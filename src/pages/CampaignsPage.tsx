@@ -78,12 +78,12 @@ export default function CampaignsPage() {
                   New Campaign
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
-                <DialogHeader>
+              <DialogContent className="sm:max-w-2xl p-0">
+                <DialogHeader className="p-6 pb-0 shrink-0">
                   <DialogTitle className="font-display">Create New Campaign</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-6 pt-4">
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="campaignName">Campaign Name</Label>
                       <Input
@@ -130,13 +130,13 @@ export default function CampaignsPage() {
                       }
                     />
                   </div>
+                </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                    <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button onClick={handleCreateCampaign}>Create Campaign</Button>
-                  </div>
+                <div className="shrink-0 sticky bottom-0 bg-background border-t border-border p-4 flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateCampaign}>Create Campaign</Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -214,8 +214,8 @@ export default function CampaignsPage() {
         {/* Campaign Detail Dialog */}
         {selectedCampaign && (
           <Dialog open={!!selectedCampaign} onOpenChange={() => setSelectedCampaign(null)}>
-            <DialogContent className="sm:max-w-3xl max-h-[85vh] overflow-y-auto">
-              <DialogHeader>
+            <DialogContent className="sm:max-w-3xl p-0">
+              <DialogHeader className="p-6 pb-4 shrink-0">
                 <DialogTitle className="font-display text-xl">
                   {selectedCampaign.name}
                 </DialogTitle>
@@ -225,7 +225,7 @@ export default function CampaignsPage() {
                 </div>
               </DialogHeader>
 
-              <div className="space-y-6 pt-4">
+              <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6 space-y-6">
                 {/* Pipeline Stages */}
                 <div>
                   <h4 className="text-sm font-medium mb-3">Pipeline Progress</h4>
