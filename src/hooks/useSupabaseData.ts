@@ -116,7 +116,7 @@ export function useUpdateCampaign() {
 }
 
 // ---- Tasks ----
-export function useTasks(filters?: { campaignId?: string; assignee?: string; status?: string }) {
+export function useTasks(filters?: { campaignId?: string; assignee?: "owner" | "editor" | "videographer" | "client"; status?: "pending" | "in-progress" | "review" | "complete" }) {
   return useQuery({
     queryKey: ["tasks", filters],
     queryFn: async () => {
