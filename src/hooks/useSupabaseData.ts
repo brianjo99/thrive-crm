@@ -313,7 +313,7 @@ export function useUserRole() {
 }
 
 // ---- SOPs ----
-export function useSOPs(role?: string) {
+export function useSOPs(role?: "owner" | "editor" | "videographer" | "client") {
   return useQuery({
     queryKey: ["sops", role],
     queryFn: async () => {
