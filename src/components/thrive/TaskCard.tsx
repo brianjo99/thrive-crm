@@ -31,7 +31,7 @@ export function TaskCard({ task, compact = false, showClient = true, className }
   const [expanded, setExpanded] = useState(false);
   const updateTask = useUpdateTask();
 
-  const checklist = (task.checklist as ChecklistItem[] | null) || [];
+  const checklist = (task.checklist as unknown as ChecklistItem[] | null) || [];
 
   const priorityClasses: Record<string, string> = {
     urgent: 'task-priority-high border-l-destructive',
