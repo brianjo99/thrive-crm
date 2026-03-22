@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { UnpaidAlert } from "@/types/thrive";
-import { useThriveStore } from "@/stores/thriveStore";
+import { useUnpaidAlerts, useDismissAlert } from "@/hooks/useSupabaseData";
 import { AlertTriangle, X, DollarSign } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -28,43 +28,39 @@ export function AlertBanner({ alert, onDismiss, className }: AlertBannerProps) {
           Consider updating {alert.clientName}'s service package or discussing scope.
         </p>
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onDismiss}
-        className="flex-shrink-0 h-8 w-8 text-muted-foreground hover:text-foreground"
-      >
+      <Button variant="ghost" size="icon" onClick={onDismiss} className="flex-shrink-0 h-8 w-8 text-muted-foreground hover:text-foreground">
         <X className="h-4 w-4" />
       </Button>
     </motion.div>
   );
 }
 
-interface AlertsPanelProps {
-  className?: string;
-}
+export function AlertsPanel({ className }: { className?: string }) {
+  const { data: alerts = [] } = useUnpaidAlerts();
+  const dismissAlert = useDismissAlert();
 
-export function AlertsPanel({ className }: AlertsPanelProps) {
-  const { unpaidAlerts, dismissAlert } = useThriveStore();
-  const activeAlerts = unpaidAlerts.filter(a => !a.dismissed);
+  if (alerts.length === 0) return null;
 
-  if (activeAlerts.length === 0) return null;
+  const mappedAlerts: UnpaidAlert[] = alerts.map(a => ({
+    id: a.id,
+    clientId: a.client_id,
+    clientName: (a as any).clients?.name || "Client",
+    servicePerformed: a.service_performed,
+    message: a.message,
+    createdAt: new Date(a.created_at),
+    dismissed: a.dismissed,
+  }));
 
   return (
     <div className={cn('space-y-3', className)}>
       <div className="flex items-center gap-2 text-warning">
         <AlertTriangle className="h-4 w-4" />
         <h3 className="font-display text-sm font-semibold">Unpaid Work Alerts</h3>
-        <span className="text-xs bg-warning/20 px-2 py-0.5 rounded-full">{activeAlerts.length}</span>
+        <span className="text-xs bg-warning/20 px-2 py-0.5 rounded-full">{mappedAlerts.length}</span>
       </div>
-      
       <AnimatePresence mode="popLayout">
-        {activeAlerts.map((alert) => (
-          <AlertBanner
-            key={alert.id}
-            alert={alert}
-            onDismiss={() => dismissAlert(alert.id)}
-          />
+        {mappedAlerts.map((alert) => (
+          <AlertBanner key={alert.id} alert={alert} onDismiss={() => dismissAlert.mutate(alert.id)} />
         ))}
       </AnimatePresence>
     </div>
