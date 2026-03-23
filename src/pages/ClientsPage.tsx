@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useClients, useCreateClient, useDeleteClient } from "@/hooks/useSupabaseData";
 import { ServiceBadge, ClientTypeBadge } from "@/components/thrive/Badges";
 import { ChecklistPanel } from "@/components/thrive/ChecklistPanel";
+import { ClientOnboardingWizard } from "@/components/thrive/ClientOnboardingWizard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedClient, setSelectedClient] = useState<ClientRow | null>(null);
+  const [onboardingClient, setOnboardingClient] = useState<ClientRow | null>(null);
 
   const [newClient, setNewClient] = useState({
     name: "",
@@ -180,6 +182,7 @@ export default function ClientsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setOnboardingClient(client); }}>Start Onboarding</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={(e) => { e.stopPropagation(); deleteClient.mutate(client.id); toast.success("Client deleted"); }}>Delete Client</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -234,6 +237,15 @@ export default function ClientsPage() {
               </div>
             </DialogContent>
           </Dialog>
+        )}
+
+        {onboardingClient && (
+          <ClientOnboardingWizard
+            client={onboardingClient}
+            isOpen={!!onboardingClient}
+            onClose={() => setOnboardingClient(null)}
+            onComplete={() => setOnboardingClient(null)}
+          />
         )}
       </main>
     </div>

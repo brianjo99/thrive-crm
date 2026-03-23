@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useCampaigns, useTasks, useCreateTask, useUpdateCampaign, useApprovals, useClients, useAssets } from "@/hooks/useSupabaseData";
 import { TaskList } from "@/components/thrive/TaskCard";
+import { DeliverablesPanel } from "@/components/thrive/DeliverablesPanel";
 import { TemplateBadge, StatusBadge } from "@/components/thrive/Badges";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -227,6 +228,10 @@ export default function CampaignDetailPage() {
                 <div className="flex justify-between"><span className="text-muted-foreground">Total Tasks</span><span className="font-medium">{tasks.length}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Completed</span><span className="font-medium">{tasks.filter(t => t.status === "complete").length}</span></div>
               </div>
+            </Card>
+
+            <Card className="luxury-card p-5">
+              <DeliverablesPanel campaignId={campaign.id} editable={true} />
             </Card>
 
             <Card className="luxury-card p-5">

@@ -5,29 +5,31 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, ChevronDown, Sparkles, FolderOpen, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, ChevronDown, Sparkles, FolderOpen, ShieldCheck, Clapperboard } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 
 type ViewRole = "owner" | "editor" | "videographer";
 
-const roleNavItems: Record<ViewRole, { title: string; url: string; icon: typeof LayoutDashboard }[]> = {
+const roleNavItems: Record<ViewRole, { title: string; url: string; icon: typeof LayoutDashboard | typeof Clapperboard }[]> = {
   owner: [
     { title: "Today", url: "/", icon: LayoutDashboard },
     { title: "Clients", url: "/clients", icon: Users },
     { title: "Campaigns", url: "/campaigns", icon: FolderKanban },
     { title: "Assets", url: "/assets", icon: FolderOpen },
     { title: "Approvals", url: "/approvals", icon: ShieldCheck },
+    { title: "Shot Lists", url: "/shot-lists", icon: FileStack },
     { title: "Templates", url: "/templates", icon: FileStack },
   ],
   editor: [
     { title: "My Tasks", url: "/editor", icon: Scissors },
     { title: "Assets", url: "/assets", icon: FolderOpen },
+    { title: "Shot Lists", url: "/shot-lists", icon: FileStack },
   ],
   videographer: [
     { title: "My Tasks", url: "/videographer", icon: Camera },
-    { title: "Shot Lists", url: "/videographer/shots", icon: FileStack },
+    { title: "Shot Lists", url: "/shot-lists", icon: FileStack },
   ],
 };
 

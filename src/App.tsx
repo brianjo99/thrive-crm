@@ -18,6 +18,7 @@ import VideographerShotsPage from "./pages/VideographerShotsPage";
 import AssetsPage from "./pages/AssetsPage";
 import ApprovalsPage from "./pages/ApprovalsPage";
 import CampaignDetailPage from "./pages/CampaignDetailPage";
+import ShotListsPage from "./pages/ShotListsPage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFound from "./pages/NotFound";
@@ -60,7 +61,8 @@ function ProtectedLayout() {
               <Route path="/editor" element={<EditorDashboard />} />
               <Route path="/editor/assets" element={<EditorAssetsPage />} />
               <Route path="/videographer" element={<VideographerDashboard />} />
-              <Route path="/videographer/shots" element={<VideographerShotsPage />} />
+              <Route path="/videographer/shots" element={<ShotListsPage />} />
+              <Route path="/shot-lists" element={<ShotListsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

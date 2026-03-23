@@ -325,3 +325,299 @@ export function useSOPs(role?: "owner" | "editor" | "videographer" | "client") {
     },
   });
 }
+
+
+// ---- Client Onboarding ----
+export function useClientOnboarding(clientId?: string) {
+  return useQuery({
+    queryKey: ["client_onboarding", clientId],
+    queryFn: async () => {
+      if (!clientId) return null;
+      const { data, error } = await supabase
+        .from("client_onboarding")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false })
+        .single();
+      if (error && error.code !== "PGRST116") throw error;
+      return data || null;
+    },
+    enabled: !!clientId,
+  });
+}
+
+export function useCreateClientOnboarding() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { client_id: string; requirements: Record<string, any> }) => {
+      const { data, error } = await supabase
+        .from("client_onboarding")
+        .insert(input)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["client_onboarding"] }),
+  });
+}
+
+export function useUpdateClientOnboarding() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"client_onboarding">>) => {
+      const { error } = await supabase.from("client_onboarding").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["client_onboarding"] }),
+  });
+}
+
+// ---- Shot Lists ----
+export function useShotLists(filters?: { campaignId?: string; assignedTo?: string }) {
+  return useQuery({
+    queryKey: ["shot_lists", filters],
+    queryFn: async () => {
+      let query = supabase.from("shot_lists").select("*").order("scheduled_date", { ascending: true });
+      if (filters?.campaignId) query = query.eq("campaign_id", filters.campaignId);
+      if (filters?.assignedTo) query = query.eq("assigned_to", filters.assignedTo);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreateShotList() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (input: {
+      campaign_id: string;
+      title: string;
+      description?: string;
+      location?: string;
+      scheduled_date?: string;
+      assigned_to?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from("shot_lists")
+        .insert({
+          ...input,
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shot_lists"] }),
+  });
+}
+
+export function useUpdateShotList() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"shot_lists">>) => {
+      const { error } = await supabase.from("shot_lists").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shot_lists"] }),
+  });
+}
+
+export function useDeleteShotList() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("shot_lists").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["shot_lists"] }),
+  });
+}
+
+// ---- Deliverables ----
+export function useDeliverables(filters?: { campaignId?: string; status?: string }) {
+  return useQuery({
+    queryKey: ["deliverables", filters],
+    queryFn: async () => {
+      let query = supabase.from("deliverables").select("*").order("due_date", { ascending: true });
+      if (filters?.campaignId) query = query.eq("campaign_id", filters.campaignId);
+      if (filters?.status) query = query.eq("status", filters.status);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreateDeliverable() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (input: {
+      campaign_id: string;
+      name: string;
+      type: string;
+      description?: string;
+      due_date?: string;
+      assigned_to?: string;
+    }) => {
+      const { data, error } = await supabase
+        .from("deliverables")
+        .insert({
+          ...input,
+          created_by: user?.id,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["deliverables"] }),
+  });
+}
+
+export function useUpdateDeliverable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<TablesInsert<"deliverables">>) => {
+      const { error } = await supabase.from("deliverables").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["deliverables"] }),
+  });
+}
+
+export function useDeleteDeliverable() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("deliverables").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["deliverables"] }),
+  });
+}
+
+// ---- Notifications ----
+export function useNotifications() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ["notifications", user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+}
+
+export function useMarkNotificationRead() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true, read_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (user) qc.invalidateQueries({ queryKey: ["notifications", user.id] });
+    },
+  });
+}
+
+export function useDeleteNotification() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("notifications").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      if (user) qc.invalidateQueries({ queryKey: ["notifications", user.id] });
+    },
+  });
+}
+
+// ---- Comments ----
+export function useComments(filters?: { taskId?: string; approvalId?: string; assetId?: string }) {
+  return useQuery({
+    queryKey: ["comments", filters],
+    queryFn: async () => {
+      let query = supabase.from("comments").select("*, author:author_id(display_name, avatar_url)").order("created_at", { ascending: true });
+      if (filters?.taskId) query = query.eq("task_id", filters.taskId);
+      if (filters?.approvalId) query = query.eq("approval_id", filters.approvalId);
+      if (filters?.assetId) query = query.eq("asset_id", filters.assetId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useCreateComment() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (input: {
+      task_id?: string;
+      approval_id?: string;
+      asset_id?: string;
+      content: string;
+      mentions?: string[];
+    }) => {
+      const { data, error } = await supabase
+        .from("comments")
+        .insert({
+          ...input,
+          author_id: user?.id,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["comments"] }),
+  });
+}
+
+export function useDeleteComment() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("comments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["comments"] }),
+  });
+}
+
+// ---- Campaign Metrics ----
+export function useCampaignMetrics(campaignId?: string) {
+  return useQuery({
+    queryKey: ["campaign_metrics", campaignId],
+    queryFn: async () => {
+      if (!campaignId) return [];
+      const { data, error } = await supabase
+        .from("campaign_metrics")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!campaignId,
+  });
+}
