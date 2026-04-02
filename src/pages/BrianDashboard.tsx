@@ -1,4 +1,6 @@
-import { useTasks, useUnpaidAlerts, useClients, useCampaigns, useApprovals } from "@/hooks/useSupabaseData";\nimport { useQuery } from "@tanstack/react-query";\nimport { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useTasks, useUnpaidAlerts, useClients, useCampaigns, useApprovals } from "@/hooks/useSupabaseData";
 import { TaskList } from "@/components/thrive/TaskCard";
 import { AlertsPanel } from "@/components/thrive/AlertsPanel";
 import { Card } from "@/components/ui/card";
@@ -20,6 +22,13 @@ function getStageProgress(stage: string): number {
   return idx < 0 ? 0 : Math.round(((idx + 1) / STAGE_ORDER.length) * 100);
 }
 
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "morning";
+  if (hour < 17) return "afternoon";
+  return "evening";
+}
+
 export default function BrianDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -28,6 +37,13 @@ export default function BrianDashboard() {
   const { data: clients = [] } = useClients();
   const { data: campaigns = [] } = useCampaigns();
   const { data: approvals = [] } = useApprovals();
+  const { data: leads = [] } = useQuery({
+    queryKey: ["leads_count"],
+    queryFn: async () => {
+      const { data } = await supabase.from("leads").select("id, status");
+      return data || [];
+    },
+  });
 
   const todaysTasks = allTasks.filter(t => t.due_date && isToday(new Date(t.due_date)));
   const tasksToReview = allTasks.filter(t => t.status === "review");
@@ -36,6 +52,7 @@ export default function BrianDashboard() {
   const filmingTasks = todaysTasks.filter(t => t.service_type === "film");
   const overdueTasks = allTasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== "complete");
   const activeCampaigns = campaigns.filter(c => c.current_stage !== "complete");
+  const newLeads = (leads as any[]).filter(l => l.status === "new").length;
 
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "there";
 
@@ -43,7 +60,7 @@ export default function BrianDashboard() {
     { label: "Filming Today", value: filmingTasks.length, icon: Camera, color: "text-[hsl(200_70%_50%)]", bg: "bg-[hsl(200_70%_50%/0.1)]", onClick: () => navigate("/shot-lists") },
     { label: "Edits to Review", value: tasksToReview.length, icon: Scissors, color: "text-[hsl(280_60%_55%)]", bg: "bg-[hsl(280_60%_55%/0.1)]", onClick: () => {} },
     { label: "Pending Approvals", value: approvalsPending.length, icon: CheckCircle, color: "text-primary", bg: "bg-primary/10", onClick: () => navigate("/approvals") },
-    { label: "Content to Post", value: contentToPost.length, icon: Send, color: "text-success", bg: "bg-success/10", onClick: () => {} },
+    { label: "New Leads", value: newLeads, icon: TrendingUp, color: "text-success", bg: "bg-success/10", onClick: () => navigate("/leads") },
   ];
 
   return (
@@ -181,60 +198,37 @@ export default function BrianDashboard() {
 
           {/* Right Column */}
           <div className="space-y-6">
-            {/* Quick Stats */}
             <Card className="luxury-card p-5">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="h-5 w-5 text-primary" />
                 <h3 className="font-display font-semibold">Overview</h3>
               </div>
-              <div className="space-y-4">
-                <div
-                  className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors"
-                  onClick={() => navigate("/clients")}
-                >
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Users className="h-3.5 w-3.5 text-primary" />
+              <div className="space-y-3">
+                {[
+                  { label: "Active Clients", value: clients.length, icon: Users, color: "text-primary", bg: "bg-primary/10", path: "/clients" },
+                  { label: "Total Campaigns", value: campaigns.length, icon: FolderKanban, color: "text-accent", bg: "bg-accent/10", path: "/campaigns" },
+                  { label: "Pending Approvals", value: approvalsPending.length, icon: CheckCircle, color: "text-warning", bg: "bg-warning/10", path: "/approvals" },
+                  { label: "Active Campaigns", value: activeCampaigns.length, icon: Camera, color: "text-[hsl(200_70%_50%)]", bg: "bg-[hsl(200_70%_50%/0.1)]", path: "/campaigns" },
+                  { label: "New Leads", value: newLeads, icon: TrendingUp, color: "text-success", bg: "bg-success/10", path: "/leads" },
+                ].map(item => (
+                  <div
+                    key={item.label}
+                    className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors"
+                    onClick={() => navigate(item.path)}
+                  >
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center", item.bg)}>
+                        <item.icon className={cn("h-3.5 w-3.5", item.color)} />
+                      </div>
+                      <span className="text-muted-foreground">{item.label}</span>
                     </div>
-                    <span className="text-muted-foreground">Active Clients</span>
+                    <span className={cn("font-bold", item.value > 0 && item.label.includes("Approval") && "text-warning", item.value > 0 && item.label === "New Leads" && "text-success")}>
+                      {item.value}
+                    </span>
                   </div>
-                  <span className="font-bold">{clients.length}</span>
-                </div>
-                <div
-                  className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors"
-                  onClick={() => navigate("/campaigns")}
-                >
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-7 h-7 rounded-lg bg-accent/10 flex items-center justify-center">
-                      <FolderKanban className="h-3.5 w-3.5 text-accent" />
-                    </div>
-                    <span className="text-muted-foreground">Total Campaigns</span>
-                  </div>
-                  <span className="font-bold">{campaigns.length}</span>
-                </div>
-                <div
-                  className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded-lg p-2 -mx-2 transition-colors"
-                  onClick={() => navigate("/approvals")}
-                >
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-7 h-7 rounded-lg bg-warning/10 flex items-center justify-center">
-                      <CheckCircle className="h-3.5 w-3.5 text-warning" />
-                    </div>
-                    <span className="text-muted-foreground">Pending Approvals</span>
-                  </div>
-                  <span className={cn("font-bold", approvalsPending.length > 0 && "text-warning")}>{approvalsPending.length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm">
-                    <div className="w-7 h-7 rounded-lg bg-[hsl(200_70%_50%/0.1)] flex items-center justify-center">
-                      <Camera className="h-3.5 w-3.5 text-[hsl(200_70%_50%)]" />
-                    </div>
-                    <span className="text-muted-foreground">Active Campaigns</span>
-                  </div>
-                  <span className="font-bold">{activeCampaigns.length}</span>
-                </div>
+                ))}
                 {overdueTasks.length > 0 && (
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between p-2 -mx-2 rounded-lg bg-destructive/5">
                     <div className="flex items-center gap-2 text-sm">
                       <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center">
                         <AlertCircle className="h-3.5 w-3.5 text-destructive" />
@@ -256,7 +250,6 @@ export default function BrianDashboard() {
               <TaskList tasks={contentToPost} compact emptyMessage="All content is posted" />
             </Card>
 
-            {/* Filming Today */}
             {filmingTasks.length > 0 && (
               <Card className="luxury-card p-5 border-l-4 border-l-[hsl(200_70%_50%)]">
                 <div className="flex items-center gap-2 mb-4">
@@ -271,11 +264,4 @@ export default function BrianDashboard() {
       </main>
     </div>
   );
-}
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return "morning";
-  if (hour < 17) return "afternoon";
-  return "evening";
 }
