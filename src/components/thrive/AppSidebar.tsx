@@ -6,7 +6,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, Sparkles, FolderOpen, ShieldCheck, Clapperboard, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, Sparkles, FolderOpen, ShieldCheck, Clapperboard, TrendingUp, Megaphone } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 type ViewRole = "owner" | "editor" | "videographer";
@@ -21,6 +21,7 @@ const roleNavItems: Record<ViewRole, { title: string; url: string; icon: typeof 
     { title: "Shot Lists", url: "/shot-lists", icon: FileStack },
     { title: "Templates", url: "/templates", icon: Clapperboard },
     { title: "Leads", url: "/leads", icon: TrendingUp },
+    { title: "Ads", url: "/ads", icon: Megaphone },
   ],
   editor: [
     { title: "My Tasks", url: "/editor", icon: Scissors },
