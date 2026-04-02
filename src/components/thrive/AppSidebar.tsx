@@ -1,35 +1,34 @@
 import { cn } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useSupabaseData";
+import { useRealtime } from "@/hooks/useRealtime";
 import { 
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, ChevronDown, Sparkles, FolderOpen, ShieldCheck, Clapperboard } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
+import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, Sparkles, FolderOpen, ShieldCheck, Clapperboard } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 type ViewRole = "owner" | "editor" | "videographer";
 
-const roleNavItems: Record<ViewRole, { title: string; url: string; icon: typeof LayoutDashboard | typeof Clapperboard }[]> = {
+const roleNavItems: Record<ViewRole, { title: string; url: string; icon: typeof LayoutDashboard }[]> = {
   owner: [
-    { title: "Today", url: "/", icon: LayoutDashboard },
+    { title: "Today", url: "/dashboard", icon: LayoutDashboard },
     { title: "Clients", url: "/clients", icon: Users },
     { title: "Campaigns", url: "/campaigns", icon: FolderKanban },
     { title: "Assets", url: "/assets", icon: FolderOpen },
     { title: "Approvals", url: "/approvals", icon: ShieldCheck },
     { title: "Shot Lists", url: "/shot-lists", icon: FileStack },
-    { title: "Templates", url: "/templates", icon: FileStack },
+    { title: "Templates", url: "/templates", icon: Clapperboard },
   ],
   editor: [
     { title: "My Tasks", url: "/editor", icon: Scissors },
-    { title: "Assets", url: "/assets", icon: FolderOpen },
+    { title: "Assets", url: "/editor/assets", icon: FolderOpen },
     { title: "Shot Lists", url: "/shot-lists", icon: FileStack },
   ],
   videographer: [
     { title: "My Tasks", url: "/videographer", icon: Camera },
-    { title: "Shot Lists", url: "/shot-lists", icon: FileStack },
+    { title: "Shot Lists", url: "/videographer/shots", icon: FileStack },
   ],
 };
 
@@ -44,10 +43,11 @@ export function AppSidebar() {
   const location = useLocation();
   const { data: userRole } = useUserRole();
   const { user } = useAuth();
-  
-  // Default to owner view, can switch via dropdown
+
+  // Activate real-time subscriptions globally
+  useRealtime();
+
   const currentRole: ViewRole = (userRole === "editor" || userRole === "videographer") ? userRole : "owner";
-  
   const isCollapsed = state === "collapsed";
   const navItems = roleNavItems[currentRole];
   const currentRoleConfig = roleConfig[currentRole];
@@ -83,7 +83,8 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
-                const isActive = location.pathname === item.url;
+                const isActive = location.pathname === item.url ||
+                  (item.url !== "/dashboard" && location.pathname.startsWith(item.url + "/"));
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>

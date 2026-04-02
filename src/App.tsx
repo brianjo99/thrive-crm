@@ -7,6 +7,7 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppSidebar } from "@/components/thrive/AppSidebar";
 import { TopBar } from "@/components/thrive/TopBar";
+import Index from "./pages/Index";
 import BrianDashboard from "./pages/BrianDashboard";
 import ClientsPage from "./pages/ClientsPage";
 import CampaignsPage from "./pages/CampaignsPage";
@@ -51,7 +52,8 @@ function ProtectedLayout() {
           <TopBar />
           <main className="flex-1 overflow-auto">
             <Routes>
-              <Route path="/" element={<BrianDashboard />} />
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<BrianDashboard />} />
               <Route path="/clients" element={<ClientsPage />} />
               <Route path="/campaigns" element={<CampaignsPage />} />
               <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
@@ -61,7 +63,7 @@ function ProtectedLayout() {
               <Route path="/editor" element={<EditorDashboard />} />
               <Route path="/editor/assets" element={<EditorAssetsPage />} />
               <Route path="/videographer" element={<VideographerDashboard />} />
-              <Route path="/videographer/shots" element={<ShotListsPage />} />
+              <Route path="/videographer/shots" element={<VideographerShotsPage />} />
               <Route path="/shot-lists" element={<ShotListsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
