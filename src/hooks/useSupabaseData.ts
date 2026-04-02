@@ -60,6 +60,31 @@ export function useDeleteClient() {
   });
 }
 
+export function useUpdateClient() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: {
+      id: string;
+      name: string;
+      email?: string;
+      type: ClientType;
+      enabledServices: ServiceType[];
+    }) => {
+      const { error } = await supabase
+        .from("clients")
+        .update({
+          name: input.name,
+          email: input.email || null,
+          type: input.type,
+          enabled_services: input.enabledServices,
+        })
+        .eq("id", input.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["clients"] }),
+  });
+}
+
 // ---- Campaigns ----
 export function useCampaigns() {
   return useQuery({
