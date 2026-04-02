@@ -151,7 +151,7 @@ export default function AssetsPage() {
                     <Input value={uploadForm.notes} onChange={(e) => setUploadForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Optional notes about these files" />
                   </div>
                 </div>
-                <div className="shrink-0 sticky bottom-0 bg-background border-t border-border p-4 flex justify-end gap-3">
+                <div className="shrink-0 border-t border-border p-4 flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
                   <Button onClick={handleUpload} disabled={uploadAsset.isPending || uploadForm.files.length === 0}>
                     {uploadAsset.isPending ? "Uploading..." : `Upload ${uploadForm.files.length} file(s)`}

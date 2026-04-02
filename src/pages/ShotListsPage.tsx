@@ -207,7 +207,7 @@ export default function ShotListsPage() {
                   </div>
                 </div>
 
-                <div className="shrink-0 sticky bottom-0 bg-background border-t border-border p-4 flex justify-end gap-3">
+                <div className="shrink-0 border-t border-border p-4 flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancel
                   </Button>

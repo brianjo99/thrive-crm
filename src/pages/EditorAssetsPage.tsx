@@ -141,7 +141,7 @@ export default function EditorAssetsPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="sticky bottom-0 bg-background border-t border-border p-4 flex justify-end gap-3">
+                <div className="border-t border-border p-4 flex justify-end gap-3">
                   <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
                   <Button
                     onClick={handleUpload}
