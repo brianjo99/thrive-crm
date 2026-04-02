@@ -1,17 +1,47 @@
 import { useApprovals, useUpdateApproval, useTasks, getAssetPublicUrl } from "@/hooks/useSupabaseData";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, XCircle, MessageSquare, Clock, Eye, ShieldCheck } from "lucide-react";
+import { CheckCircle, XCircle, MessageSquare, Clock, ShieldCheck, RotateCcw } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
+
+function useRevisionRounds(approvalId: string | null) {
+  return useQuery({
+    queryKey: ["revision_rounds", approvalId],
+    queryFn: async () => {
+      if (!approvalId) return [];
+      const { data, error } = await supabase
+        .from("revision_rounds")
+        .select("*")
+        .eq("approval_id", approvalId)
+        .order("round_number");
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!approvalId,
+  });
+}
+
+function useAddRevisionRound() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ approval_id, round_number, feedback }: { approval_id: string; round_number: number; feedback: string }) => {
+      const { error } = await supabase.from("revision_rounds").insert({ approval_id, round_number, feedback });
+      if (error) throw error;
+    },
+    onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ["revision_rounds", vars.approval_id] }),
+  });
+}
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
   pending: { label: "Pending", color: "bg-muted text-muted-foreground", icon: Clock },
@@ -26,6 +56,8 @@ export default function ApprovalsPage() {
   const { user } = useAuth();
   const [selectedApproval, setSelectedApproval] = useState<typeof allApprovals[0] | null>(null);
   const [feedback, setFeedback] = useState("");
+  const { data: revisionRounds = [] } = useRevisionRounds(selectedApproval?.id || null);
+  const addRevisionRound = useAddRevisionRound();
 
   const pendingApprovals = allApprovals.filter(a => a.status === "pending");
   const processedApprovals = allApprovals.filter(a => a.status !== "pending");
@@ -33,6 +65,10 @@ export default function ApprovalsPage() {
   const handleDecision = async (id: string, status: string) => {
     try {
       await updateApproval.mutateAsync({ id, status, feedback: feedback || undefined, reviewer_id: user?.id });
+      if (status === "revision-requested" && feedback) {
+        const nextRound = (revisionRounds.length || 0) + 1;
+        await addRevisionRound.mutateAsync({ approval_id: id, round_number: nextRound, feedback });
+      }
       toast.success(status === "approved" ? "Content approved!" : "Revision requested");
       setSelectedApproval(null);
       setFeedback("");
@@ -148,8 +184,28 @@ export default function ApprovalsPage() {
                   </div>
                 )}
 
+                {revisionRounds.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <RotateCcw className="h-4 w-4 text-warning" />
+                      <label className="text-sm font-medium">Revision History ({revisionRounds.length} round{revisionRounds.length !== 1 ? "s" : ""})</label>
+                    </div>
+                    <div className="space-y-2 max-h-36 overflow-y-auto">
+                      {revisionRounds.map(r => (
+                        <div key={r.id} className="bg-warning/5 border border-warning/20 rounded-lg p-3">
+                          <p className="text-xs text-warning font-medium mb-1">Round {r.round_number}</p>
+                          <p className="text-sm text-muted-foreground">{r.feedback}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{format(new Date(r.created_at), "MMM d, h:mm a")}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Feedback (optional)</label>
+                  <label className="text-sm font-medium">
+                    {revisionRounds.length > 0 ? `New Feedback (Round ${revisionRounds.length + 1})` : "Feedback (optional)"}
+                  </label>
                   <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Add notes or revision requests..." />
                 </div>
 

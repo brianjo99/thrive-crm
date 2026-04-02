@@ -6,7 +6,7 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, Sparkles, FolderOpen, ShieldCheck, Clapperboard, TrendingUp, Megaphone } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, Sparkles, FolderOpen, ShieldCheck, Clapperboard, TrendingUp, Megaphone, CalendarDays, Receipt, FileText, ClipboardList } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 type ViewRole = "owner" | "editor" | "videographer";
@@ -16,12 +16,16 @@ const roleNavItems: Record<ViewRole, { title: string; url: string; icon: typeof 
     { title: "Today", url: "/dashboard", icon: LayoutDashboard },
     { title: "Clients", url: "/clients", icon: Users },
     { title: "Campaigns", url: "/campaigns", icon: FolderKanban },
+    { title: "Tasks", url: "/tasks", icon: ClipboardList },
+    { title: "Calendar", url: "/calendar", icon: CalendarDays },
+    { title: "Scripts", url: "/scripts", icon: FileText },
+    { title: "Call Sheets", url: "/shot-lists", icon: FileStack },
     { title: "Assets", url: "/assets", icon: FolderOpen },
     { title: "Approvals", url: "/approvals", icon: ShieldCheck },
-    { title: "Shot Lists", url: "/shot-lists", icon: FileStack },
-    { title: "Templates", url: "/templates", icon: Clapperboard },
+    { title: "Invoices", url: "/invoices", icon: Receipt },
     { title: "Leads", url: "/leads", icon: TrendingUp },
     { title: "Ads", url: "/ads", icon: Megaphone },
+    { title: "Templates", url: "/templates", icon: Clapperboard },
   ],
   editor: [
     { title: "My Tasks", url: "/editor", icon: Scissors },

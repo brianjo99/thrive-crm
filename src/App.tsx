@@ -24,6 +24,11 @@ import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import LeadsPage from "./pages/LeadsPage";
 import AdsPage from "./pages/AdsPage";
+import CalendarPage from "./pages/CalendarPage";
+import InvoicesPage from "./pages/InvoicesPage";
+import ScriptsPage from "./pages/ScriptsPage";
+import CallSheetsPage from "./pages/CallSheetsPage";
+import TasksPage from "./pages/TasksPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -69,6 +74,11 @@ function ProtectedLayout() {
               <Route path="/shot-lists" element={<ShotListsPage />} />
               <Route path="/leads" element={<LeadsPage />} />
               <Route path="/ads" element={<AdsPage />} />
+              <Route path="/calendar" element={<CalendarPage />} />
+              <Route path="/invoices" element={<InvoicesPage />} />
+              <Route path="/scripts" element={<ScriptsPage />} />
+              <Route path="/call-sheets" element={<CallSheetsPage />} />
+              <Route path="/tasks" element={<TasksPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

@@ -1,7 +1,7 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useUnpaidAlerts, useDismissAlert, useUserRole, useNotifications, useMarkNotificationRead, useDeleteNotification } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/contexts/AuthContext";
-import { Crown, Scissors, Camera, Bell, LogOut, Check, Trash2, CheckCheck } from "lucide-react";
+import { Crown, Scissors, Camera, Bell, LogOut, Check, Trash2, CheckCheck, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -9,6 +9,8 @@ import { AlertBanner } from "@/components/thrive/AlertsPanel";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
+import { useState, useEffect } from "react";
+import { GlobalSearch } from "@/components/thrive/GlobalSearch";
 
 const roleConfig = {
   owner: { label: "Owner", icon: Crown, color: "text-primary" },
@@ -33,6 +35,18 @@ export function TopBar() {
   const markRead = useMarkNotificationRead();
   const deleteNotification = useDeleteNotification();
   const { signOut } = useAuth();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   const role = userRole || "owner";
   const config = roleConfig[role] || roleConfig.owner;
@@ -56,6 +70,8 @@ export function TopBar() {
   };
 
   return (
+    <>
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     <header className="h-14 border-b border-border bg-card/80 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-20">
       <div className="flex items-center gap-3">
         <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
@@ -67,6 +83,14 @@ export function TopBar() {
       </div>
 
       <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" className="gap-2 text-muted-foreground h-8 hidden sm:flex" onClick={() => setSearchOpen(true)}>
+          <Search className="h-3.5 w-3.5" />
+          <span className="text-xs">Search</span>
+          <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-1 rounded border border-border bg-muted px-1 text-[10px] font-medium text-muted-foreground">⌘K</kbd>
+        </Button>
+        <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setSearchOpen(true)}>
+          <Search className="h-4 w-4" />
+        </Button>
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
@@ -156,5 +180,6 @@ export function TopBar() {
         </Button>
       </div>
     </header>
+    </>
   );
 }
