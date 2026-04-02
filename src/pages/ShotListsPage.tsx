@@ -125,13 +125,13 @@ export default function ShotListsPage() {
                   <Plus className="h-4 w-4" /> New Shot List
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-lg p-0">
+              <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
                   <DialogTitle className="font-display">
                     {editingId ? "Edit Shot List" : "Create Shot List"}
                   </DialogTitle>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
                   <div className="space-y-2">
                     <Label>Campaign</Label>
                     <Select
@@ -324,11 +324,11 @@ export default function ShotListsPage() {
 
         {selectedShotList && (
           <Dialog open={!!selectedShotList} onOpenChange={() => setSelectedShotList(null)}>
-            <DialogContent className="sm:max-w-xl p-0">
+            <DialogContent className="sm:max-w-xl p-0 flex flex-col max-h-[90vh]">
               <DialogHeader className="p-6 pb-4 shrink-0">
                 <DialogTitle className="font-display">{selectedShotList.title}</DialogTitle>
               </DialogHeader>
-              <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6 space-y-4">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Campaign</p>

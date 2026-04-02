@@ -90,11 +90,11 @@ export default function EditorAssetsPage() {
                   <Upload className="h-4 w-4" /> Upload Files
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-lg p-0">
+              <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
                   <DialogTitle className="font-display">Upload Assets</DialogTitle>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-4">
                   <div
                     className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-[hsl(280_60%_55%/0.5)] transition-colors"
                     onClick={() => document.getElementById("editorFileInput")?.click()}
@@ -228,7 +228,7 @@ export default function EditorAssetsPage() {
 
         {previewAsset && (
           <Dialog open={!!previewAsset} onOpenChange={() => setPreviewAsset(null)}>
-            <DialogContent className="sm:max-w-2xl p-0">
+            <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
               <DialogHeader className="p-6 pb-4 shrink-0">
                 <DialogTitle className="font-display flex items-center gap-2">
                   <Scissors className="h-5 w-5 text-[hsl(280_60%_55%)]" />

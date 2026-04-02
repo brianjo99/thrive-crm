@@ -165,11 +165,11 @@ export default function ApprovalsPage() {
 
         {selectedApproval && (
           <Dialog open={!!selectedApproval} onOpenChange={() => { setSelectedApproval(null); setFeedback(""); }}>
-            <DialogContent className="sm:max-w-xl p-0">
+            <DialogContent className="sm:max-w-xl p-0 flex flex-col max-h-[90vh]">
               <DialogHeader className="p-6 pb-4 shrink-0">
                 <DialogTitle className="font-display">Review Content</DialogTitle>
               </DialogHeader>
-              <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6 space-y-4">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 space-y-4">
                 <div className="space-y-2">
                   <p className="text-sm"><span className="text-muted-foreground">Task:</span> {(selectedApproval as any).tasks?.title}</p>
                   <p className="text-sm"><span className="text-muted-foreground">Client:</span> {(selectedApproval as any).clients?.name}</p>

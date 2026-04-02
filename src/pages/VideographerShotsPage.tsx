@@ -135,11 +135,11 @@ export default function VideographerShotsPage() {
                   <Plus className="h-4 w-4" /> New Shot List
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-lg p-0">
+              <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
                   <DialogTitle className="font-display">{editingId ? "Edit Shot List" : "New Shot List"}</DialogTitle>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-4">
                   <div className="space-y-2">
                     <Label>Campaign *</Label>
                     <Select value={formData.campaign_id} onValueChange={(v) => setFormData(p => ({ ...p, campaign_id: v }))}>
@@ -288,7 +288,7 @@ export default function VideographerShotsPage() {
 
         {selectedShotList && (
           <Dialog open={!!selectedShotList} onOpenChange={() => setSelectedShotList(null)}>
-            <DialogContent className="sm:max-w-xl p-0">
+            <DialogContent className="sm:max-w-xl p-0 flex flex-col max-h-[90vh]">
               <DialogHeader className="p-6 pb-4 shrink-0">
                 <DialogTitle className="font-display flex items-center gap-2">
                   <Camera className="h-5 w-5 text-[hsl(200_70%_50%)]" />

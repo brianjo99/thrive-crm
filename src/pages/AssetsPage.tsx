@@ -87,11 +87,11 @@ export default function AssetsPage() {
               <DialogTrigger asChild>
                 <Button className="gap-2"><Upload className="h-4 w-4" /> Upload</Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-lg p-0">
+              <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
                   <DialogTitle className="font-display">Upload Assets</DialogTitle>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
                   <div
                     className="border-2 border-dashed border-border rounded-xl p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
                     onClick={() => document.getElementById("fileInput")?.click()}
@@ -217,11 +217,11 @@ export default function AssetsPage() {
 
         {previewAsset && (
           <Dialog open={!!previewAsset} onOpenChange={() => setPreviewAsset(null)}>
-            <DialogContent className="sm:max-w-2xl p-0">
+            <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
               <DialogHeader className="p-6 pb-4 shrink-0">
                 <DialogTitle className="font-display">{previewAsset.name}</DialogTitle>
               </DialogHeader>
-              <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6 space-y-4">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 space-y-4">
                 {previewAsset.file_type.startsWith("image/") && (
                   <img src={getAssetPublicUrl(previewAsset.file_path)} alt={previewAsset.name} className="w-full rounded-lg" />
                 )}

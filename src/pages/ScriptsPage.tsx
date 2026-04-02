@@ -430,14 +430,14 @@ export default function ScriptsPage() {
 
       {/* New Script Dialog */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogContent className="sm:max-w-2xl p-0">
+        <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
           <DialogHeader className="p-6 pb-0 shrink-0">
             <DialogTitle className="font-display flex items-center gap-2">
               <Plus className="h-5 w-5 text-primary" />
               New Script
             </DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4 space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-1.5">
                 <Label>Title</Label>
@@ -536,7 +536,7 @@ export default function ScriptsPage() {
                 </span>
               </DialogTitle>
             </DialogHeader>
-            <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4 space-y-4">
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1.5">
                   <Label>Title</Label>

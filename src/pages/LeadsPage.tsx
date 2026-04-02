@@ -235,7 +235,7 @@ export default function LeadsPage() {
       {/* Lead Detail Dialog */}
       {selectedLead && (
         <Dialog open={!!selectedLead} onOpenChange={() => setSelectedLead(null)}>
-          <DialogContent className="sm:max-w-xl p-0">
+          <DialogContent className="sm:max-w-xl p-0 flex flex-col max-h-[90vh]">
             <DialogHeader className="p-6 pb-0 shrink-0">
               <DialogTitle className="font-display flex items-center gap-2">
                 <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -245,7 +245,7 @@ export default function LeadsPage() {
               </DialogTitle>
             </DialogHeader>
 
-            <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4 space-y-4">
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-4 space-y-4">
               {/* Info */}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>

@@ -583,14 +583,14 @@ export default function InvoicesPage() {
 
       {/* New Invoice Dialog */}
       <Dialog open={newDialogOpen} onOpenChange={setNewDialogOpen}>
-        <DialogContent className="sm:max-w-2xl p-0">
+        <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
           <DialogHeader className="p-6 pb-0">
             <DialogTitle className="font-display flex items-center gap-2">
               <Receipt className="h-4 w-4" /> New Invoice
             </DialogTitle>
           </DialogHeader>
 
-          <div className="px-6 pb-6 pt-4 space-y-5 overflow-y-auto max-h-[80vh]">
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-4 space-y-5">
             {/* Client + Campaign */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">

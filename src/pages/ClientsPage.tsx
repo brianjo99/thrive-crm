@@ -83,11 +83,11 @@ export default function ClientsPage() {
               <DialogTrigger asChild>
                 <Button className="gap-2"><Plus className="h-4 w-4" /> New Client</Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-lg p-0">
+              <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
                   <DialogTitle className="font-display">Create New Client</DialogTitle>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Client Name</Label>
                     <Input id="name" value={newClient.name} onChange={(e) => setNewClient((prev) => ({ ...prev, name: e.target.value }))} placeholder="Enter client name" />
@@ -212,7 +212,7 @@ export default function ClientsPage() {
 
         {selectedClient && (
           <Dialog open={!!selectedClient} onOpenChange={() => setSelectedClient(null)}>
-            <DialogContent className="sm:max-w-2xl p-0">
+            <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
               <DialogHeader className="p-6 pb-4 shrink-0">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
@@ -224,7 +224,7 @@ export default function ClientsPage() {
                   </div>
                 </div>
               </DialogHeader>
-              <div className="flex-1 overflow-y-auto overscroll-contain px-6 pb-6 space-y-6">
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 space-y-6">
                 <div>
                   <h4 className="text-sm font-medium mb-2">Enabled Services</h4>
                   <div className="flex flex-wrap gap-2">

@@ -70,11 +70,11 @@ export default function CampaignsPage() {
               <DialogTrigger asChild>
                 <Button className="gap-2"><Plus className="h-4 w-4" /> New Campaign</Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl p-0">
+              <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
                   <DialogTitle className="font-display">Create New Campaign</DialogTitle>
                 </DialogHeader>
-                <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-4 space-y-6">
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="campaignName">Campaign Name</Label>

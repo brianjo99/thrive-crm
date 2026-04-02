@@ -322,7 +322,7 @@ export default function AdsPage() {
       {/* Config Dialog */}
       {configPlatform && (
         <Dialog open={!!configPlatform} onOpenChange={() => setConfigPlatform(null)}>
-          <DialogContent className="sm:max-w-md p-0">
+          <DialogContent className="sm:max-w-md p-0 flex flex-col max-h-[90vh]">
             <DialogHeader className="p-6 pb-0 shrink-0">
               <DialogTitle className="font-display flex items-center gap-3">
                 <div
@@ -335,7 +335,7 @@ export default function AdsPage() {
               </DialogTitle>
             </DialogHeader>
 
-            <div className="px-6 py-4 space-y-4">
+            <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-4">
               <div className="space-y-2">
                 <Label>Estado</Label>
                 <Select value={form.status} onValueChange={(v) => setForm(p => ({ ...p, status: v as AdStatus }))}>
