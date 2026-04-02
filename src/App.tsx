@@ -29,6 +29,7 @@ import InvoicesPage from "./pages/InvoicesPage";
 import ScriptsPage from "./pages/ScriptsPage";
 import CallSheetsPage from "./pages/CallSheetsPage";
 import TasksPage from "./pages/TasksPage";
+import HelpPage from "./pages/HelpPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -79,6 +80,7 @@ function ProtectedLayout() {
               <Route path="/scripts" element={<ScriptsPage />} />
               <Route path="/call-sheets" element={<CallSheetsPage />} />
               <Route path="/tasks" element={<TasksPage />} />
+              <Route path="/help" element={<HelpPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
