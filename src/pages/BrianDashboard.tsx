@@ -1,4 +1,4 @@
-import { useTasks, useUnpaidAlerts, useClients, useCampaigns, useApprovals } from "@/hooks/useSupabaseData";
+import { useTasks, useUnpaidAlerts, useClients, useCampaigns, useApprovals } from "@/hooks/useSupabaseData";\nimport { useQuery } from "@tanstack/react-query";\nimport { supabase } from "@/integrations/supabase/client";
 import { TaskList } from "@/components/thrive/TaskCard";
 import { AlertsPanel } from "@/components/thrive/AlertsPanel";
 import { Card } from "@/components/ui/card";

@@ -22,6 +22,7 @@ import CampaignDetailPage from "./pages/CampaignDetailPage";
 import ShotListsPage from "./pages/ShotListsPage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import LeadsPage from "./pages/LeadsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ function ProtectedLayout() {
               <Route path="/videographer" element={<VideographerDashboard />} />
               <Route path="/videographer/shots" element={<VideographerShotsPage />} />
               <Route path="/shot-lists" element={<ShotListsPage />} />
+              <Route path="/leads" element={<LeadsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
