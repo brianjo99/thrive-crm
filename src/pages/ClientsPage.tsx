@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useClients, useCreateClient, useDeleteClient, useUpdateClient } from "@/hooks/useSupabaseData";
+import { useNavigate } from "react-router-dom";
+import { useClients, useCreateClient, useDeleteClient } from "@/hooks/useSupabaseData";
 import { ServiceBadge, ClientTypeBadge } from "@/components/thrive/Badges";
-import { ChecklistPanel } from "@/components/thrive/ChecklistPanel";
 import { ClientOnboardingWizard } from "@/components/thrive/ClientOnboardingWizard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Users, Search, Mail, Calendar, User, MoreVertical, Pencil } from "lucide-react";
+import { Plus, Users, Search, Mail, Calendar, User, MoreVertical } from "lucide-react";
 import { motion } from "framer-motion";
 import { ClientType, ServiceType, CLIENT_TYPE_CHECKLISTS } from "@/types/thrive";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -107,34 +107,21 @@ function ClientForm({
 }
 
 export default function ClientsPage() {
+  const navigate = useNavigate();
   const { data: clients = [], isLoading } = useClients();
   const createClient = useCreateClient();
-  const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
-  const [selectedClient, setSelectedClient] = useState<ClientRow | null>(null);
-  const [editOpen, setEditOpen] = useState(false);
   const [onboardingClient, setOnboardingClient] = useState<ClientRow | null>(null);
 
   const [createForm, setCreateForm] = useState<ClientFormState>(EMPTY_FORM);
-  const [editForm, setEditForm] = useState<ClientFormState>(EMPTY_FORM);
 
   const filteredClients = clients.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const openEdit = (client: ClientRow) => {
-    setEditForm({
-      name: client.name,
-      email: client.email ?? "",
-      type: client.type as ClientType,
-      enabledServices: (client.enabled_services ?? []) as ServiceType[],
-    });
-    setEditOpen(true);
-  };
 
   const toggleService = (form: ClientFormState, service: ServiceType): ClientFormState => ({
     ...form,
@@ -160,30 +147,9 @@ export default function ClientsPage() {
     }
   };
 
-  const handleUpdate = async () => {
-    if (!selectedClient || !editForm.name) return;
-    try {
-      await updateClient.mutateAsync({
-        id: selectedClient.id,
-        name: editForm.name,
-        email: editForm.email,
-        type: editForm.type,
-        enabledServices: editForm.enabledServices,
-      });
-      // Refresh selectedClient to show updated info
-      const updated = { ...selectedClient, name: editForm.name, email: editForm.email, type: editForm.type, enabled_services: editForm.enabledServices };
-      setSelectedClient(updated as ClientRow);
-      toast.success("¡Cliente actualizado!");
-      setEditOpen(false);
-    } catch (error: any) {
-      toast.error(error.message);
-    }
-  };
-
   const handleDelete = (client: ClientRow) => {
     if (!confirm(`¿Eliminar a ${client.name}? Esta acción no se puede deshacer.`)) return;
     deleteClient.mutate(client.id);
-    setSelectedClient(null);
     toast.success("Cliente eliminado");
   };
 
@@ -246,7 +212,7 @@ export default function ClientsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredClients.map((client, index) => (
               <motion.div key={client.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                <Card className="luxury-card p-5 cursor-pointer group" onClick={() => setSelectedClient(client)}>
+                <Card className="luxury-card p-5 cursor-pointer group" onClick={() => navigate(`/clients/${client.id}`)}>
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
@@ -264,8 +230,8 @@ export default function ClientsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedClient(client); openEdit(client); }}>
-                          Editar cliente
+                        <DropdownMenuItem onClick={e => { e.stopPropagation(); navigate(`/clients/${client.id}`); }}>
+                          Ver detalle
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={e => { e.stopPropagation(); setOnboardingClient(client); }}>
                           Iniciar onboarding
@@ -297,84 +263,6 @@ export default function ClientsPage() {
               </motion.div>
             ))}
           </div>
-        )}
-
-        {/* Client Detail Dialog */}
-        {selectedClient && (
-          <Dialog open={!!selectedClient} onOpenChange={() => setSelectedClient(null)}>
-            <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
-              <DialogHeader className="p-6 pb-4 shrink-0">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
-                      <Users className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <DialogTitle className="font-display text-xl">{selectedClient.name}</DialogTitle>
-                      <ClientTypeBadge type={selectedClient.type} size="sm" />
-                      {selectedClient.email && (
-                        <p className="text-sm text-muted-foreground mt-0.5">{selectedClient.email}</p>
-                      )}
-                    </div>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1.5 shrink-0"
-                    onClick={() => openEdit(selectedClient)}
-                  >
-                    <Pencil className="h-3.5 w-3.5" /> Edit
-                  </Button>
-                </div>
-              </DialogHeader>
-              <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 space-y-6">
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Servicios habilitados</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {(["film", "edit", "post", "report"] as ServiceType[]).map(service => (
-                      <ServiceBadge key={service} service={service} enabled={selectedClient.enabled_services.includes(service)} />
-                    ))}
-                  </div>
-                </div>
-                <ChecklistPanel items={selectedClient.default_checklist as any[]} editable={false} />
-                <div className="pt-2 border-t border-border">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive gap-1.5"
-                    onClick={() => handleDelete(selectedClient)}
-                  >
-                    Eliminar cliente
-                  </Button>
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
-
-        {/* Edit Client Dialog */}
-        {selectedClient && (
-          <Dialog open={editOpen} onOpenChange={setEditOpen}>
-            <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
-              <DialogHeader className="p-6 pb-0 shrink-0">
-                <DialogTitle className="font-display">Editar cliente</DialogTitle>
-              </DialogHeader>
-              <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
-                <ClientForm
-                  form={editForm}
-                  onChange={updates => setEditForm(f => ({ ...f, ...updates }))}
-                  onToggleService={s => setEditForm(f => toggleService(f, s))}
-                  showChecklist={false}
-                />
-              </div>
-              <div className="shrink-0 border-t border-border p-4 flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
-                <Button onClick={handleUpdate} disabled={updateClient.isPending || !editForm.name}>
-                  {updateClient.isPending ? "Guardando..." : "Guardar cambios"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
         )}
 
         {onboardingClient && (

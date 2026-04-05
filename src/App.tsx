@@ -19,6 +19,7 @@ import VideographerShotsPage from "./pages/VideographerShotsPage";
 import AssetsPage from "./pages/AssetsPage";
 import ApprovalsPage from "./pages/ApprovalsPage";
 import CampaignDetailPage from "./pages/CampaignDetailPage";
+import ClientDetailPage from "./pages/ClientDetailPage";
 import ShotListsPage from "./pages/ShotListsPage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -65,6 +66,7 @@ function ProtectedLayout() {
               <Route path="/" element={<Index />} />
               <Route path="/dashboard" element={<ProtectedRoute module="dashboard"><BrianDashboard /></ProtectedRoute>} />
               <Route path="/clients" element={<ProtectedRoute module="clients"><ClientsPage /></ProtectedRoute>} />
+              <Route path="/clients/:id" element={<ProtectedRoute module="clients"><ClientDetailPage /></ProtectedRoute>} />
               <Route path="/campaigns" element={<ProtectedRoute module="campaigns"><CampaignsPage /></ProtectedRoute>} />
               <Route path="/campaigns/:id" element={<ProtectedRoute module="campaigns"><CampaignDetailPage /></ProtectedRoute>} />
               <Route path="/templates" element={<ProtectedRoute module="templates"><TemplatesPage /></ProtectedRoute>} />
