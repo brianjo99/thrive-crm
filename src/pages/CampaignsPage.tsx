@@ -47,7 +47,7 @@ export default function CampaignsPage() {
         clientId: newCampaign.clientId,
         template: newCampaign.template,
       });
-      toast.success("Campaign created!");
+      toast.success("¡Campaña creada!");
       setNewCampaign({ name: "", clientId: "", template: "film-edit" });
       setIsDialogOpen(false);
     } catch (error: any) {
@@ -62,28 +62,28 @@ export default function CampaignsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <FolderKanban className="h-6 w-6 text-primary" />
-              <h1 className="font-display text-2xl font-bold">Campaigns</h1>
+              <h1 className="font-display text-2xl font-bold">Campañas</h1>
               <span className="text-sm text-muted-foreground">({campaigns.length})</span>
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2"><Plus className="h-4 w-4" /> New Campaign</Button>
+                <Button className="gap-2"><Plus className="h-4 w-4" /> Nueva campaña</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
-                  <DialogTitle className="font-display">Create New Campaign</DialogTitle>
+                  <DialogTitle className="font-display">Crear campaña nueva</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="campaignName">Campaign Name</Label>
-                      <Input id="campaignName" value={newCampaign.name} onChange={(e) => setNewCampaign((prev) => ({ ...prev, name: e.target.value }))} placeholder="Q1 Content Series" />
+                      <Label htmlFor="campaignName">Nombre de la campaña</Label>
+                      <Input id="campaignName" value={newCampaign.name} onChange={(e) => setNewCampaign((prev) => ({ ...prev, name: e.target.value }))} placeholder="Serie de contenido Q1" />
                     </div>
                     <div className="space-y-2">
-                      <Label>Client</Label>
+                      <Label>Cliente</Label>
                       <Select value={newCampaign.clientId} onValueChange={(value) => setNewCampaign((prev) => ({ ...prev, clientId: value }))}>
-                        <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger>
                         <SelectContent>
                           {clients.map((client) => (
                             <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
@@ -93,8 +93,8 @@ export default function CampaignsPage() {
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <Label>Campaign Template</Label>
-                    <p className="text-sm text-muted-foreground">Choose a template that matches the client's service package</p>
+                    <Label>Plantilla de campaña</Label>
+                    <p className="text-sm text-muted-foreground">Elige la plantilla que corresponde al paquete de servicios del cliente</p>
                     <CampaignTemplateGrid
                       selectedTemplate={newCampaign.template}
                       onSelectTemplate={(template) => setNewCampaign((prev) => ({ ...prev, template }))}
@@ -102,9 +102,9 @@ export default function CampaignsPage() {
                   </div>
                 </div>
                 <div className="shrink-0 border-t border-border p-4 flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
                   <Button onClick={handleCreateCampaign} disabled={createCampaign.isPending}>
-                    {createCampaign.isPending ? "Creating..." : "Create Campaign"}
+                    {createCampaign.isPending ? "Creando..." : "Crear campaña"}
                   </Button>
                 </div>
               </DialogContent>
@@ -113,7 +113,7 @@ export default function CampaignsPage() {
 
           <div className="mt-4 relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search campaigns..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+            <Input placeholder="Buscar campañas..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
           </div>
         </div>
       </header>
@@ -126,9 +126,9 @@ export default function CampaignsPage() {
         ) : filteredCampaigns.length === 0 ? (
           <Card className="luxury-card p-12 text-center">
             <FolderKanban className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-display text-lg font-semibold mb-2">No campaigns found</h3>
-            <p className="text-muted-foreground mb-4">{searchQuery ? "Try a different search term" : "Create your first campaign to get started"}</p>
-            {!searchQuery && <Button onClick={() => setIsDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />Create Campaign</Button>}
+            <h3 className="font-display text-lg font-semibold mb-2">No se encontraron campañas</h3>
+            <p className="text-muted-foreground mb-4">{searchQuery ? "Intenta con otro término de búsqueda" : "Crea tu primera campaña para empezar"}</p>
+            {!searchQuery && <Button onClick={() => setIsDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />Nueva campaña</Button>}
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -150,8 +150,8 @@ export default function CampaignsPage() {
                     </div>
                     <div className="pt-3 border-t border-border">
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Started {format(new Date(campaign.start_date), "MMM d, yyyy")}</span>
-                        <span>{taskCount} tasks</span>
+                        <span>Inicio {format(new Date(campaign.start_date), "d MMM yyyy")}</span>
+                        <span>{taskCount} tareas</span>
                       </div>
                     </div>
                   </Card>

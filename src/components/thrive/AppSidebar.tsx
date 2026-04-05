@@ -84,7 +84,7 @@ export function AppSidebar() {
         <SidebarGroup>
           {!isCollapsed && (
             <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs uppercase tracking-wider px-2">
-              Navigation
+              Navegación
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>

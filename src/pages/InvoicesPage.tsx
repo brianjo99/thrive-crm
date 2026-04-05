@@ -423,6 +423,7 @@ export default function InvoicesPage() {
 
   const totalRevenue   = invoices.filter(i => i.status === "paid").reduce((s, i) => s + i.total, 0);
   const outstanding    = invoices.filter(i => i.status === "sent" || i.status === "overdue").reduce((s, i) => s + i.total, 0);
+  const draftsTotal    = invoices.filter(i => i.status === "draft").reduce((s, i) => s + i.total, 0);
   const draftsCount    = invoices.filter(i => i.status === "draft").length;
   const overdueCount   = invoices.filter(i => i.status === "overdue").length;
   const filtered       = tab === "all" ? invoices : invoices.filter(i => i.status === tab);
@@ -698,10 +699,10 @@ export default function InvoicesPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Total Revenue", value: usd(totalRevenue), icon: <DollarSign className="h-4 w-4" />, color: "text-green-400", iconBg: "bg-green-500/10 text-green-400" },
-            { label: "Outstanding",   value: usd(outstanding),  icon: <Send className="h-4 w-4" />,        color: "text-blue-400",  iconBg: "bg-blue-500/10 text-blue-400" },
-            { label: "Drafts",        value: draftsCount,       icon: <FileText className="h-4 w-4" />,    color: "text-muted-foreground", iconBg: "bg-muted text-muted-foreground" },
-            { label: "Overdue",       value: overdueCount,      icon: <AlertCircle className="h-4 w-4" />, color: "text-red-400",   iconBg: "bg-red-500/10 text-red-400" },
+            { label: "Total cobrado", value: usd(totalRevenue), icon: <DollarSign className="h-4 w-4" />, color: "text-green-400", iconBg: "bg-green-500/10 text-green-400" },
+            { label: "Por cobrar",    value: usd(outstanding),  icon: <Send className="h-4 w-4" />,        color: "text-blue-400",  iconBg: "bg-blue-500/10 text-blue-400" },
+            { label: `Borradores (${draftsCount})`, value: usd(draftsTotal), icon: <FileText className="h-4 w-4" />, color: "text-muted-foreground", iconBg: "bg-muted text-muted-foreground" },
+            { label: "Vencidas",      value: overdueCount,      icon: <AlertCircle className="h-4 w-4" />, color: "text-red-400",   iconBg: "bg-red-500/10 text-red-400" },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
               <Card className="luxury-card p-4">

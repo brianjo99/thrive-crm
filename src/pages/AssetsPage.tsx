@@ -58,7 +58,7 @@ export default function AssetsPage() {
           notes: uploadForm.notes || undefined,
         });
       }
-      toast.success(`${uploadForm.files.length} file(s) uploaded!`);
+      toast.success(`${uploadForm.files.length} archivo(s) subido(s)`);
       setUploadForm({ files: [], clientId: "", campaignId: "", notes: "" });
       setIsUploadOpen(false);
     } catch (error: any) {
@@ -80,16 +80,16 @@ export default function AssetsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <FolderOpen className="h-6 w-6 text-primary" />
-              <h1 className="font-display text-2xl font-bold">Assets</h1>
+              <h1 className="font-display text-2xl font-bold">Archivos</h1>
               <span className="text-sm text-muted-foreground">({assets.length})</span>
             </div>
             <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2"><Upload className="h-4 w-4" /> Upload</Button>
+                <Button className="gap-2"><Upload className="h-4 w-4" /> Subir archivos</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
-                  <DialogTitle className="font-display">Upload Assets</DialogTitle>
+                  <DialogTitle className="font-display">Subir archivos</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
                   <div
@@ -97,8 +97,8 @@ export default function AssetsPage() {
                     onClick={() => document.getElementById("fileInput")?.click()}
                   >
                     <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Click or drag files to upload</p>
-                    <p className="text-xs text-muted-foreground mt-1">Videos, images, documents, project files</p>
+                    <p className="text-sm text-muted-foreground">Haz clic o arrastra archivos aquí</p>
+                    <p className="text-xs text-muted-foreground mt-1">Videos, imágenes, documentos, archivos de proyecto</p>
                     <input
                       id="fileInput"
                       type="file"
@@ -112,7 +112,7 @@ export default function AssetsPage() {
                   </div>
                   {uploadForm.files.length > 0 && (
                     <div className="space-y-2">
-                      <Label>Selected Files ({uploadForm.files.length})</Label>
+                      <Label>Archivos seleccionados ({uploadForm.files.length})</Label>
                       {uploadForm.files.map((f, i) => {
                         const FileIcon = getFileIcon(f.type);
                         return (
@@ -129,32 +129,32 @@ export default function AssetsPage() {
                     </div>
                   )}
                   <div className="space-y-2">
-                    <Label>Link to Client (optional)</Label>
+                    <Label>Vincular a cliente (opcional)</Label>
                     <Select value={uploadForm.clientId} onValueChange={(v) => setUploadForm(prev => ({ ...prev, clientId: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger>
                       <SelectContent>
                         {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Link to Campaign (optional)</Label>
+                    <Label>Vincular a campaña (opcional)</Label>
                     <Select value={uploadForm.campaignId} onValueChange={(v) => setUploadForm(prev => ({ ...prev, campaignId: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select campaign" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar campaña" /></SelectTrigger>
                       <SelectContent>
                         {campaigns.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Notes</Label>
-                    <Input value={uploadForm.notes} onChange={(e) => setUploadForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Optional notes about these files" />
+                    <Label>Notas</Label>
+                    <Input value={uploadForm.notes} onChange={(e) => setUploadForm(prev => ({ ...prev, notes: e.target.value }))} placeholder="Notas opcionales sobre estos archivos" />
                   </div>
                 </div>
                 <div className="shrink-0 border-t border-border p-4 flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancelar</Button>
                   <Button onClick={handleUpload} disabled={uploadAsset.isPending || uploadForm.files.length === 0}>
-                    {uploadAsset.isPending ? "Uploading..." : `Upload ${uploadForm.files.length} file(s)`}
+                    {uploadAsset.isPending ? "Subiendo..." : `Subir ${uploadForm.files.length} archivo(s)`}
                   </Button>
                 </div>
               </DialogContent>
@@ -162,7 +162,7 @@ export default function AssetsPage() {
           </div>
           <div className="mt-4 relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search assets..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+            <Input placeholder="Buscar archivos..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
           </div>
         </div>
       </header>
@@ -175,9 +175,9 @@ export default function AssetsPage() {
         ) : filteredAssets.length === 0 ? (
           <Card className="luxury-card p-12 text-center">
             <FolderOpen className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="font-display text-xl font-semibold mb-2">No Assets Yet</h2>
-            <p className="text-muted-foreground max-w-md mx-auto mb-4">Upload footage, images, documents, and project files. Drag and drop or click Upload.</p>
-            <Button onClick={() => setIsUploadOpen(true)} className="gap-2"><Upload className="h-4 w-4" />Upload Files</Button>
+            <h2 className="font-display text-xl font-semibold mb-2">Sin archivos aún</h2>
+            <p className="text-muted-foreground max-w-md mx-auto mb-4">Sube footage, imágenes, documentos y archivos de proyecto. Arrastra y suelta o haz clic en el botón.</p>
+            <Button onClick={() => setIsUploadOpen(true)} className="gap-2"><Upload className="h-4 w-4" />Subir archivos</Button>
           </Card>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -229,16 +229,16 @@ export default function AssetsPage() {
                   <video src={getAssetPublicUrl(previewAsset.file_path)} controls className="w-full rounded-lg" />
                 )}
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div><span className="text-muted-foreground">Type:</span> <span className="font-medium">{previewAsset.file_type}</span></div>
-                  <div><span className="text-muted-foreground">Size:</span> <span className="font-medium">{formatFileSize(previewAsset.file_size)}</span></div>
-                  <div><span className="text-muted-foreground">Uploaded:</span> <span className="font-medium">{format(new Date(previewAsset.created_at), "MMM d, yyyy")}</span></div>
-                  {(previewAsset as any).clients?.name && <div><span className="text-muted-foreground">Client:</span> <span className="font-medium">{(previewAsset as any).clients.name}</span></div>}
+                  <div><span className="text-muted-foreground">Tipo:</span> <span className="font-medium">{previewAsset.file_type}</span></div>
+                  <div><span className="text-muted-foreground">Tamaño:</span> <span className="font-medium">{formatFileSize(previewAsset.file_size)}</span></div>
+                  <div><span className="text-muted-foreground">Subido:</span> <span className="font-medium">{format(new Date(previewAsset.created_at), "d MMM yyyy")}</span></div>
+                  {(previewAsset as any).clients?.name && <div><span className="text-muted-foreground">Cliente:</span> <span className="font-medium">{(previewAsset as any).clients.name}</span></div>}
                 </div>
-                {previewAsset.notes && <div><span className="text-muted-foreground text-sm">Notes:</span><p className="text-sm mt-1">{previewAsset.notes}</p></div>}
+                {previewAsset.notes && <div><span className="text-muted-foreground text-sm">Notas:</span><p className="text-sm mt-1">{previewAsset.notes}</p></div>}
                 <div className="flex gap-2 pt-4 border-t border-border">
                   <Button variant="outline" className="gap-2" asChild>
                     <a href={getAssetPublicUrl(previewAsset.file_path)} target="_blank" rel="noopener noreferrer">
-                      <Eye className="h-4 w-4" /> Open
+                      <Eye className="h-4 w-4" /> Abrir
                     </a>
                   </Button>
                   <Button
@@ -247,10 +247,10 @@ export default function AssetsPage() {
                     onClick={() => {
                       deleteAsset.mutate({ id: previewAsset.id, file_path: previewAsset.file_path });
                       setPreviewAsset(null);
-                      toast.success("Asset deleted");
+                      toast.success("Archivo eliminado");
                     }}
                   >
-                    <Trash2 className="h-4 w-4" /> Delete
+                    <Trash2 className="h-4 w-4" /> Eliminar
                   </Button>
                 </div>
               </div>

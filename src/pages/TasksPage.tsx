@@ -26,9 +26,9 @@ export default function TasksPage() {
 
   const stats = [
     { label: "Total", value: allTasks.length, icon: ClipboardList, color: "text-muted-foreground" },
-    { label: "Due Today", value: allTasks.filter(t => t.due_date && isToday(new Date(t.due_date))).length, icon: Clock, color: "text-warning" },
-    { label: "Overdue", value: allTasks.filter(t => t.due_date && isPast(new Date(t.due_date)) && t.status !== "complete").length, icon: AlertCircle, color: "text-destructive" },
-    { label: "Complete", value: allTasks.filter(t => t.status === "complete").length, icon: CheckCircle, color: "text-success" },
+    { label: "Para hoy", value: allTasks.filter(t => t.due_date && isToday(new Date(t.due_date))).length, icon: Clock, color: "text-warning" },
+    { label: "Vencidas", value: allTasks.filter(t => t.due_date && isPast(new Date(t.due_date)) && t.status !== "complete").length, icon: AlertCircle, color: "text-destructive" },
+    { label: "Completadas", value: allTasks.filter(t => t.status === "complete").length, icon: CheckCircle, color: "text-success" },
   ];
 
   return (
@@ -38,7 +38,7 @@ export default function TasksPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <ClipboardList className="h-6 w-6 text-primary" />
-              <h1 className="font-display text-2xl font-bold">Tasks</h1>
+              <h1 className="font-display text-2xl font-bold">Tareas</h1>
             </div>
             <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
               <Button
@@ -55,7 +55,7 @@ export default function TasksPage() {
                 className="h-7 px-2 gap-1.5"
                 onClick={() => setView("list")}
               >
-                <List className="h-3.5 w-3.5" /> List
+                <List className="h-3.5 w-3.5" /> Lista
               </Button>
             </div>
           </div>
@@ -63,27 +63,27 @@ export default function TasksPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[180px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search tasks..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 h-8" />
+              <Input placeholder="Buscar tareas..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9 h-8" />
             </div>
             <Select value={campaignFilter} onValueChange={setCampaignFilter}>
               <SelectTrigger className="w-44 h-8 text-sm">
-                <SelectValue placeholder="All campaigns" />
+                <SelectValue placeholder="Todas las campañas" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All campaigns</SelectItem>
+                <SelectItem value="all">Todas las campañas</SelectItem>
                 {campaigns.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-36 h-8 text-sm">
-                <SelectValue placeholder="All statuses" />
+                <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All statuses</SelectItem>
-                <SelectItem value="todo">To Do</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="review">Review</SelectItem>
-                <SelectItem value="complete">Complete</SelectItem>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="todo">Por hacer</SelectItem>
+                <SelectItem value="in_progress">En progreso</SelectItem>
+                <SelectItem value="review">En revisión</SelectItem>
+                <SelectItem value="complete">Completado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -106,11 +106,11 @@ export default function TasksPage() {
         </div>
 
         {isLoading ? (
-          <div className="text-center py-12 text-muted-foreground">Loading tasks...</div>
+          <div className="text-center py-12 text-muted-foreground">Cargando tareas...</div>
         ) : filtered.length === 0 ? (
           <Card className="luxury-card p-12 text-center">
             <ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No tasks found</p>
+            <p className="text-muted-foreground">No se encontraron tareas</p>
           </Card>
         ) : view === "kanban" ? (
           <KanbanView tasks={filtered} />

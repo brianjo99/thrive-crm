@@ -48,12 +48,12 @@ function ClientForm({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="client-name">Client Name</Label>
+        <Label htmlFor="client-name">Nombre del cliente</Label>
         <Input
           id="client-name"
           value={form.name}
           onChange={e => onChange({ name: e.target.value })}
-          placeholder="Enter client name"
+          placeholder="Nombre del cliente"
         />
       </div>
       <div className="space-y-2">
@@ -63,11 +63,11 @@ function ClientForm({
           type="email"
           value={form.email}
           onChange={e => onChange({ email: e.target.value })}
-          placeholder="client@example.com"
+          placeholder="cliente@ejemplo.com"
         />
       </div>
       <div className="space-y-2">
-        <Label>Client Type</Label>
+        <Label>Tipo de cliente</Label>
         <Select value={form.type} onValueChange={(v: ClientType) => onChange({ type: v })}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -76,10 +76,10 @@ function ClientForm({
             <SelectItem value="creator">Creator</SelectItem>
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">Determines default checklists and workflows</p>
+        <p className="text-xs text-muted-foreground">Determina los checklists y flujos por defecto</p>
       </div>
       <div className="space-y-2">
-        <Label>Enabled Services</Label>
+        <Label>Servicios habilitados</Label>
         <div className="flex flex-wrap gap-2">
           {(["film", "edit", "post", "report"] as ServiceType[]).map(service => (
             <button key={service} onClick={() => onToggleService(service)} className="transition-transform hover:scale-105">
@@ -90,7 +90,7 @@ function ClientForm({
       </div>
       {showChecklist && (
         <div className="pt-4 border-t border-border">
-          <p className="text-sm font-medium mb-2">Default Checklist Preview</p>
+          <p className="text-sm font-medium mb-2">Vista previa del checklist</p>
           <div className="text-xs text-muted-foreground space-y-1">
             {CLIENT_TYPE_CHECKLISTS[form.type].slice(0, 3).map(item => (
               <div key={item.id} className="flex items-center gap-2">
@@ -98,7 +98,7 @@ function ClientForm({
                 <span>{item.label}</span>
               </div>
             ))}
-            <p>+{CLIENT_TYPE_CHECKLISTS[form.type].length - 3} more items</p>
+            <p>+{CLIENT_TYPE_CHECKLISTS[form.type].length - 3} elementos más</p>
           </div>
         </div>
       )}
@@ -152,7 +152,7 @@ export default function ClientsPage() {
         type: createForm.type,
         enabledServices: createForm.enabledServices,
       });
-      toast.success("Client created!");
+      toast.success("¡Cliente creado!");
       setCreateForm(EMPTY_FORM);
       setCreateOpen(false);
     } catch (error: any) {
@@ -173,7 +173,7 @@ export default function ClientsPage() {
       // Refresh selectedClient to show updated info
       const updated = { ...selectedClient, name: editForm.name, email: editForm.email, type: editForm.type, enabled_services: editForm.enabledServices };
       setSelectedClient(updated as ClientRow);
-      toast.success("Client updated!");
+      toast.success("¡Cliente actualizado!");
       setEditOpen(false);
     } catch (error: any) {
       toast.error(error.message);
@@ -181,10 +181,10 @@ export default function ClientsPage() {
   };
 
   const handleDelete = (client: ClientRow) => {
-    if (!confirm(`Delete ${client.name}? This cannot be undone.`)) return;
+    if (!confirm(`¿Eliminar a ${client.name}? Esta acción no se puede deshacer.`)) return;
     deleteClient.mutate(client.id);
     setSelectedClient(null);
-    toast.success("Client deleted");
+    toast.success("Cliente eliminado");
   };
 
   return (
@@ -194,17 +194,17 @@ export default function ClientsPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Users className="h-6 w-6 text-primary" />
-              <h1 className="font-display text-2xl font-bold">Clients</h1>
+              <h1 className="font-display text-2xl font-bold">Clientes</h1>
               <span className="text-sm text-muted-foreground">({clients.length})</span>
             </div>
 
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2"><Plus className="h-4 w-4" /> New Client</Button>
+                <Button className="gap-2"><Plus className="h-4 w-4" /> Nuevo cliente</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
-                  <DialogTitle className="font-display">Create New Client</DialogTitle>
+                  <DialogTitle className="font-display">Crear cliente nuevo</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
                   <ClientForm
@@ -214,9 +214,9 @@ export default function ClientsPage() {
                   />
                 </div>
                 <div className="shrink-0 border-t border-border p-4 flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
                   <Button onClick={handleCreate} disabled={createClient.isPending || !createForm.name}>
-                    {createClient.isPending ? "Creating..." : "Create Client"}
+                    {createClient.isPending ? "Creando..." : "Crear cliente"}
                   </Button>
                 </div>
               </DialogContent>
@@ -225,7 +225,7 @@ export default function ClientsPage() {
 
           <div className="mt-4 relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search clients..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
+            <Input placeholder="Buscar clientes..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-9" />
           </div>
         </div>
       </header>
@@ -238,9 +238,9 @@ export default function ClientsPage() {
         ) : filteredClients.length === 0 ? (
           <Card className="luxury-card p-12 text-center">
             <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-display text-lg font-semibold mb-2">No clients found</h3>
-            <p className="text-muted-foreground mb-4">{searchQuery ? "Try a different search term" : "Add your first client to get started"}</p>
-            {!searchQuery && <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-2" />Add Client</Button>}
+            <h3 className="font-display text-lg font-semibold mb-2">No se encontraron clientes</h3>
+            <p className="text-muted-foreground mb-4">{searchQuery ? "Intenta con otro término de búsqueda" : "Agrega tu primer cliente para empezar"}</p>
+            {!searchQuery && <Button onClick={() => setCreateOpen(true)}><Plus className="h-4 w-4 mr-2" />Nuevo cliente</Button>}
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -265,28 +265,28 @@ export default function ClientsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={e => { e.stopPropagation(); setSelectedClient(client); openEdit(client); }}>
-                          Edit Client
+                          Editar cliente
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={e => { e.stopPropagation(); setOnboardingClient(client); }}>
-                          Start Onboarding
+                          Iniciar onboarding
                         </DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={e => { e.stopPropagation(); handleDelete(client); }}>
-                          Delete Client
+                          Eliminar cliente
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
                   {client.email && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                      <Mail className="h-3.5 w-3.5" /><span className="truncate">{client.email}</span>
+                      <Mail className="h-3.5 w-3.5" /><span className="truncate" title={client.email}>{client.email}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mb-4">
                     <Calendar className="h-3.5 w-3.5" />
-                    <span>Client since {format(new Date(client.created_at), "MMM yyyy")}</span>
+                    <span>Cliente desde {format(new Date(client.created_at), "MMM yyyy")}</span>
                   </div>
                   <div className="pt-3 border-t border-border">
-                    <p className="text-xs text-muted-foreground mb-2">Services</p>
+                    <p className="text-xs text-muted-foreground mb-2">Servicios</p>
                     <div className="flex flex-wrap gap-1.5">
                       {(["film", "edit", "post", "report"] as const).map(service => (
                         <ServiceBadge key={service} service={service} enabled={client.enabled_services.includes(service)} size="sm" showLabel={false} />
@@ -329,7 +329,7 @@ export default function ClientsPage() {
               </DialogHeader>
               <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 space-y-6">
                 <div>
-                  <h4 className="text-sm font-medium mb-2">Enabled Services</h4>
+                  <h4 className="text-sm font-medium mb-2">Servicios habilitados</h4>
                   <div className="flex flex-wrap gap-2">
                     {(["film", "edit", "post", "report"] as ServiceType[]).map(service => (
                       <ServiceBadge key={service} service={service} enabled={selectedClient.enabled_services.includes(service)} />
@@ -344,7 +344,7 @@ export default function ClientsPage() {
                     className="text-destructive hover:text-destructive gap-1.5"
                     onClick={() => handleDelete(selectedClient)}
                   >
-                    Delete Client
+                    Eliminar cliente
                   </Button>
                 </div>
               </div>
@@ -357,7 +357,7 @@ export default function ClientsPage() {
           <Dialog open={editOpen} onOpenChange={setEditOpen}>
             <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
               <DialogHeader className="p-6 pb-0 shrink-0">
-                <DialogTitle className="font-display">Edit Client</DialogTitle>
+                <DialogTitle className="font-display">Editar cliente</DialogTitle>
               </DialogHeader>
               <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">
                 <ClientForm
@@ -368,9 +368,9 @@ export default function ClientsPage() {
                 />
               </div>
               <div className="shrink-0 border-t border-border p-4 flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setEditOpen(false)}>Cancelar</Button>
                 <Button onClick={handleUpdate} disabled={updateClient.isPending || !editForm.name}>
-                  {updateClient.isPending ? "Saving..." : "Save Changes"}
+                  {updateClient.isPending ? "Guardando..." : "Guardar cambios"}
                 </Button>
               </div>
             </DialogContent>

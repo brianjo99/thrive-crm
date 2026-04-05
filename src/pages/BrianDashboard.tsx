@@ -24,9 +24,9 @@ function getStageProgress(stage: string): number {
 
 function getGreeting(): string {
   const hour = new Date().getHours();
-  if (hour < 12) return "morning";
-  if (hour < 17) return "afternoon";
-  return "evening";
+  if (hour < 12) return "Buenos días";
+  if (hour < 17) return "Buenas tardes";
+  return "Buenas noches";
 }
 
 export default function BrianDashboard() {
@@ -57,10 +57,10 @@ export default function BrianDashboard() {
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "there";
 
   const stats = [
-    { label: "Filming Today", value: filmingTasks.length, icon: Camera, color: "text-[hsl(200_70%_50%)]", bg: "bg-[hsl(200_70%_50%/0.1)]", onClick: () => navigate("/shot-lists") },
-    { label: "Edits to Review", value: tasksToReview.length, icon: Scissors, color: "text-[hsl(280_60%_55%)]", bg: "bg-[hsl(280_60%_55%/0.1)]", onClick: () => {} },
-    { label: "Pending Approvals", value: approvalsPending.length, icon: CheckCircle, color: "text-primary", bg: "bg-primary/10", onClick: () => navigate("/approvals") },
-    { label: "New Leads", value: newLeads, icon: TrendingUp, color: "text-success", bg: "bg-success/10", onClick: () => navigate("/leads") },
+    { label: "Filmaciones hoy", value: filmingTasks.length, icon: Camera, color: "text-[hsl(200_70%_50%)]", bg: "bg-[hsl(200_70%_50%/0.1)]", onClick: () => navigate("/shot-lists") },
+    { label: "Ediciones a revisar", value: tasksToReview.length, icon: Scissors, color: "text-[hsl(280_60%_55%)]", bg: "bg-[hsl(280_60%_55%/0.1)]", onClick: () => {} },
+    { label: "Aprobaciones pendientes", value: approvalsPending.length, icon: CheckCircle, color: "text-primary", bg: "bg-primary/10", onClick: () => navigate("/approvals") },
+    { label: "Leads nuevos", value: newLeads, icon: TrendingUp, color: "text-success", bg: "bg-success/10", onClick: () => navigate("/leads") },
   ];
 
   return (
@@ -71,7 +71,7 @@ export default function BrianDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, MMMM d")}</p>
               <h1 className="font-display text-2xl font-bold">
-                Good {getGreeting()}, {displayName}
+                {getGreeting()}, {displayName}
               </h1>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -117,17 +117,17 @@ export default function BrianDashboard() {
             <Card className="luxury-card p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="h-5 w-5 text-primary" />
-                <h2 className="font-display text-lg font-semibold">Today's Focus</h2>
+                <h2 className="font-display text-lg font-semibold">Foco del día</h2>
                 {overdueTasks.length > 0 && (
                   <span className="ml-auto flex items-center gap-1 text-xs text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">
-                    <AlertCircle className="h-3 w-3" /> {overdueTasks.length} overdue
+                    <AlertCircle className="h-3 w-3" /> {overdueTasks.length} vencidas
                   </span>
                 )}
               </div>
               {todaysTasks.length === 0 ? (
                 <div className="text-center py-8">
                   <CheckCircle className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">All clear for today!</p>
+                  <p className="text-muted-foreground">¡Todo al día por hoy!</p>
                 </div>
               ) : (
                 <TaskList tasks={todaysTasks} compact />
@@ -139,17 +139,17 @@ export default function BrianDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <FolderKanban className="h-5 w-5 text-primary" />
-                  <h2 className="font-display text-lg font-semibold">Active Campaigns</h2>
+                  <h2 className="font-display text-lg font-semibold">Campañas activas</h2>
                 </div>
                 <button
                   onClick={() => navigate("/campaigns")}
                   className="flex items-center gap-1 text-xs text-primary hover:underline"
                 >
-                  View all <ArrowRight className="h-3 w-3" />
+                  Ver todas <ArrowRight className="h-3 w-3" />
                 </button>
               </div>
               {activeCampaigns.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No active campaigns</p>
+                <p className="text-sm text-muted-foreground text-center py-4">Sin campañas activas</p>
               ) : (
                 <div className="space-y-4">
                   {activeCampaigns.slice(0, 5).map(campaign => {
@@ -173,7 +173,7 @@ export default function BrianDashboard() {
                     );
                   })}
                   {activeCampaigns.length > 5 && (
-                    <p className="text-xs text-muted-foreground text-center">+{activeCampaigns.length - 5} more campaigns</p>
+                    <p className="text-xs text-muted-foreground text-center">+{activeCampaigns.length - 5} campañas más</p>
                   )}
                 </div>
               )}
@@ -184,15 +184,15 @@ export default function BrianDashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Scissors className="h-5 w-5 text-[hsl(280_60%_55%)]" />
-                  <h2 className="font-display text-lg font-semibold">Edits to Review</h2>
+                  <h2 className="font-display text-lg font-semibold">Ediciones a revisar</h2>
                 </div>
                 {tasksToReview.length > 0 && (
                   <span className="text-xs bg-[hsl(280_60%_55%/0.15)] text-[hsl(280_60%_50%)] px-2 py-1 rounded-full">
-                    {tasksToReview.length} waiting
+                    {tasksToReview.length} en espera
                   </span>
                 )}
               </div>
-              <TaskList tasks={tasksToReview} compact emptyMessage="No edits waiting for review" />
+              <TaskList tasks={tasksToReview} compact emptyMessage="Sin ediciones en espera" />
             </Card>
           </div>
 
@@ -201,15 +201,15 @@ export default function BrianDashboard() {
             <Card className="luxury-card p-5">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="h-5 w-5 text-primary" />
-                <h3 className="font-display font-semibold">Overview</h3>
+                <h3 className="font-display font-semibold">Resumen</h3>
               </div>
               <div className="space-y-3">
                 {[
-                  { label: "Active Clients", value: clients.length, icon: Users, color: "text-primary", bg: "bg-primary/10", path: "/clients" },
-                  { label: "Total Campaigns", value: campaigns.length, icon: FolderKanban, color: "text-accent", bg: "bg-accent/10", path: "/campaigns" },
-                  { label: "Pending Approvals", value: approvalsPending.length, icon: CheckCircle, color: "text-warning", bg: "bg-warning/10", path: "/approvals" },
-                  { label: "Active Campaigns", value: activeCampaigns.length, icon: Camera, color: "text-[hsl(200_70%_50%)]", bg: "bg-[hsl(200_70%_50%/0.1)]", path: "/campaigns" },
-                  { label: "New Leads", value: newLeads, icon: TrendingUp, color: "text-success", bg: "bg-success/10", path: "/leads" },
+                  { label: "Clientes activos", value: clients.length, icon: Users, color: "text-primary", bg: "bg-primary/10", path: "/clients" },
+                  { label: "Campañas totales", value: campaigns.length, icon: FolderKanban, color: "text-accent", bg: "bg-accent/10", path: "/campaigns" },
+                  { label: "Aprobaciones pendientes", value: approvalsPending.length, icon: CheckCircle, color: "text-warning", bg: "bg-warning/10", path: "/approvals" },
+                  { label: "Campañas activas", value: activeCampaigns.length, icon: Camera, color: "text-[hsl(200_70%_50%)]", bg: "bg-[hsl(200_70%_50%/0.1)]", path: "/campaigns" },
+                  { label: "Leads nuevos", value: newLeads, icon: TrendingUp, color: "text-success", bg: "bg-success/10", path: "/leads" },
                 ].map(item => (
                   <div
                     key={item.label}
@@ -222,7 +222,7 @@ export default function BrianDashboard() {
                       </div>
                       <span className="text-muted-foreground">{item.label}</span>
                     </div>
-                    <span className={cn("font-bold", item.value > 0 && item.label.includes("Approval") && "text-warning", item.value > 0 && item.label === "New Leads" && "text-success")}>
+                    <span className={cn("font-bold", item.value > 0 && item.label.includes("pendientes") && "text-warning", item.value > 0 && item.label === "Leads nuevos" && "text-success")}>
                       {item.value}
                     </span>
                   </div>
@@ -233,7 +233,7 @@ export default function BrianDashboard() {
                       <div className="w-7 h-7 rounded-lg bg-destructive/10 flex items-center justify-center">
                         <AlertCircle className="h-3.5 w-3.5 text-destructive" />
                       </div>
-                      <span className="text-muted-foreground">Overdue Tasks</span>
+                      <span className="text-muted-foreground">Tareas vencidas</span>
                     </div>
                     <span className="font-bold text-destructive">{overdueTasks.length}</span>
                   </div>
@@ -245,16 +245,16 @@ export default function BrianDashboard() {
             <Card className="luxury-card p-5">
               <div className="flex items-center gap-2 mb-4">
                 <Send className="h-5 w-5 text-success" />
-                <h2 className="font-display text-lg font-semibold">Content to Post</h2>
+                <h2 className="font-display text-lg font-semibold">Contenido por publicar</h2>
               </div>
-              <TaskList tasks={contentToPost} compact emptyMessage="All content is posted" />
+              <TaskList tasks={contentToPost} compact emptyMessage="Todo el contenido está publicado" />
             </Card>
 
             {filmingTasks.length > 0 && (
               <Card className="luxury-card p-5 border-l-4 border-l-[hsl(200_70%_50%)]">
                 <div className="flex items-center gap-2 mb-4">
                   <Camera className="h-5 w-5 text-[hsl(200_70%_50%)]" />
-                  <h2 className="font-display text-lg font-semibold">Filming Today</h2>
+                  <h2 className="font-display text-lg font-semibold">Filmaciones hoy</h2>
                 </div>
                 <TaskList tasks={filmingTasks} compact />
               </Card>
