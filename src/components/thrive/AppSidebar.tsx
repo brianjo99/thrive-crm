@@ -37,8 +37,8 @@ const roleNavItems: Record<ViewRole, NavGroup[]> = {
       items: [
         { title: "Facturas", url: "/invoices",  icon: Receipt,      module: "invoices" },
         { title: "Leads",    url: "/leads",     icon: TrendingUp,   module: "leads" },
-        { title: "Ads",      url: "/ads",       icon: Megaphone,    module: "ads" },
-        { title: "Templates",url: "/templates", icon: Clapperboard, module: "templates" },
+        { title: "Media Buying", url: "/ads",       icon: Megaphone,    module: "ads" },
+        { title: "Plantillas",   url: "/templates", icon: Clapperboard, module: "templates" },
       ],
     },
     {

@@ -261,8 +261,8 @@ export default function AdsPage() {
               <Megaphone className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-2xl font-bold">Ads & Canales</h1>
-              <p className="text-sm text-muted-foreground">Gestiona todas tus plataformas publicitarias</p>
+              <h1 className="font-display text-2xl font-bold">Media Buying</h1>
+              <p className="text-sm text-muted-foreground">Gestiona todas tus plataformas publicitarias y de compra de medios</p>
             </div>
           </div>
         </div>
@@ -281,7 +281,7 @@ export default function AdsPage() {
           </Card>
           <Card className="luxury-card p-4">
             <p className="text-2xl font-display font-bold">${totalBudget > 0 ? totalBudget.toLocaleString() : "—"}</p>
-            <p className="text-xs text-muted-foreground">Budget mensual total</p>
+            <p className="text-xs text-muted-foreground">Presupuesto mensual total</p>
           </Card>
         </div>
 

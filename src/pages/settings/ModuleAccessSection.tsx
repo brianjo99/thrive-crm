@@ -16,7 +16,7 @@ const ROLES = [
 ];
 
 const MODULES = [
-  { id: "dashboard",   label: "Today",        description: "Dashboard principal" },
+  { id: "dashboard",   label: "Today",        description: "Panel principal" },
   { id: "clients",     label: "Clientes",     description: "Gestión de clientes" },
   { id: "campaigns",   label: "Campañas",     description: "Campañas y producción" },
   { id: "tasks",       label: "Tareas",       description: "Tablero de tareas" },
@@ -27,9 +27,9 @@ const MODULES = [
   { id: "approvals",   label: "Aprobaciones", description: "Revisión de contenido" },
   { id: "invoices",    label: "Facturas",     description: "Facturación" },
   { id: "leads",       label: "Leads",        description: "Pipeline de prospectos" },
-  { id: "ads",         label: "Ads",          description: "Plataformas de publicidad" },
-  { id: "templates",   label: "Templates",    description: "Plantillas de campaña" },
-  { id: "settings",    label: "Settings",     description: "Administración" },
+  { id: "ads",         label: "Media Buying", description: "Plataformas de publicidad y compra de medios" },
+  { id: "templates",   label: "Plantillas",   description: "Plantillas de campaña" },
+  { id: "settings",    label: "Settings",     description: "Administración del sistema" },
 ];
 
 function useVisibility(role: string) {
