@@ -1,43 +1,64 @@
 import { cn } from "@/lib/utils";
 import { useUserRole } from "@/hooks/useSupabaseData";
 import { useRealtime } from "@/hooks/useRealtime";
-import { 
+import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, Sparkles, FolderOpen, ShieldCheck, Clapperboard, TrendingUp, Megaphone, CalendarDays, Receipt, FileText, ClipboardList, BookOpen } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, Sparkles, FolderOpen, ShieldCheck, Clapperboard, TrendingUp, Megaphone, CalendarDays, Receipt, FileText, ClipboardList, BookOpen, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 type ViewRole = "owner" | "editor" | "videographer";
 
-const roleNavItems: Record<ViewRole, { title: string; url: string; icon: typeof LayoutDashboard }[]> = {
+type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; module?: string };
+
+const roleNavItems: Record<ViewRole, NavItem[]> = {
   owner: [
-    { title: "Today", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Clients", url: "/clients", icon: Users },
-    { title: "Campaigns", url: "/campaigns", icon: FolderKanban },
-    { title: "Tasks", url: "/tasks", icon: ClipboardList },
-    { title: "Calendar", url: "/calendar", icon: CalendarDays },
-    { title: "Scripts", url: "/scripts", icon: FileText },
-    { title: "Call Sheets", url: "/shot-lists", icon: FileStack },
-    { title: "Assets", url: "/assets", icon: FolderOpen },
-    { title: "Approvals", url: "/approvals", icon: ShieldCheck },
-    { title: "Invoices", url: "/invoices", icon: Receipt },
-    { title: "Leads", url: "/leads", icon: TrendingUp },
-    { title: "Ads", url: "/ads", icon: Megaphone },
-    { title: "Templates", url: "/templates", icon: Clapperboard },
-    { title: "Manual", url: "/help", icon: BookOpen },
+    { title: "Today",        url: "/dashboard",  icon: LayoutDashboard, module: "dashboard" },
+    { title: "Clientes",     url: "/clients",    icon: Users,           module: "clients" },
+    { title: "Campañas",     url: "/campaigns",  icon: FolderKanban,    module: "campaigns" },
+    { title: "Tareas",       url: "/tasks",      icon: ClipboardList,   module: "tasks" },
+    { title: "Calendario",   url: "/calendar",   icon: CalendarDays,    module: "calendar" },
+    { title: "Scripts",      url: "/scripts",    icon: FileText,        module: "scripts" },
+    { title: "Call Sheets",  url: "/shot-lists", icon: FileStack,       module: "call_sheets" },
+    { title: "Archivos",     url: "/assets",     icon: FolderOpen,      module: "assets" },
+    { title: "Aprobaciones", url: "/approvals",  icon: ShieldCheck,     module: "approvals" },
+    { title: "Facturas",     url: "/invoices",   icon: Receipt,         module: "invoices" },
+    { title: "Leads",        url: "/leads",      icon: TrendingUp,      module: "leads" },
+    { title: "Ads",          url: "/ads",        icon: Megaphone,       module: "ads" },
+    { title: "Templates",    url: "/templates",  icon: Clapperboard,    module: "templates" },
+    { title: "Manual",       url: "/help",       icon: BookOpen },
+    { title: "Settings",     url: "/settings",   icon: Settings,        module: "settings" },
   ],
   editor: [
-    { title: "My Tasks", url: "/editor", icon: Scissors },
-    { title: "Assets", url: "/editor/assets", icon: FolderOpen },
-    { title: "Shot Lists", url: "/shot-lists", icon: FileStack },
+    { title: "My Tasks", url: "/editor",        icon: Scissors },
+    { title: "Archivos", url: "/editor/assets", icon: FolderOpen },
+    { title: "Shot Lists",url: "/shot-lists",   icon: FileStack },
   ],
   videographer: [
-    { title: "My Tasks", url: "/videographer", icon: Camera },
-    { title: "Shot Lists", url: "/videographer/shots", icon: FileStack },
+    { title: "My Tasks",  url: "/videographer",       icon: Camera },
+    { title: "Shot Lists",url: "/videographer/shots", icon: FileStack },
   ],
 };
+
+function useModuleVisibility(role: string | null) {
+  return useQuery({
+    queryKey: ["module_visibility_role", role],
+    queryFn: async () => {
+      if (!role) return new Map<string, boolean>();
+      const { data } = await supabase
+        .from("module_visibility")
+        .select("module, is_visible")
+        .eq("role", role);
+      return new Map((data ?? []).map((r: any) => [r.module, r.is_visible]));
+    },
+    enabled: !!role,
+    staleTime: 60_000,
+  });
+}
 
 const roleConfig: Record<ViewRole, { label: string; icon: typeof Crown; color: string }> = {
   owner: { label: "Owner", icon: Crown, color: "text-primary" },
@@ -56,7 +77,13 @@ export function AppSidebar() {
 
   const currentRole: ViewRole = (userRole === "editor" || userRole === "videographer") ? userRole : "owner";
   const isCollapsed = state === "collapsed";
-  const navItems = roleNavItems[currentRole];
+  const { data: visibilityMap } = useModuleVisibility(currentRole);
+
+  // Filter nav items based on module_visibility table (if available)
+  const allNavItems = roleNavItems[currentRole];
+  const navItems = visibilityMap && visibilityMap.size > 0
+    ? allNavItems.filter(item => !item.module || visibilityMap.get(item.module) !== false)
+    : allNavItems;
   const currentRoleConfig = roleConfig[currentRole];
   const RoleIcon = currentRoleConfig.icon;
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "User";
