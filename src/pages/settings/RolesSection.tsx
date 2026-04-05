@@ -38,8 +38,8 @@ const MODULES = [
   { id: "approvals",   label: "Aprobaciones" },
   { id: "invoices",    label: "Facturas" },
   { id: "leads",       label: "Leads" },
-  { id: "ads",         label: "Ads" },
-  { id: "templates",   label: "Templates" },
+  { id: "ads",         label: "Media Buying" },
+  { id: "templates",   label: "Plantillas" },
   { id: "settings",    label: "Settings" },
 ];
 

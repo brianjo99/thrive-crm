@@ -243,9 +243,9 @@ const SECTIONS: Section[] = [
     id: "ads",
     icon: Megaphone,
     color: "text-orange-400",
-    title: "Ads — Plataformas de Publicidad",
-    subtitle: "Registra las cuentas de ads que usas",
-    description: "Directorio de todas las plataformas de publicidad digital: Meta Ads, Google Ads, TikTok Ads, YouTube Ads, streaming y más. Registra qué plataformas estás usando y sus datos de cuenta.",
+    title: "Media Buying — Plataformas de publicidad",
+    subtitle: "Registra las cuentas y canales de compra de medios que usas",
+    description: "Directorio de plataformas de publicidad digital y compra de medios: Meta Ads, Google Ads, TikTok Ads, YouTube Ads, streaming y más. Registra qué plataformas usas y los datos clave de cada cuenta.",
     steps: [
       "Las plataformas están organizadas en 4 categorías: Social, Search, Streaming/CTV y Programmatic.",
       "Haz clic en cualquier tarjeta de plataforma para configurarla.",
@@ -262,7 +262,7 @@ const SECTIONS: Section[] = [
     id: "templates",
     icon: Clapperboard,
     color: "text-muted-foreground",
-    title: "Templates — Plantillas",
+    title: "Plantillas",
     subtitle: "Plantillas de campaña reutilizables",
     description: "Vista de las plantillas de campaña disponibles. Cada template define qué tipo de tareas se generan automáticamente cuando creas una campaña nueva.",
     steps: [

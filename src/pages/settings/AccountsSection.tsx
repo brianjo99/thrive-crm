@@ -50,8 +50,8 @@ const MODULE_LABELS: Record<string, string> = {
   dashboard: "Today", clients: "Clientes", campaigns: "Campañas",
   tasks: "Tareas", calendar: "Calendario", scripts: "Scripts",
   call_sheets: "Call Sheets", assets: "Archivos", approvals: "Aprobaciones",
-  invoices: "Facturas", leads: "Leads", ads: "Ads",
-  templates: "Templates", settings: "Settings",
+  invoices: "Facturas", leads: "Leads", ads: "Media Buying",
+  templates: "Plantillas", settings: "Settings",
 };
 
 function useAccounts() {
