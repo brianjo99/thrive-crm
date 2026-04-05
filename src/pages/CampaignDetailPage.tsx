@@ -62,7 +62,7 @@ export default function CampaignDetailPage() {
     if (currentStageIndex < stages.length - 1) {
       const nextStage = stages[currentStageIndex + 1];
       await updateCampaign.mutateAsync({ id: campaign.id, current_stage: nextStage });
-      toast.success(`Advanced to ${nextStage}`);
+      toast.success(`Avanzado a ${nextStage}`);
     }
   };
 
@@ -78,7 +78,7 @@ export default function CampaignDetailPage() {
         campaign_id: campaign.id,
         client_id: campaign.client_id,
       });
-      toast.success("Task added!");
+      toast.success("Tarea añadida");
       setNewTask({ title: "", description: "", priority: "medium", stage: "", service_type: "" });
       setIsAddTaskOpen(false);
     } catch (error: any) {
@@ -133,53 +133,53 @@ export default function CampaignDetailPage() {
           <div className="flex gap-2">
             {currentStageIndex < stages.length - 1 && (
               <Button onClick={advanceStage} className="gap-2">
-                Advance Stage <ArrowRight className="h-4 w-4" />
+                Avanzar etapa <ArrowRight className="h-4 w-4" />
               </Button>
             )}
             <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2"><Plus className="h-4 w-4" />Add Task</Button>
+                <Button variant="outline" className="gap-2"><Plus className="h-4 w-4" />Añadir tarea</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
-                  <DialogTitle className="font-display">Add Task</DialogTitle>
+                  <DialogTitle className="font-display">Añadir tarea</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-4">
                   <div className="space-y-2">
-                    <Label>Title</Label>
-                    <Input value={newTask.title} onChange={(e) => setNewTask(p => ({ ...p, title: e.target.value }))} placeholder="Task title" />
+                    <Label>Título</Label>
+                    <Input value={newTask.title} onChange={(e) => setNewTask(p => ({ ...p, title: e.target.value }))} placeholder="Título de la tarea" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Input value={newTask.description} onChange={(e) => setNewTask(p => ({ ...p, description: e.target.value }))} placeholder="Optional description" />
+                    <Label>Descripción</Label>
+                    <Input value={newTask.description} onChange={(e) => setNewTask(p => ({ ...p, description: e.target.value }))} placeholder="Descripción opcional" />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Stage</Label>
+                      <Label>Etapa</Label>
                       <Select value={newTask.stage} onValueChange={(v) => setNewTask(p => ({ ...p, stage: v as PipelineStage }))}>
-                        <SelectTrigger><SelectValue placeholder="Select stage" /></SelectTrigger>
+                        <SelectTrigger><SelectValue placeholder="Seleccionar etapa" /></SelectTrigger>
                         <SelectContent>
                           {stages.map(s => <SelectItem key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1).replace("-", " ")}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Priority</Label>
+                      <Label>Prioridad</Label>
                       <Select value={newTask.priority} onValueChange={(v) => setNewTask(p => ({ ...p, priority: v as TaskPriority }))}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="high">High</SelectItem>
-                          <SelectItem value="urgent">Urgent</SelectItem>
+                          <SelectItem value="low">Baja</SelectItem>
+                          <SelectItem value="medium">Media</SelectItem>
+                          <SelectItem value="high">Alta</SelectItem>
+                          <SelectItem value="urgent">Urgente</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Service Type (optional)</Label>
+                    <Label>Tipo de servicio (opcional)</Label>
                     <Select value={newTask.service_type} onValueChange={(v) => setNewTask(p => ({ ...p, service_type: v as ServiceType }))}>
-                      <SelectTrigger><SelectValue placeholder="Select service" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar servicio" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="film">Film</SelectItem>
                         <SelectItem value="edit">Edit</SelectItem>
@@ -190,9 +190,9 @@ export default function CampaignDetailPage() {
                   </div>
                 </div>
                 <div className="shrink-0 border-t border-border p-4 flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsAddTaskOpen(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setIsAddTaskOpen(false)}>Cancelar</Button>
                   <Button onClick={handleAddTask} disabled={createTask.isPending}>
-                    {createTask.isPending ? "Adding..." : "Add Task"}
+                    {createTask.isPending ? "Añadiendo..." : "Añadir tarea"}
                   </Button>
                 </div>
               </DialogContent>
@@ -212,7 +212,7 @@ export default function CampaignDetailPage() {
                       <h3 className="font-display font-semibold">{stage.charAt(0).toUpperCase() + stage.slice(1).replace("-", " ")}</h3>
                       <StatusBadge status={stage} />
                     </div>
-                    <TaskList tasks={stageTasks} emptyMessage="No tasks in this stage" />
+                    <TaskList tasks={stageTasks} emptyMessage="Sin tareas en esta etapa" />
                   </Card>
                 </motion.div>
               );
@@ -221,12 +221,12 @@ export default function CampaignDetailPage() {
 
           <div className="space-y-6">
             <Card className="luxury-card p-5">
-              <h3 className="font-display font-semibold mb-4">Campaign Info</h3>
+              <h3 className="font-display font-semibold mb-4">Info de campaña</h3>
               <div className="space-y-3 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Template</span><TemplateBadge template={campaign.template} /></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Current Stage</span><StatusBadge status={campaign.current_stage} /></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Total Tasks</span><span className="font-medium">{tasks.length}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Completed</span><span className="font-medium">{tasks.filter(t => t.status === "complete").length}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Plantilla</span><TemplateBadge template={campaign.template} /></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Etapa actual</span><StatusBadge status={campaign.current_stage} /></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Total tareas</span><span className="font-medium">{tasks.length}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Completadas</span><span className="font-medium">{tasks.filter(t => t.status === "complete").length}</span></div>
               </div>
             </Card>
 
@@ -235,9 +235,9 @@ export default function CampaignDetailPage() {
             </Card>
 
             <Card className="luxury-card p-5">
-              <h3 className="font-display font-semibold mb-4">Approvals</h3>
+              <h3 className="font-display font-semibold mb-4">Aprobaciones</h3>
               {approvals.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">No approvals yet</p>
+                <p className="text-sm text-muted-foreground text-center py-4">Sin aprobaciones aún</p>
               ) : (
                 <div className="space-y-2">
                   {approvals.slice(0, 5).map(a => (

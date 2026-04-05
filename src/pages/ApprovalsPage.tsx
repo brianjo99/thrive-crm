@@ -44,10 +44,10 @@ function useAddRevisionRound() {
 }
 
 const statusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
-  pending: { label: "Pending", color: "bg-muted text-muted-foreground", icon: Clock },
-  approved: { label: "Approved", color: "bg-success/15 text-success", icon: CheckCircle },
-  "revision-requested": { label: "Revision Requested", color: "bg-warning/15 text-warning", icon: MessageSquare },
-  rejected: { label: "Rejected", color: "bg-destructive/15 text-destructive", icon: XCircle },
+  pending: { label: "Pendiente", color: "bg-muted text-muted-foreground", icon: Clock },
+  approved: { label: "Aprobado", color: "bg-success/15 text-success", icon: CheckCircle },
+  "revision-requested": { label: "Revisión solicitada", color: "bg-warning/15 text-warning", icon: MessageSquare },
+  rejected: { label: "Rechazado", color: "bg-destructive/15 text-destructive", icon: XCircle },
 };
 
 export default function ApprovalsPage() {
@@ -69,7 +69,7 @@ export default function ApprovalsPage() {
         const nextRound = (revisionRounds.length || 0) + 1;
         await addRevisionRound.mutateAsync({ approval_id: id, round_number: nextRound, feedback });
       }
-      toast.success(status === "approved" ? "Content approved!" : "Revision requested");
+      toast.success(status === "approved" ? "Contenido aprobado" : "Revisión solicitada");
       setSelectedApproval(null);
       setFeedback("");
     } catch (error: any) {
@@ -83,10 +83,10 @@ export default function ApprovalsPage() {
         <div className="px-6 py-4">
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-6 w-6 text-primary" />
-            <h1 className="font-display text-2xl font-bold">Content Approvals</h1>
+            <h1 className="font-display text-2xl font-bold">Aprobaciones</h1>
             {pendingApprovals.length > 0 && (
               <span className="text-xs bg-warning/20 text-warning px-2 py-0.5 rounded-full font-medium">
-                {pendingApprovals.length} pending
+                {pendingApprovals.length} pendiente{pendingApprovals.length !== 1 ? "s" : ""}
               </span>
             )}
           </div>
@@ -97,10 +97,10 @@ export default function ApprovalsPage() {
         <Tabs defaultValue="pending" className="space-y-6">
           <TabsList>
             <TabsTrigger value="pending" className="gap-2">
-              <Clock className="h-4 w-4" /> Pending ({pendingApprovals.length})
+              <Clock className="h-4 w-4" /> Pendientes ({pendingApprovals.length})
             </TabsTrigger>
             <TabsTrigger value="processed" className="gap-2">
-              <CheckCircle className="h-4 w-4" /> Processed ({processedApprovals.length})
+              <CheckCircle className="h-4 w-4" /> Procesados ({processedApprovals.length})
             </TabsTrigger>
           </TabsList>
 
@@ -110,8 +110,8 @@ export default function ApprovalsPage() {
             ) : pendingApprovals.length === 0 ? (
               <Card className="luxury-card p-12 text-center">
                 <CheckCircle className="h-12 w-12 text-success mx-auto mb-4" />
-                <h3 className="font-display text-lg font-semibold mb-2">All caught up!</h3>
-                <p className="text-muted-foreground">No pending approvals right now.</p>
+                <h3 className="font-display text-lg font-semibold mb-2">¡Todo al día!</h3>
+                <p className="text-muted-foreground">No hay aprobaciones pendientes.</p>
               </Card>
             ) : (
               <div className="space-y-3">
@@ -140,7 +140,7 @@ export default function ApprovalsPage() {
           <TabsContent value="processed">
             {processedApprovals.length === 0 ? (
               <Card className="luxury-card p-12 text-center">
-                <p className="text-muted-foreground">No processed approvals yet.</p>
+                <p className="text-muted-foreground">Aún no hay aprobaciones procesadas.</p>
               </Card>
             ) : (
               <div className="space-y-3">
@@ -167,13 +167,13 @@ export default function ApprovalsPage() {
           <Dialog open={!!selectedApproval} onOpenChange={() => { setSelectedApproval(null); setFeedback(""); }}>
             <DialogContent className="sm:max-w-xl p-0 flex flex-col max-h-[90vh]">
               <DialogHeader className="p-6 pb-4 shrink-0">
-                <DialogTitle className="font-display">Review Content</DialogTitle>
+                <DialogTitle className="font-display">Revisar contenido</DialogTitle>
               </DialogHeader>
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 space-y-4">
                 <div className="space-y-2">
-                  <p className="text-sm"><span className="text-muted-foreground">Task:</span> {(selectedApproval as any).tasks?.title}</p>
-                  <p className="text-sm"><span className="text-muted-foreground">Client:</span> {(selectedApproval as any).clients?.name}</p>
-                  <p className="text-sm"><span className="text-muted-foreground">Type:</span> {selectedApproval.reviewer_type === "internal" ? "Internal Review" : "Client Review"}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">Tarea:</span> {(selectedApproval as any).tasks?.title}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">Cliente:</span> {(selectedApproval as any).clients?.name}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">Tipo:</span> {selectedApproval.reviewer_type === "internal" ? "Revisión interna" : "Revisión de cliente"}</p>
                 </div>
 
                 {(selectedApproval as any).assets?.file_path && (
@@ -188,12 +188,12 @@ export default function ApprovalsPage() {
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <RotateCcw className="h-4 w-4 text-warning" />
-                      <label className="text-sm font-medium">Revision History ({revisionRounds.length} round{revisionRounds.length !== 1 ? "s" : ""})</label>
+                      <label className="text-sm font-medium">Historial de revisiones ({revisionRounds.length} ronda{revisionRounds.length !== 1 ? "s" : ""})</label>
                     </div>
                     <div className="space-y-2 max-h-36 overflow-y-auto">
                       {revisionRounds.map(r => (
                         <div key={r.id} className="bg-warning/5 border border-warning/20 rounded-lg p-3">
-                          <p className="text-xs text-warning font-medium mb-1">Round {r.round_number}</p>
+                          <p className="text-xs text-warning font-medium mb-1">Ronda {r.round_number}</p>
                           <p className="text-sm text-muted-foreground">{r.feedback}</p>
                           <p className="text-xs text-muted-foreground mt-1">{format(new Date(r.created_at), "MMM d, h:mm a")}</p>
                         </div>
@@ -204,17 +204,17 @@ export default function ApprovalsPage() {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    {revisionRounds.length > 0 ? `New Feedback (Round ${revisionRounds.length + 1})` : "Feedback (optional)"}
+                    {revisionRounds.length > 0 ? `Nuevo feedback (Ronda ${revisionRounds.length + 1})` : "Feedback (opcional)"}
                   </label>
-                  <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Add notes or revision requests..." />
+                  <Textarea value={feedback} onChange={(e) => setFeedback(e.target.value)} placeholder="Añade notas o solicitudes de revisión..." />
                 </div>
 
                 <div className="flex gap-3 pt-4 border-t border-border">
                   <Button className="flex-1 gap-2" onClick={() => handleDecision(selectedApproval.id, "approved")}>
-                    <CheckCircle className="h-4 w-4" /> Approve
+                    <CheckCircle className="h-4 w-4" /> Aprobar
                   </Button>
                   <Button variant="outline" className="flex-1 gap-2" onClick={() => handleDecision(selectedApproval.id, "revision-requested")}>
-                    <MessageSquare className="h-4 w-4" /> Request Revision
+                    <MessageSquare className="h-4 w-4" /> Solicitar revisión
                   </Button>
                 </div>
               </div>

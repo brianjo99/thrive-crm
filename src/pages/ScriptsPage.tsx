@@ -34,25 +34,25 @@ type ScriptWithCampaign = Script & {
 
 const STATUS_CONFIG = {
   draft: {
-    label: "Draft",
+    label: "Borrador",
     color: "bg-muted text-muted-foreground",
     dot: "bg-muted-foreground",
     icon: FileText,
   },
   review: {
-    label: "Review",
+    label: "En revisión",
     color: "bg-yellow-500/15 text-yellow-500",
     dot: "bg-yellow-500",
     icon: PenLine,
   },
   approved: {
-    label: "Approved",
+    label: "Aprobado",
     color: "bg-green-500/15 text-green-500",
     dot: "bg-green-500",
     icon: Check,
   },
   archived: {
-    label: "Archived",
+    label: "Archivado",
     color: "bg-muted/50 text-muted-foreground/60",
     dot: "bg-muted-foreground/40",
     icon: Archive,
@@ -184,14 +184,14 @@ export default function ScriptsPage() {
   };
 
   const handleCreate = async () => {
-    if (!newTitle.trim()) return toast.error("Title is required");
+    if (!newTitle.trim()) return toast.error("El título es obligatorio");
     await createScript.mutateAsync({
       title: newTitle.trim(),
       campaign_id: newCampaignId || null,
       status: newStatus,
       content: newContent,
     });
-    toast.success("Script created");
+    toast.success("Script creado");
     setShowNewDialog(false);
     setNewTitle("");
     setNewCampaignId("");
@@ -220,8 +220,8 @@ export default function ScriptsPage() {
     });
     toast.success(
       contentActuallyChanged
-        ? `Saved — version bumped to v${selectedScript.version + 1}`
-        : "Script saved"
+        ? `Guardado — versión actualizada a v${selectedScript.version + 1}`
+        : "Script guardado"
     );
     setSelectedScript(null);
   };
@@ -232,7 +232,7 @@ export default function ScriptsPage() {
   ) => {
     e.stopPropagation();
     await duplicateScript.mutateAsync(script);
-    toast.success("Script duplicated");
+    toast.success("Script duplicado");
   };
 
   return (
@@ -247,7 +247,7 @@ export default function ScriptsPage() {
               <div>
                 <h1 className="font-display text-2xl font-bold">Scripts</h1>
                 <p className="text-sm text-muted-foreground">
-                  Copy & script management ({scripts.length} total)
+                  Gestión de scripts ({scripts.length} total)
                 </p>
               </div>
             </div>
@@ -256,7 +256,7 @@ export default function ScriptsPage() {
               className="gap-2"
             >
               <Plus className="h-4 w-4" />
-              New Script
+              Nuevo script
             </Button>
           </div>
         </div>
@@ -266,18 +266,18 @@ export default function ScriptsPage() {
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Total Scripts", value: counts.total, dot: "bg-primary" },
+            { label: "Total scripts", value: counts.total, dot: "bg-primary" },
             {
-              label: "Awaiting Review",
+              label: "En revisión",
               value: counts.review,
               dot: "bg-yellow-500",
             },
             {
-              label: "Approved",
+              label: "Aprobados",
               value: counts.approved,
               dot: "bg-green-500",
             },
-            { label: "Drafts", value: counts.draft, dot: "bg-muted-foreground" },
+            { label: "Borradores", value: counts.draft, dot: "bg-muted-foreground" },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -305,7 +305,7 @@ export default function ScriptsPage() {
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search scripts or campaigns..."
+              placeholder="Buscar scripts o campañas..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"
@@ -316,15 +316,15 @@ export default function ScriptsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All ({scripts.length})</SelectItem>
-              <SelectItem value="draft">Draft ({counts.draft})</SelectItem>
+              <SelectItem value="all">Todos ({scripts.length})</SelectItem>
+              <SelectItem value="draft">Borrador ({counts.draft})</SelectItem>
               <SelectItem value="review">
-                Review ({counts.review})
+                En revisión ({counts.review})
               </SelectItem>
               <SelectItem value="approved">
-                Approved ({counts.approved})
+                Aprobado ({counts.approved})
               </SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
+              <SelectItem value="archived">Archivado</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -340,12 +340,12 @@ export default function ScriptsPage() {
           <Card className="luxury-card p-12 text-center">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="font-display text-lg font-semibold mb-2">
-              {scripts.length === 0 ? "No scripts yet" : "No results"}
+              {scripts.length === 0 ? "Aún no hay scripts" : "Sin resultados"}
             </h3>
             <p className="text-muted-foreground">
               {scripts.length === 0
-                ? "Create your first script to get started."
-                : "Try adjusting your search or filter."}
+                ? "Crea tu primer script para empezar."
+                : "Prueba ajustando la búsqueda o el filtro."}
             </p>
           </Card>
         ) : (
@@ -391,7 +391,7 @@ export default function ScriptsPage() {
                               </>
                             ) : (
                               <span className="italic text-muted-foreground/60">
-                                No campaign
+                                Sin campaña
                               </span>
                             )}
                             <span className="hidden md:inline">
@@ -434,30 +434,30 @@ export default function ScriptsPage() {
           <DialogHeader className="p-6 pb-0 shrink-0">
             <DialogTitle className="font-display flex items-center gap-2">
               <Plus className="h-5 w-5 text-primary" />
-              New Script
+              Nuevo script
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-1.5">
-                <Label>Title</Label>
+                <Label>Título</Label>
                 <Input
-                  placeholder="Script title..."
+                  placeholder="Título del script..."
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Campaign</Label>
+                <Label>Campaña</Label>
                 <Select
                   value={newCampaignId}
                   onValueChange={setNewCampaignId}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select campaign..." />
+                    <SelectValue placeholder="Seleccionar campaña..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No campaign</SelectItem>
+                    <SelectItem value="">Sin campaña</SelectItem>
                     {(campaigns as any[]).map((c: any) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}
@@ -472,7 +472,7 @@ export default function ScriptsPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Status</Label>
+                <Label>Estado</Label>
                 <Select
                   value={newStatus}
                   onValueChange={(v) => setNewStatus(v as Script["status"])}
@@ -481,17 +481,17 @@ export default function ScriptsPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="review">Review</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
+                    <SelectItem value="draft">Borrador</SelectItem>
+                    <SelectItem value="review">En revisión</SelectItem>
+                    <SelectItem value="approved">Aprobado</SelectItem>
+                    <SelectItem value="archived">Archivado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="col-span-2 space-y-1.5">
-                <Label>Script Content</Label>
+                <Label>Contenido del script</Label>
                 <Textarea
-                  placeholder="Write the full script here..."
+                  placeholder="Escribe el script completo aquí..."
                   value={newContent}
                   onChange={(e) => setNewContent(e.target.value)}
                   rows={12}
@@ -504,13 +504,13 @@ export default function ScriptsPage() {
                 variant="outline"
                 onClick={() => setShowNewDialog(false)}
               >
-                Cancel
+                Cancelar
               </Button>
               <Button
                 onClick={handleCreate}
                 disabled={createScript.isPending || !newTitle.trim()}
               >
-                Create Script
+                Crear script
               </Button>
             </div>
           </div>
@@ -527,7 +527,7 @@ export default function ScriptsPage() {
             <DialogHeader className="p-6 pb-0 shrink-0">
               <DialogTitle className="font-display flex items-center gap-2">
                 <PenLine className="h-5 w-5 text-primary" />
-                Edit Script
+                Editar script
                 <span className="text-sm font-mono font-normal text-muted-foreground ml-1">
                   v{selectedScript.version}
                   {editedContent !== (selectedScript.content ?? "") && (
@@ -539,22 +539,22 @@ export default function ScriptsPage() {
             <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1.5">
-                  <Label>Title</Label>
+                  <Label>Título</Label>
                   <Input
                     value={editedTitle}
                     onChange={(e) => setEditedTitle(e.target.value)}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Campaign</Label>
+                  <Label>Campaña</Label>
                   <p className="text-sm text-muted-foreground py-2">
                     {selectedScript.campaigns
                       ? `${selectedScript.campaigns.name}${selectedScript.campaigns.clients ? ` · ${selectedScript.campaigns.clients.name}` : ""}`
-                      : "No campaign"}
+                      : "Sin campaña"}
                   </p>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Status</Label>
+                  <Label>Estado</Label>
                   <Select
                     value={editedStatus}
                     onValueChange={(v) =>
@@ -565,10 +565,10 @@ export default function ScriptsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="review">Review</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
+                      <SelectItem value="draft">Borrador</SelectItem>
+                      <SelectItem value="review">En revisión</SelectItem>
+                      <SelectItem value="approved">Aprobado</SelectItem>
+                      <SelectItem value="archived">Archivado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -576,10 +576,10 @@ export default function ScriptsPage() {
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <Label>Script Content</Label>
+                  <Label>Contenido del script</Label>
                   {editedContent !== (selectedScript.content ?? "") && (
                     <span className="text-xs text-yellow-500">
-                      Content changed — version will auto-increment on save
+                      Contenido modificado — la versión se actualizará al guardar
                     </span>
                   )}
                 </div>
@@ -593,16 +593,16 @@ export default function ScriptsPage() {
                   }}
                   rows={16}
                   className="text-sm font-mono leading-relaxed resize-none"
-                  placeholder="Script content..."
+                  placeholder="Contenido del script..."
                 />
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-border">
                 <div className="text-xs text-muted-foreground">
-                  Created{" "}
+                  Creado{" "}
                   {format(new Date(selectedScript.created_at), "MMM d, yyyy")}
                   {" · "}
-                  Updated{" "}
+                  Editado{" "}
                   {format(new Date(selectedScript.updated_at), "MMM d, yyyy")}
                 </div>
                 <div className="flex gap-2">
@@ -610,13 +610,13 @@ export default function ScriptsPage() {
                     variant="outline"
                     onClick={() => setSelectedScript(null)}
                   >
-                    Cancel
+                    Cancelar
                   </Button>
                   <Button
                     onClick={handleSaveScript}
                     disabled={updateScript.isPending}
                   >
-                    Save Changes
+                    Guardar cambios
                   </Button>
                 </div>
               </div>

@@ -148,11 +148,11 @@ function getShootDateBadge(
   if (!shootDate) return null;
   const date = parseISO(shootDate);
   if (isToday(date))
-    return { label: "Today", color: "bg-green-500/15 text-green-500" };
+    return { label: "Hoy", color: "bg-green-500/15 text-green-500" };
   if (isTomorrow(date))
-    return { label: "Tomorrow", color: "bg-yellow-500/15 text-yellow-500" };
+    return { label: "Mañana", color: "bg-yellow-500/15 text-yellow-500" };
   if (isPast(startOfDay(date)))
-    return { label: "Past", color: "bg-muted text-muted-foreground" };
+    return { label: "Pasado", color: "bg-muted text-muted-foreground" };
   return null;
 }
 
@@ -234,7 +234,7 @@ export default function CallSheetsPage() {
   };
 
   const handleCreate = async () => {
-    if (!form.title.trim()) return toast.error("Title is required");
+    if (!form.title.trim()) return toast.error("El título es obligatorio");
     await createCallSheet.mutateAsync({
       title: form.title.trim(),
       campaign_id: form.campaign_id || null,
@@ -246,7 +246,7 @@ export default function CallSheetsPage() {
       crew: crew.filter((c) => c.name.trim()),
       schedule: schedule.filter((s) => s.activity.trim()),
     });
-    toast.success("Call sheet created");
+    toast.success("Call sheet creado");
     setShowNewDialog(false);
     resetForm();
   };
@@ -275,7 +275,7 @@ export default function CallSheetsPage() {
 
   const handleUpdate = async () => {
     if (!editSheet) return;
-    if (!editForm.title.trim()) return toast.error("Title is required");
+    if (!editForm.title.trim()) return toast.error("El título es obligatorio");
     await updateCallSheet.mutateAsync({
       id: editSheet.id,
       title: editForm.title.trim(),
@@ -288,15 +288,15 @@ export default function CallSheetsPage() {
       crew: editCrew.filter((c) => c.name.trim()),
       schedule: editSchedule.filter((s) => s.activity.trim()),
     });
-    toast.success("Call sheet updated");
+    toast.success("Call sheet actualizado");
     setEditSheet(null);
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this call sheet?")) return;
+    if (!confirm("¿Eliminar este call sheet?")) return;
     await deleteCallSheet.mutateAsync(id);
     setViewSheet(null);
-    toast.success("Call sheet deleted");
+    toast.success("Call sheet eliminado");
   };
 
   const handlePrint = () => {
@@ -315,13 +315,13 @@ export default function CallSheetsPage() {
               <div>
                 <h1 className="font-display text-2xl font-bold">Call Sheets</h1>
                 <p className="text-sm text-muted-foreground">
-                  Filming day management ({callSheets.length} total)
+                  Gestión de días de filmación ({callSheets.length} total)
                 </p>
               </div>
             </div>
             <Button onClick={() => setShowNewDialog(true)} className="gap-2">
               <Plus className="h-4 w-4" />
-              New Call Sheet
+              Nuevo call sheet
             </Button>
           </div>
         </div>
@@ -332,10 +332,10 @@ export default function CallSheetsPage() {
         <div className="grid grid-cols-3 gap-4">
           {[
             {
-              label: "This Week",
+              label: "Esta semana",
               value: upcomingThisWeek,
               dot: "bg-primary",
-              sub: "upcoming shoots",
+              sub: "rodajes próximos",
             },
             {
               label: "Total",
@@ -344,10 +344,10 @@ export default function CallSheetsPage() {
               sub: "call sheets",
             },
             {
-              label: "Today",
+              label: "Hoy",
               value: todayCount,
               dot: "bg-green-500",
-              sub: "shoots today",
+              sub: "rodajes hoy",
             },
           ].map((stat, i) => (
             <motion.div
@@ -379,9 +379,8 @@ export default function CallSheetsPage() {
               variant={filter === f ? "default" : "outline"}
               size="sm"
               onClick={() => setFilter(f)}
-              className="capitalize"
             >
-              {f}
+              {f === "upcoming" ? "Próximos" : f === "past" ? "Pasados" : "Todos"}
             </Button>
           ))}
         </div>
@@ -398,13 +397,13 @@ export default function CallSheetsPage() {
             <Camera className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="font-display text-lg font-semibold mb-2">
               {callSheets.length === 0
-                ? "No call sheets yet"
-                : "No shoots in this period"}
+                ? "Aún no hay call sheets"
+                : "Sin rodajes en este período"}
             </h3>
             <p className="text-muted-foreground">
               {callSheets.length === 0
-                ? "Create your first call sheet for an upcoming filming day."
-                : "Try switching to a different filter."}
+                ? "Crea tu primer call sheet para un día de filmación."
+                : "Prueba cambiando el filtro."}
             </p>
           </Card>
         ) : (
@@ -509,14 +508,14 @@ export default function CallSheetsPage() {
           <DialogHeader className="p-6 pb-0 shrink-0">
             <DialogTitle className="font-display flex items-center gap-2">
               <Camera className="h-5 w-5 text-primary" />
-              New Call Sheet
+              Nuevo call sheet
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4 space-y-6">
             {/* Basic Info */}
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                Basic Info
+                Información básica
               </h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-1.5">
@@ -538,10 +537,10 @@ export default function CallSheetsPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select campaign..." />
+                      <SelectValue placeholder="Seleccionar campaña..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No campaign</SelectItem>
+                      <SelectItem value="">Sin campaña</SelectItem>
                       {(campaigns as any[]).map((c: any) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
@@ -623,13 +622,13 @@ export default function CallSheetsPage() {
                   resetForm();
                 }}
               >
-                Cancel
+                Cancelar
               </Button>
               <Button
                 onClick={handleCreate}
                 disabled={createCallSheet.isPending || !form.title.trim()}
               >
-                Create Call Sheet
+                Crear call sheet
               </Button>
             </div>
           </div>
@@ -787,7 +786,7 @@ export default function CallSheetsPage() {
                   onClick={() => handleDelete(viewSheet.id)}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
-                  Delete
+                  Eliminar
                 </Button>
                 <div className="flex gap-2">
                   <Button
@@ -797,7 +796,7 @@ export default function CallSheetsPage() {
                     onClick={handlePrint}
                   >
                     <Printer className="h-3.5 w-3.5" />
-                    Print
+                    Imprimir
                   </Button>
                   <Button
                     size="sm"
@@ -805,7 +804,7 @@ export default function CallSheetsPage() {
                     onClick={() => openEdit(viewSheet)}
                   >
                     <PenLine className="h-3.5 w-3.5" />
-                    Edit
+                    Editar
                   </Button>
                 </div>
               </div>
@@ -821,14 +820,14 @@ export default function CallSheetsPage() {
             <DialogHeader className="p-6 pb-0 shrink-0">
               <DialogTitle className="font-display flex items-center gap-2">
                 <PenLine className="h-5 w-5 text-primary" />
-                Edit Call Sheet
+                Editar call sheet
               </DialogTitle>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto px-6 pb-6 pt-4 space-y-6">
               {/* Basic Info */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                  Basic Info
+                  Información básica
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2 space-y-1.5">
@@ -849,10 +848,10 @@ export default function CallSheetsPage() {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select campaign..." />
+                        <SelectValue placeholder="Seleccionar campaña..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No campaign</SelectItem>
+                        <SelectItem value="">Sin campaña</SelectItem>
                         {(campaigns as any[]).map((c: any) => (
                           <SelectItem key={c.id} value={c.id}>
                             {c.name}
@@ -938,13 +937,13 @@ export default function CallSheetsPage() {
                   variant="outline"
                   onClick={() => setEditSheet(null)}
                 >
-                  Cancel
+                  Cancelar
                 </Button>
                 <Button
                   onClick={handleUpdate}
                   disabled={updateCallSheet.isPending || !editForm.title.trim()}
                 >
-                  Save Changes
+                  Guardar cambios
                 </Button>
               </div>
             </div>
@@ -989,7 +988,7 @@ function CrewSection({
           className="gap-1 h-7 text-xs"
           onClick={() => setCrew((prev) => [...prev, { name: "", role: "", call_time: "", phone: "" }])}
         >
-          <Plus className="h-3 w-3" /> Add Member
+          <Plus className="h-3 w-3" /> Agregar miembro
         </Button>
       </div>
       <div className="space-y-2">
@@ -1035,7 +1034,7 @@ function CrewSection({
         ))}
       </div>
       <p className="text-xs text-muted-foreground">
-        Columns: Name · Role · Call Time · Phone
+        Columnas: Nombre · Rol · Hora de llamada · Teléfono
       </p>
     </div>
   );
@@ -1075,7 +1074,7 @@ function ScheduleSection({
             setSchedule((prev) => [...prev, { time: "", activity: "", notes: "" }])
           }
         >
-          <Plus className="h-3 w-3" /> Add Item
+          <Plus className="h-3 w-3" /> Agregar ítem
         </Button>
       </div>
       <div className="space-y-2">
