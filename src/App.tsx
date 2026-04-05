@@ -32,6 +32,7 @@ import TasksPage from "./pages/TasksPage";
 import HelpPage from "./pages/HelpPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import { ProtectedRoute, RoleRoute } from "@/components/thrive/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -62,28 +63,28 @@ function ProtectedLayout() {
           <main className="flex-1 overflow-auto">
             <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/dashboard" element={<BrianDashboard />} />
-              <Route path="/clients" element={<ClientsPage />} />
-              <Route path="/campaigns" element={<CampaignsPage />} />
-              <Route path="/campaigns/:id" element={<CampaignDetailPage />} />
-              <Route path="/templates" element={<TemplatesPage />} />
-              <Route path="/assets" element={<AssetsPage />} />
-              <Route path="/approvals" element={<ApprovalsPage />} />
-              <Route path="/editor" element={<EditorDashboard />} />
-              <Route path="/editor/assets" element={<EditorAssetsPage />} />
-              <Route path="/videographer" element={<VideographerDashboard />} />
-              <Route path="/videographer/shots" element={<VideographerShotsPage />} />
-              <Route path="/shot-lists" element={<ShotListsPage />} />
-              <Route path="/leads" element={<LeadsPage />} />
-              <Route path="/ads" element={<AdsPage />} />
-              <Route path="/calendar" element={<CalendarPage />} />
-              <Route path="/invoices" element={<InvoicesPage />} />
-              <Route path="/scripts" element={<ScriptsPage />} />
-              <Route path="/call-sheets" element={<CallSheetsPage />} />
-              <Route path="/tasks" element={<TasksPage />} />
+              <Route path="/dashboard" element={<ProtectedRoute module="dashboard"><BrianDashboard /></ProtectedRoute>} />
+              <Route path="/clients" element={<ProtectedRoute module="clients"><ClientsPage /></ProtectedRoute>} />
+              <Route path="/campaigns" element={<ProtectedRoute module="campaigns"><CampaignsPage /></ProtectedRoute>} />
+              <Route path="/campaigns/:id" element={<ProtectedRoute module="campaigns"><CampaignDetailPage /></ProtectedRoute>} />
+              <Route path="/templates" element={<ProtectedRoute module="templates"><TemplatesPage /></ProtectedRoute>} />
+              <Route path="/assets" element={<ProtectedRoute module="assets"><AssetsPage /></ProtectedRoute>} />
+              <Route path="/approvals" element={<ProtectedRoute module="approvals"><ApprovalsPage /></ProtectedRoute>} />
+              <Route path="/editor" element={<RoleRoute roles={["editor", "owner"]}><EditorDashboard /></RoleRoute>} />
+              <Route path="/editor/assets" element={<RoleRoute roles={["editor", "owner"]}><EditorAssetsPage /></RoleRoute>} />
+              <Route path="/videographer" element={<RoleRoute roles={["videographer", "owner"]}><VideographerDashboard /></RoleRoute>} />
+              <Route path="/videographer/shots" element={<RoleRoute roles={["videographer", "owner"]}><VideographerShotsPage /></RoleRoute>} />
+              <Route path="/shot-lists" element={<ProtectedRoute module="call_sheets"><ShotListsPage /></ProtectedRoute>} />
+              <Route path="/leads" element={<ProtectedRoute module="leads"><LeadsPage /></ProtectedRoute>} />
+              <Route path="/ads" element={<ProtectedRoute module="ads"><AdsPage /></ProtectedRoute>} />
+              <Route path="/calendar" element={<ProtectedRoute module="calendar"><CalendarPage /></ProtectedRoute>} />
+              <Route path="/invoices" element={<ProtectedRoute module="invoices"><InvoicesPage /></ProtectedRoute>} />
+              <Route path="/scripts" element={<ProtectedRoute module="scripts"><ScriptsPage /></ProtectedRoute>} />
+              <Route path="/call-sheets" element={<ProtectedRoute module="call_sheets"><CallSheetsPage /></ProtectedRoute>} />
+              <Route path="/tasks" element={<ProtectedRoute module="tasks"><TasksPage /></ProtectedRoute>} />
               <Route path="/help" element={<HelpPage />} />
               <Route path="/manual" element={<Navigate to="/help" replace />} />
-              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/settings" element={<ProtectedRoute module="settings"><SettingsPage /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>

@@ -119,9 +119,12 @@ export function AppSidebar() {
   // Activate real-time subscriptions globally
   useRealtime();
 
-  const currentRole: ViewRole = userRole === "editor" || userRole === "videographer" || userRole === "client"
-    ? userRole
-    : "owner";
+  // Map known roles to their nav. Unknown/null falls to "owner" nav but
+  // ProtectedRoute blocks actual route access — this is cosmetic only.
+  const currentRole: ViewRole =
+    userRole === "editor" || userRole === "videographer" || userRole === "client"
+      ? userRole
+      : "owner";
   const isCollapsed = state === "collapsed";
   const { data: visibilityMap } = useModuleVisibility(currentRole);
 
