@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-type ViewRole = "owner" | "editor" | "videographer";
+type ViewRole = "owner" | "editor" | "videographer" | "client";
 
 type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; module?: string };
 
@@ -41,6 +41,10 @@ const roleNavItems: Record<ViewRole, NavItem[]> = {
   videographer: [
     { title: "My Tasks",  url: "/videographer",       icon: Camera },
     { title: "Shot Lists",url: "/videographer/shots", icon: FileStack },
+  ],
+  client: [
+    { title: "Today", url: "/dashboard", icon: LayoutDashboard, module: "dashboard" },
+    { title: "Manual", url: "/help", icon: BookOpen },
   ],
 };
 
@@ -75,7 +79,9 @@ export function AppSidebar() {
   // Activate real-time subscriptions globally
   useRealtime();
 
-  const currentRole: ViewRole = (userRole === "editor" || userRole === "videographer") ? userRole : "owner";
+  const currentRole: ViewRole = userRole === "editor" || userRole === "videographer" || userRole === "client"
+    ? userRole
+    : "owner";
   const isCollapsed = state === "collapsed";
   const { data: visibilityMap } = useModuleVisibility(currentRole);
 

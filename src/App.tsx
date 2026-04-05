@@ -82,6 +82,7 @@ function ProtectedLayout() {
               <Route path="/call-sheets" element={<CallSheetsPage />} />
               <Route path="/tasks" element={<TasksPage />} />
               <Route path="/help" element={<HelpPage />} />
+              <Route path="/manual" element={<Navigate to="/help" replace />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

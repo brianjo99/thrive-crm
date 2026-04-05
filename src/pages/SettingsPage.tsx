@@ -1,6 +1,7 @@
-import { useSearchParams } from "react-router-dom";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { Settings, Users, Shield, UserSquare2, Eye, ClipboardList, Lock, SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUserRole } from "@/hooks/useSupabaseData";
 import GeneralSection from "./settings/GeneralSection";
 import AccountsSection from "./settings/AccountsSection";
 import RolesSection from "./settings/RolesSection";
@@ -21,8 +22,12 @@ const SECTIONS = [
 
 export default function SettingsPage() {
   const [params, setParams] = useSearchParams();
+  const { data: role, isLoading } = useUserRole();
   const active = params.get("tab") ?? "general";
   const setTab = (id: string) => setParams({ tab: id });
+
+  if (isLoading) return null;
+  if (role !== "owner") return <Navigate to="/" replace />;
 
   return (
     <div className="min-h-screen">

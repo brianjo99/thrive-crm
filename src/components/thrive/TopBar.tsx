@@ -49,7 +49,7 @@ export function TopBar() {
   }, []);
 
   const role = userRole || "owner";
-  const config = roleConfig[role] || roleConfig.owner;
+  const config = roleConfig[role as keyof typeof roleConfig] || roleConfig.owner;
   const RoleIcon = config.icon;
 
   const unreadCount = notifications.filter(n => !n.read).length;
