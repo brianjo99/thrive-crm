@@ -389,8 +389,8 @@ export default function HelpPage() {
               <BookOpen className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-2xl font-bold">Manual de Usuario</h1>
-              <p className="text-sm text-muted-foreground">Thrive Hub — Guía completa de uso</p>
+              <h1 className="font-display text-2xl font-bold">Help Center</h1>
+              <p className="text-sm text-muted-foreground">Thrive Hub — guía operativa del CRM</p>
             </div>
           </div>
           <div className="relative max-w-md">

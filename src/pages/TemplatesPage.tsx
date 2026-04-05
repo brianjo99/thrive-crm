@@ -16,10 +16,10 @@ export default function TemplatesPage() {
         <div className="px-6 py-4">
           <div className="flex items-center gap-3">
             <FileStack className="h-6 w-6 text-primary" />
-            <h1 className="font-display text-2xl font-bold">Templates</h1>
+            <h1 className="font-display text-2xl font-bold">Plantillas</h1>
           </div>
           <p className="text-muted-foreground mt-1">
-            Campaign templates and default checklists that auto-generate based on service packages
+            Plantillas de campañas y checklists por defecto que se generan según el paquete de servicios
           </p>
         </div>
       </header>
@@ -29,11 +29,11 @@ export default function TemplatesPage() {
           <TabsList>
             <TabsTrigger value="campaigns" className="gap-2">
               <LayoutTemplate className="h-4 w-4" />
-              Campaign Templates
+              Plantillas de campaña
             </TabsTrigger>
             <TabsTrigger value="checklists" className="gap-2">
               <CheckSquare className="h-4 w-4" />
-              Default Checklists
+              Checklists por defecto
             </TabsTrigger>
           </TabsList>
 
@@ -44,35 +44,35 @@ export default function TemplatesPage() {
             >
               <Card className="luxury-card p-6">
                 <h2 className="font-display text-lg font-semibold mb-2">
-                  Service-Based Campaign Templates
+                  Plantillas de campañas por servicio
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  Each template auto-creates the correct pipeline stages, tasks, and deliverables
-                  based on the services included. Select a template when creating a new campaign.
+                  Cada plantilla genera automáticamente las etapas, tareas y entregables correctos
+                  según los servicios incluidos. Elige una plantilla al crear una nueva campaña.
                 </p>
                 <CampaignTemplateGrid />
               </Card>
             </motion.div>
 
             <Card className="luxury-card p-6 bg-gradient-to-br from-card to-primary/5">
-              <h3 className="font-display font-semibold mb-3">How Templates Work</h3>
+              <h3 className="font-display font-semibold mb-3">Cómo funcionan las plantillas</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="space-y-2">
-                  <p className="font-medium text-primary">1. Select Template</p>
+                  <p className="font-medium text-primary">1. Elige plantilla</p>
                   <p className="text-muted-foreground">
-                    Choose based on the client's service package (Film Only, Film+Edit, etc.)
+                    Selecciónala según el paquete de servicios del cliente (Film Only, Film+Edit, etc.)
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <p className="font-medium text-primary">2. Auto-Generate</p>
+                  <p className="font-medium text-primary">2. Generación automática</p>
                   <p className="text-muted-foreground">
-                    Pipeline stages, checklists, and task categories are created automatically
+                    Las etapas del pipeline, checklists y categorías de tareas se crean automáticamente
                   </p>
                 </div>
                 <div className="space-y-2">
-                  <p className="font-medium text-primary">3. Start Working</p>
+                  <p className="font-medium text-primary">3. Empieza a operar</p>
                   <p className="text-muted-foreground">
-                    Everything is set up correctly — just start moving through the pipeline
+                    Todo queda configurado correctamente para empezar a avanzar por el pipeline
                   </p>
                 </div>
               </div>
@@ -86,11 +86,11 @@ export default function TemplatesPage() {
             >
               <Card className="luxury-card p-6">
                 <h2 className="font-display text-lg font-semibold mb-2">
-                  Default Checklists by Client Type
+                  Checklists por defecto según tipo de cliente
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  These checklists load automatically when you create a new client. They're fully
-                  editable per client, but provide smart defaults based on client type.
+                  Estos checklists se cargan automáticamente al crear un cliente. Son editables por cliente,
+                  pero sirven como base inteligente según el tipo de cuenta.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -109,24 +109,24 @@ export default function TemplatesPage() {
             </motion.div>
 
             <Card className="luxury-card p-6 bg-gradient-to-br from-card to-accent/10">
-              <h3 className="font-display font-semibold mb-3">Checklist Philosophy</h3>
+              <h3 className="font-display font-semibold mb-3">Lógica de los checklists</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="space-y-2">
-                  <p className="font-medium">Business Clients</p>
+                  <p className="font-medium">Clientes business</p>
                   <p className="text-muted-foreground">
-                    Focus on brand consistency, lead generation CTAs, and detailed reporting
+                    Enfocados en consistencia de marca, CTAs de generación de leads y reporting detallado
                   </p>
                 </div>
                 <div className="space-y-2">
                   <p className="font-medium">Influencers</p>
                   <p className="text-muted-foreground">
-                    Emphasize hook testing, trend alignment, and engagement-driven content
+                    Enfatizan pruebas de hooks, alineación con trends y contenido orientado a engagement
                   </p>
                 </div>
                 <div className="space-y-2">
                   <p className="font-medium">Creators</p>
                   <p className="text-muted-foreground">
-                    Prioritize volume, speed, iteration, and efficient batch workflows
+                    Priorizan volumen, velocidad, iteración y workflows eficientes por lotes
                   </p>
                 </div>
               </div>
