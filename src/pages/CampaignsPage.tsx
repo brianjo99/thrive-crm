@@ -8,13 +8,34 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FolderKanban, Search } from "lucide-react";
+import { Plus, FolderKanban, Search, AlertTriangle, CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { CampaignTemplate } from "@/types/thrive";
-import { format } from "date-fns";
+import { format, isPast, isToday } from "date-fns";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNavigate } from "react-router-dom";
+
+const STAGE_ORDER = ["discovery","pre-production","filming","editing","review","revisions","posting","reporting","complete"] as const;
+
+function StagePipelineDots({ stages, currentStage }: { stages: string[]; currentStage: string }) {
+  const currentIdx = stages.indexOf(currentStage);
+  return (
+    <div className="flex items-center gap-1">
+      {stages.map((s, i) => (
+        <div
+          key={s}
+          className={`h-1.5 rounded-full transition-all ${
+            i < currentIdx ? "bg-success flex-1" :
+            i === currentIdx ? "bg-primary flex-[2]" :
+            "bg-muted flex-1"
+          }`}
+          title={s}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function CampaignsPage() {
   const { data: campaigns = [], isLoading } = useCampaigns();
@@ -134,24 +155,87 @@ export default function CampaignsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCampaigns.map((campaign, index) => {
               const clientName = (campaign as any).clients?.name || "Unknown";
-              const taskCount = allTasks.filter(t => t.campaign_id === campaign.id).length;
+              const campaignTasks = allTasks.filter(t => t.campaign_id === campaign.id);
+              const completedTasks = campaignTasks.filter(t => t.status === "complete");
+              const urgentTasks = campaignTasks.filter(t => t.priority === "urgent" && t.status !== "complete");
+              const overdueTasks = campaignTasks.filter(t =>
+                t.due_date && isPast(new Date(t.due_date)) && !isToday(new Date(t.due_date)) && t.status !== "complete"
+              );
+              const isBlocked = urgentTasks.length > 0 || overdueTasks.length > 0;
+              const stages = campaign.stages || [];
+              const stageIdx = stages.indexOf(campaign.current_stage);
+              const completionPct = campaignTasks.length > 0
+                ? Math.round((completedTasks.length / campaignTasks.length) * 100)
+                : 0;
+
+              // Derive a "next action" hint from stage
+              const stageHints: Record<string, string> = {
+                discovery: "Definir script y plan",
+                "pre-production": "Preparar shot list",
+                filming: "Sesión de filmación",
+                editing: "Editar material",
+                review: "Revisión interna",
+                revisions: "Aplicar correcciones",
+                posting: "Publicar contenido",
+                reporting: "Cerrar y reportar",
+                complete: "Campaña completada",
+              };
+              const nextHint = stageHints[campaign.current_stage] || campaign.current_stage;
+
               return (
                 <motion.div key={campaign.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                  <Card className="luxury-card p-5 cursor-pointer" onClick={() => navigate(`/campaigns/${campaign.id}`)}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-display font-semibold">{campaign.name}</h3>
+                  <Card
+                    className={`luxury-card p-5 cursor-pointer hover:border-primary/30 transition-colors ${isBlocked ? "border-l-4 border-l-destructive" : ""}`}
+                    onClick={() => navigate(`/campaigns/${campaign.id}`)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0 mr-3">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-display font-semibold truncate">{campaign.name}</h3>
+                          {isBlocked && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
+                          {campaign.current_stage === "complete" && <CheckCircle className="h-4 w-4 text-success shrink-0" />}
+                        </div>
                         <p className="text-sm text-muted-foreground">{clientName}</p>
                       </div>
                       <TemplateBadge template={campaign.template} />
                     </div>
-                    <div className="flex items-center gap-2 mb-4">
+
+                    {/* Pipeline progress bar */}
+                    {stages.length > 0 && (
+                      <div className="mb-3">
+                        <StagePipelineDots stages={stages} currentStage={campaign.current_stage} />
+                      </div>
+                    )}
+
+                    {/* Current stage + next action */}
+                    <div className="flex items-center justify-between mb-3">
                       <StatusBadge status={campaign.current_stage} />
+                      <span className="text-xs text-muted-foreground italic">{nextHint}</span>
                     </div>
-                    <div className="pt-3 border-t border-border">
+
+                    <div className="pt-3 border-t border-border space-y-2">
+                      {/* Task completion bar */}
+                      {campaignTasks.length > 0 && (
+                        <div>
+                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                            <span>Tareas</span>
+                            <span>{completedTasks.length}/{campaignTasks.length} · {completionPct}%</span>
+                          </div>
+                          <div className="h-1 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-primary rounded-full" style={{ width: `${completionPct}%` }} />
+                          </div>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>Inicio {format(new Date(campaign.start_date), "d MMM yyyy")}</span>
-                        <span>{taskCount} tareas</span>
+                        {isBlocked && (
+                          <span className="text-destructive font-medium">
+                            {urgentTasks.length > 0 ? `${urgentTasks.length} urgente${urgentTasks.length !== 1 ? "s" : ""}` : `${overdueTasks.length} vencida${overdueTasks.length !== 1 ? "s" : ""}`}
+                          </span>
+                        )}
+                        {!isBlocked && campaign.due_date && (
+                          <span>{format(new Date(campaign.due_date), "d MMM yyyy")}</span>
+                        )}
                       </div>
                     </div>
                   </Card>

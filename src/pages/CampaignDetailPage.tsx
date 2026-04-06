@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCampaigns, useTasks, useCreateTask, useUpdateCampaign, useApprovals, useClients, useAssets, useShotLists, useDeliverables, getAssetPublicUrl } from "@/hooks/useSupabaseData";
 import { DeliverablesPanel } from "@/components/thrive/DeliverablesPanel";
+import { WorkflowPipeline } from "@/components/thrive/WorkflowPipeline";
 import { TemplateBadge, StatusBadge, ServiceBadge } from "@/components/thrive/Badges";
 import { TaskCard } from "@/components/thrive/TaskCard";
 import { Card } from "@/components/ui/card";
@@ -530,6 +531,20 @@ export default function CampaignDetailPage() {
 
           {/* ── Right sidebar ── */}
           <div className="space-y-5">
+            {/* Production pipeline */}
+            <Card className="luxury-card p-4">
+              <h3 className="font-display font-semibold text-sm mb-4">Flujo de producción</h3>
+              <WorkflowPipeline
+                campaign={campaign}
+                tasks={tasks}
+                scripts={scripts}
+                shotLists={shotLists}
+                assets={assets}
+                approvals={approvals}
+                deliverables={deliverables}
+              />
+            </Card>
+
             {/* Client card */}
             {client && (
               <Card className="luxury-card p-4">
