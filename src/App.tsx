@@ -20,6 +20,7 @@ import AssetsPage from "./pages/AssetsPage";
 import ApprovalsPage from "./pages/ApprovalsPage";
 import CampaignDetailPage from "./pages/CampaignDetailPage";
 import ClientDetailPage from "./pages/ClientDetailPage";
+import ClientPortalPage from "./pages/ClientPortalPage";
 import ShotListsPage from "./pages/ShotListsPage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
@@ -72,6 +73,7 @@ function ProtectedLayout() {
               <Route path="/templates" element={<ProtectedRoute module="templates"><TemplatesPage /></ProtectedRoute>} />
               <Route path="/assets" element={<ProtectedRoute module="assets"><AssetsPage /></ProtectedRoute>} />
               <Route path="/approvals" element={<ProtectedRoute module="approvals"><ApprovalsPage /></ProtectedRoute>} />
+              <Route path="/portal" element={<RoleRoute roles={["client"]}><ClientPortalPage /></RoleRoute>} />
               <Route path="/editor" element={<RoleRoute roles={["editor", "owner"]}><EditorDashboard /></RoleRoute>} />
               <Route path="/editor/assets" element={<RoleRoute roles={["editor", "owner"]}><EditorAssetsPage /></RoleRoute>} />
               <Route path="/videographer" element={<RoleRoute roles={["videographer", "owner"]}><VideographerDashboard /></RoleRoute>} />

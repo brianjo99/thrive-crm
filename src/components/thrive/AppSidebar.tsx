@@ -78,10 +78,10 @@ const roleNavItems: Record<ViewRole, NavGroup[]> = {
   ],
   client: [
     {
-      label: "Cliente",
+      label: "Mi proyecto",
       items: [
-        { title: "Today", url: "/dashboard", icon: LayoutDashboard, module: "dashboard" },
-        { title: "Help",  url: "/help",      icon: BookOpen },
+        { title: "Resumen",      url: "/portal", icon: LayoutDashboard },
+        { title: "Help",         url: "/help",   icon: BookOpen },
       ],
     },
   ],
@@ -107,7 +107,7 @@ const roleConfig: Record<ViewRole, { label: string; icon: typeof Crown; color: s
   owner: { label: "Owner", icon: Crown, color: "text-primary" },
   editor: { label: "Editor", icon: Scissors, color: "text-[hsl(280_60%_50%)]" },
   videographer: { label: "Videographer", icon: Camera, color: "text-[hsl(200_70%_50%)]" },
-  client: { label: "Client", icon: Users, color: "text-muted-foreground" },
+  client: { label: "Portal cliente", icon: Users, color: "text-muted-foreground" },
 };
 
 export function AppSidebar() {

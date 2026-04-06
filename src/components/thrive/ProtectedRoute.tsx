@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 function roleHome(role: string | null | undefined): string {
   if (role === "editor") return "/editor";
   if (role === "videographer") return "/videographer";
+  if (role === "client") return "/portal";
   return "/dashboard";
 }
 
