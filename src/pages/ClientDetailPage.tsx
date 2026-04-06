@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ServiceBadge, ClientTypeBadge } from "@/components/thrive/Badges";
 import { ClientOnboardingWizard } from "@/components/thrive/ClientOnboardingWizard";
+import { BrandKitCard } from "@/components/thrive/BrandKitCard";
 import {
   ArrowLeft, Users, Mail, Calendar, Pencil, FolderKanban,
   CheckCircle, ShieldCheck, Receipt, Clock, AlertCircle,
@@ -320,6 +321,9 @@ export default function ClientDetailPage() {
 
           {/* Left: content sections */}
           <div className="lg:col-span-2 space-y-6">
+
+            {/* Brand Kit */}
+            <BrandKitCard clientId={client.id} />
 
             {/* Campaigns */}
             <Card className="luxury-card p-5">
