@@ -263,7 +263,8 @@ export default function CampaignDetailPage() {
           <div className="flex gap-2">
             {currentStageIndex < stages.length - 1 && (
               <Button onClick={advanceStage} className="gap-2">
-                Avanzar etapa <ArrowRight className="h-4 w-4" />
+                Pasar a: {stages[currentStageIndex + 1].charAt(0).toUpperCase() + stages[currentStageIndex + 1].slice(1).replace("-", " ")}
+                <ArrowRight className="h-4 w-4" />
               </Button>
             )}
             <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
@@ -359,140 +360,202 @@ export default function CampaignDetailPage() {
                 {tasksLoading ? (
                   <div className="space-y-3">{[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-xl" />)}</div>
                 ) : (
-                  stages.map(stage => {
-                    const stageTasks = tasks.filter(t => t.stage === stage);
-                    if (stageTasks.length === 0 && stage !== campaign.current_stage) return null;
-                    return (
-                      <motion.div key={stage} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                        <Card className={`luxury-card p-5 ${stage === campaign.current_stage ? "border-l-4 border-l-primary" : ""}`}>
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-display font-semibold">{stage.charAt(0).toUpperCase() + stage.slice(1).replace("-", " ")}</h3>
-                            <div className="flex items-center gap-2">
-                              <StatusBadge status={stage} />
-                              <span className="text-xs text-muted-foreground">{stageTasks.filter(t => t.status === "complete").length}/{stageTasks.length}</span>
-                            </div>
+                  <>
+                    {/* Discovery kickoff card — only shown when campaign is new and empty */}
+                    {campaign.current_stage === "discovery" && tasks.length === 0 && (
+                      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                        <Card className="luxury-card p-5 border-l-4 border-l-primary">
+                          <h3 className="font-display font-semibold mb-1">Para arrancar esta campaña</h3>
+                          <p className="text-sm text-muted-foreground mb-4">Completa estos pasos para poner en marcha la producción.</p>
+                          <div className="space-y-2">
+                            {[
+                              { label: "Crear el script de contenido", action: () => navigate("/scripts"), cta: "Ir a Scripts" },
+                              { label: "Definir el plan de filmación (shot list)", action: () => navigate("/shot-lists"), cta: "Shot Lists" },
+                              { label: "Añadir las primeras tareas", action: () => setIsAddTaskOpen(true), cta: "Añadir tarea" },
+                            ].map((item, i) => (
+                              <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-4 h-4 rounded border-2 border-muted-foreground/30 shrink-0" />
+                                  <span className="text-sm text-muted-foreground">{item.label}</span>
+                                </div>
+                                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-primary" onClick={item.action}>
+                                  {item.cta} <ArrowRight className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
                           </div>
-                          {stageTasks.length === 0 ? (
-                            <p className="text-sm text-muted-foreground text-center py-4">Sin tareas en esta etapa</p>
-                          ) : (
-                            <div className="space-y-3">
-                              {stageTasks.map((task, i) => (
-                                <motion.div key={task.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                                  <TaskCard task={task} showClient={false} />
-                                </motion.div>
-                              ))}
-                            </div>
-                          )}
                         </Card>
                       </motion.div>
-                    );
-                  })
+                    )}
+
+                    {stages.map(stage => {
+                      const stageTasks = tasks.filter(t => t.stage === stage);
+                      if (stageTasks.length === 0 && stage !== campaign.current_stage) return null;
+                      return (
+                        <motion.div key={stage} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                          <Card className={`luxury-card p-5 ${stage === campaign.current_stage ? "border-l-4 border-l-primary" : ""}`}>
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="font-display font-semibold">{stage.charAt(0).toUpperCase() + stage.slice(1).replace("-", " ")}</h3>
+                              <div className="flex items-center gap-2">
+                                <StatusBadge status={stage} />
+                                {stageTasks.length > 0 && (
+                                  <span className="text-xs text-muted-foreground">{stageTasks.filter(t => t.status === "complete").length}/{stageTasks.length}</span>
+                                )}
+                              </div>
+                            </div>
+                            {stageTasks.length === 0 ? (
+                              <div className="flex items-center justify-between py-1">
+                                <p className="text-sm text-muted-foreground">Sin tareas en esta etapa</p>
+                                <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setIsAddTaskOpen(true)}>
+                                  <Plus className="h-3 w-3" /> Añadir
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="space-y-3">
+                                {stageTasks.map((task, i) => (
+                                  <motion.div key={task.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                                    <TaskCard task={task} showClient={false} />
+                                  </motion.div>
+                                ))}
+                              </div>
+                            )}
+                          </Card>
+                        </motion.div>
+                      );
+                    })}
+                  </>
                 )}
               </TabsContent>
 
               {/* ── Production tab ── */}
               <TabsContent value="production" className="space-y-4">
-                {/* Shot Lists */}
-                <Card className="luxury-card p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Camera className="h-5 w-5 text-primary" />
-                    <h3 className="font-display font-semibold">Shot Lists</h3>
-                    <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{shotLists.length}</span>
-                  </div>
-                  {shotLists.length === 0 ? (
-                    <div className="text-center py-6">
-                      <Camera className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Sin shot lists aún</p>
-                      <Button variant="outline" size="sm" className="mt-3 gap-1" onClick={() => navigate("/shot-lists")}>
-                        <Plus className="h-3 w-3" /> Crear shot list
+                {/* Combined empty state — only when BOTH scripts and shot lists are missing */}
+                {scripts.length === 0 && shotLists.length === 0 ? (
+                  <Card className="luxury-card p-5">
+                    <p className="text-sm font-medium mb-1">Sin material de producción</p>
+                    <p className="text-xs text-muted-foreground mb-4">Esta campaña aún no tiene scripts ni planes de filmación vinculados.</p>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate("/scripts")}>
+                        <FileText className="h-3.5 w-3.5" /> Crear script
+                      </Button>
+                      <Button variant="outline" size="sm" className="gap-1" onClick={() => navigate("/shot-lists")}>
+                        <Camera className="h-3.5 w-3.5" /> Crear shot list
                       </Button>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {shotLists.map((sl, i) => (
-                        <motion.div key={sl.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}>
-                          <div className="flex items-start justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm">{sl.title}</p>
-                              {sl.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{sl.description}</p>}
-                              <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-                                {sl.location && (
-                                  <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{sl.location}</span>
-                                )}
-                                {sl.scheduled_date && (
-                                  <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(new Date(sl.scheduled_date), "d MMM")}</span>
-                                )}
-                                {sl.assigned_to && (
-                                  <span className="flex items-center gap-1"><User className="h-3 w-3" />{sl.assigned_to}</span>
-                                )}
+                  </Card>
+                ) : (
+                  <>
+                    {/* Shot Lists — only render section if exists or shot lists present */}
+                    {(shotLists.length > 0) && (
+                      <Card className="luxury-card p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <Camera className="h-4 w-4 text-primary" />
+                            <h3 className="font-display font-semibold">Shot Lists</h3>
+                            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{shotLists.length}</span>
+                          </div>
+                          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => navigate("/shot-lists")}>
+                            Ver todos <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {shotLists.map((sl, i) => (
+                            <motion.div key={sl.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}>
+                              <div className="flex items-start justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm">{sl.title}</p>
+                                  <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
+                                    {sl.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{sl.location}</span>}
+                                    {sl.scheduled_date && <span className="flex items-center gap-1"><Calendar className="h-3 w-3" />{format(new Date(sl.scheduled_date), "d MMM")}</span>}
+                                    {sl.assigned_to && <span className="flex items-center gap-1"><User className="h-3 w-3" />{sl.assigned_to}</span>}
+                                  </div>
+                                </div>
+                                <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ml-3 ${
+                                  sl.status === "completed" ? "bg-success/15 text-success" :
+                                  sl.status === "in-progress" ? "bg-primary/15 text-primary" :
+                                  "bg-muted text-muted-foreground"
+                                }`}>
+                                  {sl.status === "completed" ? "Listo" : sl.status === "in-progress" ? "En curso" : "Pendiente"}
+                                </span>
                               </div>
-                            </div>
-                            <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ml-3 ${
-                              sl.status === "completed" ? "bg-success/15 text-success" :
-                              sl.status === "in-progress" ? "bg-primary/15 text-primary" :
-                              "bg-muted text-muted-foreground"
-                            }`}>
-                              {sl.status === "completed" ? "Completado" : sl.status === "in-progress" ? "En curso" : "Pendiente"}
-                            </span>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </Card>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </Card>
+                    )}
 
-                {/* Scripts */}
-                <Card className="luxury-card p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <FileText className="h-5 w-5 text-primary" />
-                    <h3 className="font-display font-semibold">Scripts</h3>
-                    <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{scripts.length}</span>
-                  </div>
-                  {scripts.length === 0 ? (
-                    <div className="text-center py-6">
-                      <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">Sin scripts vinculados</p>
-                      <Button variant="outline" size="sm" className="mt-3 gap-1" onClick={() => navigate("/scripts")}>
-                        <Plus className="h-3 w-3" /> Ir a Scripts
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {scripts.map((script, i) => (
-                        <motion.div key={script.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}>
-                          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm truncate">{script.title}</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                v{script.version} · {format(new Date(script.updated_at), "d MMM yyyy")}
-                              </p>
-                            </div>
-                            <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ml-3 ${SCRIPT_STATUS[script.status]?.color}`}>
-                              {SCRIPT_STATUS[script.status]?.label}
-                            </span>
+                    {/* Scripts — only render section if exists */}
+                    {(scripts.length > 0) && (
+                      <Card className="luxury-card p-5">
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-primary" />
+                            <h3 className="font-display font-semibold">Scripts</h3>
+                            <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{scripts.length}</span>
                           </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </Card>
+                          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => navigate("/scripts")}>
+                            Ver todos <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <div className="space-y-2">
+                          {scripts.map((script, i) => (
+                            <motion.div key={script.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}>
+                              <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm truncate">{script.title}</p>
+                                  <p className="text-xs text-muted-foreground mt-0.5">v{script.version} · {format(new Date(script.updated_at), "d MMM yyyy")}</p>
+                                </div>
+                                <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full ml-3 ${SCRIPT_STATUS[script.status]?.color}`}>
+                                  {SCRIPT_STATUS[script.status]?.label}
+                                </span>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </Card>
+                    )}
+
+                    {/* Individual empty states — only shown when the OTHER section has content */}
+                    {shotLists.length === 0 && scripts.length > 0 && (
+                      <div className="flex items-center justify-between px-1 py-2">
+                        <span className="text-sm text-muted-foreground">Sin shot lists vinculados</span>
+                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => navigate("/shot-lists")}>
+                          <Plus className="h-3 w-3" /> Crear shot list
+                        </Button>
+                      </div>
+                    )}
+                    {scripts.length === 0 && shotLists.length > 0 && (
+                      <div className="flex items-center justify-between px-1 py-2">
+                        <span className="text-sm text-muted-foreground">Sin scripts vinculados</span>
+                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => navigate("/scripts")}>
+                          <Plus className="h-3 w-3" /> Crear script
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
               </TabsContent>
 
               {/* ── Assets tab ── */}
               <TabsContent value="assets">
                 <Card className="luxury-card p-5">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Layers className="h-5 w-5 text-primary" />
-                    <h3 className="font-display font-semibold">Assets de campaña</h3>
-                    <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{assets.length}</span>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Layers className="h-4 w-4 text-primary" />
+                      <h3 className="font-display font-semibold">Assets de campaña</h3>
+                      {assets.length > 0 && <span className="text-xs bg-muted text-muted-foreground px-2 py-0.5 rounded-full">{assets.length}</span>}
+                    </div>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => navigate("/assets")}>
+                      {assets.length > 0 ? <><ArrowRight className="h-3 w-3" /> Gestionar</> : <><Plus className="h-3 w-3" /> Subir material</>}
+                    </Button>
                   </div>
                   {assets.length === 0 ? (
-                    <div className="text-center py-10">
-                      <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-sm text-muted-foreground">Sin assets subidos aún</p>
-                      <Button variant="outline" size="sm" className="mt-3 gap-1" onClick={() => navigate("/assets")}>
-                        <Plus className="h-3 w-3" /> Ir a Assets
-                      </Button>
+                    <div className="flex items-center gap-3 py-3 px-1">
+                      <ImageIcon className="h-8 w-8 text-muted-foreground/30 shrink-0" />
+                      <div>
+                        <p className="text-sm text-muted-foreground">Sin material subido aún</p>
+                        <p className="text-xs text-muted-foreground/60 mt-0.5">Sube el material filmado una vez que tengas las sesiones completadas</p>
+                      </div>
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -542,6 +605,7 @@ export default function CampaignDetailPage() {
                 assets={assets}
                 approvals={approvals}
                 deliverables={deliverables}
+                onNavigate={navigate}
               />
             </Card>
 
@@ -629,7 +693,12 @@ export default function CampaignDetailPage() {
             </Card>
 
             {/* Deliverables */}
-            <DeliverablesPanel campaignId={campaign.id} editable={true} />
+            <div>
+              <p className="text-xs text-muted-foreground px-1 mb-2">
+                Los entregables son los outputs finales que se entregan al cliente: videos, imágenes, reportes, reels, etc.
+              </p>
+              <DeliverablesPanel campaignId={campaign.id} editable={true} />
+            </div>
           </div>
         </div>
       </main>
