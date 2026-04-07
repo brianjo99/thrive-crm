@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Users, Search, Mail, Calendar, User, MoreVertical } from "lucide-react";
+import { Plus, Users, Search, Mail, Calendar, User, MoreVertical, Download } from "lucide-react";
+import { exportToCsv } from "@/utils/exportCsv";
 import { motion } from "framer-motion";
 import { ClientType, ServiceType, CLIENT_TYPE_CHECKLISTS } from "@/types/thrive";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -164,6 +165,20 @@ export default function ClientsPage() {
               <span className="text-sm text-muted-foreground">({clients.length})</span>
             </div>
 
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => exportToCsv("clientes.csv", clients.map(c => ({
+                  Nombre: c.name,
+                  Email: c.email || "",
+                  Tipo: c.type || "",
+                  Creado: c.created_at ? c.created_at.split("T")[0] : "",
+                })))}
+              >
+                <Download className="h-3.5 w-3.5" /> Exportar
+              </Button>
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2"><Plus className="h-4 w-4" /> Nuevo cliente</Button>
@@ -187,6 +202,7 @@ export default function ClientsPage() {
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           <div className="mt-4 relative max-w-md">

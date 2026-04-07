@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useLogAudit } from "@/hooks/useSupabaseData";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +97,7 @@ export default function LeadsPage() {
   const updateLead = useUpdateLead();
   const deleteLead = useDeleteLead();
   const convertLead = useConvertLeadToClient();
+  const logAudit = useLogAudit();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -144,6 +146,7 @@ export default function LeadsPage() {
 
   const handleStatusChange = async (lead: Lead, status: Lead["status"]) => {
     await updateLead.mutateAsync({ id: lead.id, status });
+    logAudit.mutate({ action: "lead_status", resource_type: "lead", resource_id: lead.id, resource_name: lead.nombre, old_value: { status: lead.status }, new_value: { status } });
     if (selectedLead?.id === lead.id) setSelectedLead({ ...lead, status });
     toast.success(`Lead marcado como ${STATUS_CONFIG[status].label}`);
   };

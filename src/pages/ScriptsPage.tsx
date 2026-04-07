@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { FileText, PenLine, Check, Archive, Copy, Plus, Search } from "lucide-react";
+import { FileText, PenLine, Check, Archive, Copy, Plus, Search, Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -165,6 +165,44 @@ export default function ScriptsPage() {
   const [newStatus, setNewStatus] = useState<Script["status"]>("draft");
   const [newContent, setNewContent] = useState("");
 
+  // AI generation state
+  const [showAI, setShowAI] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiForm, setAiForm] = useState({
+    plataforma: "Instagram Reel",
+    tipo: "Promocional",
+    tono: "Profesional y cercano",
+    duracion: "60 segundos",
+    descripcion: "",
+  });
+
+  const handleGenerateAI = async () => {
+    if (!aiForm.descripcion.trim()) return toast.error("Describe el contenido que quieres generar");
+    setAiGenerating(true);
+    try {
+      const campaign = (campaigns as any[]).find((c: any) => c.id === newCampaignId);
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-script`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...aiForm,
+          campaignName: campaign?.name || "",
+          clientName: campaign?.clients?.name || "",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error generando script");
+      setNewContent(data.script);
+      if (!newTitle) setNewTitle(`${aiForm.plataforma} — ${aiForm.tipo}`);
+      setShowAI(false);
+      toast.success("Script generado con IA");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   const filtered = scripts.filter((s) => {
     const campaignName = s.campaigns?.name ?? "";
     const clientName = s.campaigns?.clients?.name ?? "";
@@ -185,18 +223,22 @@ export default function ScriptsPage() {
 
   const handleCreate = async () => {
     if (!newTitle.trim()) return toast.error("El título es obligatorio");
-    await createScript.mutateAsync({
-      title: newTitle.trim(),
-      campaign_id: newCampaignId || null,
-      status: newStatus,
-      content: newContent,
-    });
-    toast.success("Script creado");
-    setShowNewDialog(false);
-    setNewTitle("");
-    setNewCampaignId("");
-    setNewStatus("draft");
-    setNewContent("");
+    try {
+      await createScript.mutateAsync({
+        title: newTitle.trim(),
+        campaign_id: (newCampaignId && newCampaignId !== "none") ? newCampaignId : null,
+        status: newStatus,
+        content: newContent,
+      });
+      toast.success("Script creado");
+      setShowNewDialog(false);
+      setNewTitle("");
+      setNewCampaignId("");
+      setNewStatus("draft");
+      setNewContent("");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const openScript = (script: ScriptWithCampaign) => {
@@ -211,19 +253,23 @@ export default function ScriptsPage() {
     if (!selectedScript) return;
     const contentActuallyChanged =
       editedContent !== (selectedScript.content ?? "");
-    await updateScript.mutateAsync({
-      id: selectedScript.id,
-      title: editedTitle,
-      content: editedContent,
-      status: editedStatus,
-      bumpVersion: contentActuallyChanged,
-    });
-    toast.success(
-      contentActuallyChanged
-        ? `Guardado — versión actualizada a v${selectedScript.version + 1}`
-        : "Script guardado"
-    );
-    setSelectedScript(null);
+    try {
+      await updateScript.mutateAsync({
+        id: selectedScript.id,
+        title: editedTitle,
+        content: editedContent,
+        status: editedStatus,
+        bumpVersion: contentActuallyChanged,
+      });
+      toast.success(
+        contentActuallyChanged
+          ? `Guardado — versión actualizada a v${selectedScript.version + 1}`
+          : "Script guardado"
+      );
+      setSelectedScript(null);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const handleDuplicate = async (
@@ -438,6 +484,106 @@ export default function ScriptsPage() {
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-4 space-y-4">
+
+            {/* AI Generator Panel */}
+            <div className="rounded-xl border border-primary/30 bg-primary/5 overflow-hidden">
+              <button
+                type="button"
+                className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
+                onClick={() => setShowAI(!showAI)}
+              >
+                <span className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" /> Generar con IA
+                </span>
+                {showAI ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+
+              {showAI && (
+                <div className="px-4 pb-4 space-y-3 border-t border-primary/20">
+                  <div className="grid grid-cols-2 gap-3 pt-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Plataforma</Label>
+                      <Select value={aiForm.plataforma} onValueChange={v => setAiForm(f => ({ ...f, plataforma: v }))}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Instagram Reel">Instagram Reel</SelectItem>
+                          <SelectItem value="TikTok">TikTok</SelectItem>
+                          <SelectItem value="YouTube Short">YouTube Short</SelectItem>
+                          <SelectItem value="YouTube">YouTube</SelectItem>
+                          <SelectItem value="Facebook">Facebook</SelectItem>
+                          <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Tipo</Label>
+                      <Select value={aiForm.tipo} onValueChange={v => setAiForm(f => ({ ...f, tipo: v }))}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Promocional">Promocional</SelectItem>
+                          <SelectItem value="Educativo">Educativo</SelectItem>
+                          <SelectItem value="Testimonial">Testimonial</SelectItem>
+                          <SelectItem value="Behind the scenes">Behind the scenes</SelectItem>
+                          <SelectItem value="Lanzamiento de producto">Lanzamiento</SelectItem>
+                          <SelectItem value="Storytelling">Storytelling</SelectItem>
+                          <SelectItem value="Tutorial">Tutorial</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Tono</Label>
+                      <Select value={aiForm.tono} onValueChange={v => setAiForm(f => ({ ...f, tono: v }))}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Profesional y cercano">Profesional</SelectItem>
+                          <SelectItem value="Divertido y energético">Divertido</SelectItem>
+                          <SelectItem value="Inspirador y motivacional">Inspirador</SelectItem>
+                          <SelectItem value="Informativo y directo">Informativo</SelectItem>
+                          <SelectItem value="Lujoso y exclusivo">Lujoso</SelectItem>
+                          <SelectItem value="Casual y auténtico">Casual</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Duración</Label>
+                      <Select value={aiForm.duracion} onValueChange={v => setAiForm(f => ({ ...f, duracion: v }))}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15 segundos">15 seg</SelectItem>
+                          <SelectItem value="30 segundos">30 seg</SelectItem>
+                          <SelectItem value="60 segundos">60 seg</SelectItem>
+                          <SelectItem value="90 segundos">90 seg</SelectItem>
+                          <SelectItem value="3 minutos">3 min</SelectItem>
+                          <SelectItem value="5 minutos">5 min</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-2 space-y-1.5">
+                      <Label className="text-xs">Describe el contenido *</Label>
+                      <Textarea
+                        placeholder="Ej: Video para promocionar el lanzamiento de una nueva línea de skincare natural, destacando sus ingredientes orgánicos y resultados en 30 días..."
+                        value={aiForm.descripcion}
+                        onChange={e => setAiForm(f => ({ ...f, descripcion: e.target.value }))}
+                        rows={3}
+                        className="text-sm resize-none"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    onClick={handleGenerateAI}
+                    disabled={aiGenerating || !aiForm.descripcion.trim()}
+                    className="w-full gap-2"
+                  >
+                    {aiGenerating ? (
+                      <><Loader2 className="h-4 w-4 animate-spin" /> Generando script...</>
+                    ) : (
+                      <><Sparkles className="h-4 w-4" /> Generar script</>
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2 space-y-1.5">
                 <Label>Título</Label>
@@ -457,7 +603,7 @@ export default function ScriptsPage() {
                     <SelectValue placeholder="Seleccionar campaña..." />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Sin campaña</SelectItem>
+                    <SelectItem value="none">Sin campaña</SelectItem>
                     {(campaigns as any[]).map((c: any) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}

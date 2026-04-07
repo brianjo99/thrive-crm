@@ -12,6 +12,8 @@ import type { Json } from "@/integrations/supabase/types";
 
 type TaskRow = Database["public"]["Tables"]["tasks"]["Row"] & {
   clients?: { name: string } | null;
+  campaigns?: { name: string } | null;
+  profiles?: { display_name: string | null; email: string | null } | null;
 };
 
 interface ChecklistItem {
@@ -24,10 +26,11 @@ interface TaskCardProps {
   task: TaskRow;
   compact?: boolean;
   showClient?: boolean;
+  showCampaign?: boolean;
   className?: string;
 }
 
-export function TaskCard({ task, compact = false, showClient = true, className }: TaskCardProps) {
+export function TaskCard({ task, compact = false, showClient = true, showCampaign = false, className }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const updateTask = useUpdateTask();
 
@@ -74,6 +77,15 @@ export function TaskCard({ task, compact = false, showClient = true, className }
                 <User className="h-3 w-3" />{task.clients.name}
               </span>
             )}
+            {showCampaign && task.campaigns?.name && (
+              <span className="text-muted-foreground">{task.campaigns.name}</span>
+            )}
+            {task.profiles && (
+              <span className="flex items-center gap-1 text-muted-foreground">
+                <User className="h-3 w-3" />
+                {task.profiles.display_name || task.profiles.email}
+              </span>
+            )}
             {task.due_date && (
               <span className={cn("flex items-center gap-1", isToday(new Date(task.due_date)) ? "text-primary font-medium" : "text-muted-foreground")}>
                 <Clock className="h-3 w-3" />{formatDueDate(task.due_date)}
@@ -113,10 +125,11 @@ interface TaskListProps {
   emptyMessage?: string;
   compact?: boolean;
   showClient?: boolean;
+  showCampaign?: boolean;
   className?: string;
 }
 
-export function TaskList({ tasks, title, emptyMessage = "No tasks", compact = false, showClient = true, className }: TaskListProps) {
+export function TaskList({ tasks, title, emptyMessage = "No tasks", compact = false, showClient = true, showCampaign = false, className }: TaskListProps) {
   return (
     <div className={className}>
       {title && (
@@ -130,7 +143,7 @@ export function TaskList({ tasks, title, emptyMessage = "No tasks", compact = fa
         <div className="space-y-3">
           {tasks.map((task, index) => (
             <motion.div key={task.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-              <TaskCard task={task} compact={compact} showClient={showClient} />
+              <TaskCard task={task} compact={compact} showClient={showClient} showCampaign={showCampaign} />
             </motion.div>
           ))}
         </div>

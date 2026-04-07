@@ -20,18 +20,18 @@ import { cn } from "@/lib/utils";
 type ShotList = Tables<"shot_lists">;
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
-  planned: { label: "Planned", color: "text-blue-500", bg: "bg-blue-500/10" },
-  "in-progress": { label: "In Progress", color: "text-yellow-500", bg: "bg-yellow-500/10" },
-  completed: { label: "Completed", color: "text-green-500", bg: "bg-green-500/10" },
-  cancelled: { label: "Cancelled", color: "text-red-500", bg: "bg-red-500/10" },
+  planned: { label: "Planificado", color: "text-blue-500", bg: "bg-blue-500/10" },
+  "in-progress": { label: "En progreso", color: "text-yellow-500", bg: "bg-yellow-500/10" },
+  completed: { label: "Completado", color: "text-green-500", bg: "bg-green-500/10" },
+  cancelled: { label: "Cancelado", color: "text-red-500", bg: "bg-red-500/10" },
 };
 
 function getDateLabel(dateStr: string | null) {
   if (!dateStr) return null;
   const date = new Date(dateStr);
-  if (isToday(date)) return { label: "Today", urgent: true };
-  if (isTomorrow(date)) return { label: "Tomorrow", urgent: false };
-  if (isPast(date)) return { label: "Overdue", urgent: true };
+  if (isToday(date)) return { label: "Hoy", urgent: true };
+  if (isTomorrow(date)) return { label: "Mañana", urgent: false };
+  if (isPast(date)) return { label: "Vencido", urgent: true };
   return { label: format(date, "MMM d"), urgent: false };
 }
 
@@ -86,16 +86,16 @@ export default function VideographerShotsPage() {
 
   const handleSave = async () => {
     if (!formData.title || !formData.campaign_id) {
-      toast.error("Please fill in required fields");
+      toast.error("Campaña y título son obligatorios");
       return;
     }
     try {
       if (editingId) {
         await updateShotList.mutateAsync({ id: editingId, ...formData });
-        toast.success("Shot list updated!");
+        toast.success("Call sheet actualizado");
       } else {
         await createShotList.mutateAsync(formData);
-        toast.success("Shot list created!");
+        toast.success("Call sheet creado");
       }
       setIsDialogOpen(false);
     } catch (error: any) {
@@ -104,10 +104,10 @@ export default function VideographerShotsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Delete this shot list?")) {
+    if (confirm("¿Eliminar este call sheet?")) {
       try {
         await deleteShotList.mutateAsync(id);
-        toast.success("Deleted!");
+        toast.success("Call sheet eliminado");
       } catch (error: any) {
         toast.error(error.message);
       }
@@ -124,68 +124,68 @@ export default function VideographerShotsPage() {
                 <Camera className="h-5 w-5 text-[hsl(200_70%_50%)]" />
               </div>
               <div>
-                <h1 className="font-display text-2xl font-bold">Shot Lists</h1>
-                <p className="text-sm text-muted-foreground">Pre-production planning ({allShotLists.length})</p>
+                <h1 className="font-display text-2xl font-bold">Call Sheets</h1>
+                <p className="text-sm text-muted-foreground">Planificación de producción ({allShotLists.length})</p>
               </div>
             </div>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2 bg-[hsl(200_70%_50%)] hover:bg-[hsl(200_70%_40%)]" onClick={() => handleOpenDialog()}>
-                  <Plus className="h-4 w-4" /> New Shot List
+                  <Plus className="h-4 w-4" /> Nuevo call sheet
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-lg p-0 flex flex-col max-h-[90vh]">
                 <DialogHeader className="p-6 pb-0 shrink-0">
-                  <DialogTitle className="font-display">{editingId ? "Edit Shot List" : "New Shot List"}</DialogTitle>
+                  <DialogTitle className="font-display">{editingId ? "Editar call sheet" : "Nuevo call sheet"}</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-4">
                   <div className="space-y-2">
-                    <Label>Campaign *</Label>
+                    <Label>Campaña *</Label>
                     <Select value={formData.campaign_id} onValueChange={(v) => setFormData(p => ({ ...p, campaign_id: v }))}>
-                      <SelectTrigger><SelectValue placeholder="Select campaign" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Seleccionar campaña" /></SelectTrigger>
                       <SelectContent>
                         {campaigns.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Title *</Label>
-                    <Input value={formData.title} onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))} placeholder="e.g., Product Launch Shoot" />
+                    <Label>Título *</Label>
+                    <Input value={formData.title} onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))} placeholder="Ej: Filmación lanzamiento producto" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Location</Label>
-                    <Input value={formData.location} onChange={(e) => setFormData(p => ({ ...p, location: e.target.value }))} placeholder="e.g., Studio A, Downtown" />
+                    <Label>Locación</Label>
+                    <Input value={formData.location} onChange={(e) => setFormData(p => ({ ...p, location: e.target.value }))} placeholder="Ej: Estudio A, Centro" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Scheduled Date</Label>
+                    <Label>Fecha programada</Label>
                     <Input type="date" value={formData.scheduled_date} onChange={(e) => setFormData(p => ({ ...p, scheduled_date: e.target.value }))} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Textarea value={formData.description} onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Describe the shoot..." rows={3} />
+                    <Label>Descripción</Label>
+                    <Textarea value={formData.description} onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))} placeholder="Describe la filmación..." rows={3} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Status</Label>
+                    <Label>Estado</Label>
                     <Select value={formData.status} onValueChange={(v: any) => setFormData(p => ({ ...p, status: v }))}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="planned">Planificado</SelectItem>
+                        <SelectItem value="in-progress">En progreso</SelectItem>
+                        <SelectItem value="completed">Completado</SelectItem>
+                        <SelectItem value="cancelled">Cancelado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
                 <div className="border-t border-border p-4 flex justify-end gap-3">
-                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+                  <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
                   <Button
                     onClick={handleSave}
                     disabled={createShotList.isPending || updateShotList.isPending}
                     className="bg-[hsl(200_70%_50%)] hover:bg-[hsl(200_70%_40%)]"
                   >
-                    {editingId ? "Update" : "Create"}
+                    {editingId ? "Actualizar" : "Crear"}
                   </Button>
                 </div>
               </DialogContent>
@@ -195,23 +195,23 @@ export default function VideographerShotsPage() {
           {todayShots.length > 0 && (
             <div className="mt-3 flex items-center gap-2 text-sm">
               <span className="w-2 h-2 rounded-full bg-[hsl(200_70%_50%)] animate-pulse" />
-              <span className="text-[hsl(200_70%_50%)] font-medium">{todayShots.length} shoot{todayShots.length > 1 ? "s" : ""} today</span>
+              <span className="text-[hsl(200_70%_50%)] font-medium">{todayShots.length} filmación{todayShots.length > 1 ? "es" : ""} hoy</span>
             </div>
           )}
 
           <div className="mt-3 flex items-center gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search shot lists..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+              <Input placeholder="Buscar call sheets..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
             </div>
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="planned">Planned</SelectItem>
-                <SelectItem value="in-progress">In Progress</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="planned">Planificado</SelectItem>
+                <SelectItem value="in-progress">En progreso</SelectItem>
+                <SelectItem value="completed">Completado</SelectItem>
+                <SelectItem value="cancelled">Cancelado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -224,12 +224,12 @@ export default function VideographerShotsPage() {
         ) : filtered.length === 0 ? (
           <Card className="luxury-card p-12 text-center">
             <Camera className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h2 className="font-display text-xl font-semibold mb-2">No Shot Lists</h2>
+            <h2 className="font-display text-xl font-semibold mb-2">Sin call sheets</h2>
             <p className="text-muted-foreground max-w-md mx-auto mb-4">
-              Create shot lists to plan filming sessions and stay organized on set.
+              Crea call sheets para planificar las filmaciones y mantener el equipo organizado en set.
             </p>
             <Button onClick={() => handleOpenDialog()} className="gap-2 bg-[hsl(200_70%_50%)]">
-              <Plus className="h-4 w-4" /> Create Shot List
+              <Plus className="h-4 w-4" /> Nuevo call sheet
             </Button>
           </Card>
         ) : (
@@ -298,25 +298,25 @@ export default function VideographerShotsPage() {
               <div className="px-6 pb-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground mb-1">Campaign</p>
+                    <p className="text-muted-foreground mb-1">Campaña</p>
                     <p className="font-medium">{campaigns.find(c => c.id === selectedShotList.campaign_id)?.name || "—"}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1">Status</p>
+                    <p className="text-muted-foreground mb-1">Estado</p>
                     <span className={cn("px-2 py-1 rounded-full text-xs font-medium", STATUS_CONFIG[selectedShotList.status].bg, STATUS_CONFIG[selectedShotList.status].color)}>
                       {STATUS_CONFIG[selectedShotList.status].label}
                     </span>
                   </div>
                   {selectedShotList.location && (
                     <div>
-                      <p className="text-muted-foreground mb-1">Location</p>
+                      <p className="text-muted-foreground mb-1">Locación</p>
                       <p className="font-medium flex items-center gap-1"><MapPin className="h-3 w-3" />{selectedShotList.location}</p>
                     </div>
                   )}
                   {selectedShotList.scheduled_date && (
                     <div>
-                      <p className="text-muted-foreground mb-1">Date</p>
-                      <p className="font-medium flex items-center gap-1"><Calendar className="h-3 w-3" />{format(new Date(selectedShotList.scheduled_date), "EEEE, MMM d, yyyy")}</p>
+                      <p className="text-muted-foreground mb-1">Fecha</p>
+                      <p className="font-medium flex items-center gap-1"><Calendar className="h-3 w-3" />{format(new Date(selectedShotList.scheduled_date), "EEEE, d MMM yyyy")}</p>
                     </div>
                   )}
                 </div>
@@ -328,7 +328,7 @@ export default function VideographerShotsPage() {
                 )}
                 <div className="flex gap-2 pt-2 border-t border-border">
                   <Button variant="outline" className="gap-2" onClick={() => { setSelectedShotList(null); handleOpenDialog(selectedShotList); }}>
-                    <Edit2 className="h-4 w-4" /> Edit
+                    <Edit2 className="h-4 w-4" /> Editar
                   </Button>
                   {selectedShotList.status === "planned" && (
                     <Button
@@ -336,10 +336,10 @@ export default function VideographerShotsPage() {
                       onClick={() => {
                         updateShotList.mutate({ id: selectedShotList.id, status: "in-progress" });
                         setSelectedShotList(null);
-                        toast.success("Shoot started!");
+                        toast.success("¡Filmación iniciada!");
                       }}
                     >
-                      <Camera className="h-4 w-4" /> Start Shoot
+                      <Camera className="h-4 w-4" /> Iniciar filmación
                     </Button>
                   )}
                   {selectedShotList.status === "in-progress" && (
@@ -348,10 +348,10 @@ export default function VideographerShotsPage() {
                       onClick={() => {
                         updateShotList.mutate({ id: selectedShotList.id, status: "completed" });
                         setSelectedShotList(null);
-                        toast.success("Shoot completed!");
+                        toast.success("¡Filmación completada!");
                       }}
                     >
-                      <CheckCircle className="h-4 w-4" /> Mark Complete
+                      <CheckCircle className="h-4 w-4" /> Marcar completado
                     </Button>
                   )}
                 </div>

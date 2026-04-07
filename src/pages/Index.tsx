@@ -11,7 +11,6 @@ const Index = () => {
   if (role === "editor") return <Navigate to="/editor" replace />;
   if (role === "videographer") return <Navigate to="/videographer" replace />;
   if (role === "owner") return <Navigate to="/dashboard" replace />;
-  if (role === "client") return <Navigate to="/portal" replace />;
 
   // No role row or unknown role → back to auth
   return <Navigate to="/auth" replace />;

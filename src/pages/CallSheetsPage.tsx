@@ -540,7 +540,7 @@ export default function CallSheetsPage() {
                       <SelectValue placeholder="Seleccionar campaña..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Sin campaña</SelectItem>
+                      <SelectItem value="none">Sin campaña</SelectItem>
                       {(campaigns as any[]).map((c: any) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
@@ -851,7 +851,7 @@ export default function CallSheetsPage() {
                         <SelectValue placeholder="Seleccionar campaña..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Sin campaña</SelectItem>
+                        <SelectItem value="none">Sin campaña</SelectItem>
                         {(campaigns as any[]).map((c: any) => (
                           <SelectItem key={c.id} value={c.id}>
                             {c.name}

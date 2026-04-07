@@ -139,7 +139,7 @@ export default function ShotListsPage() {
                       onValueChange={(v) => setFormData((p) => ({ ...p, campaign_id: v }))}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select campaign" />
+                        <SelectValue placeholder="Seleccionar campaña" />
                       </SelectTrigger>
                       <SelectContent>
                         {campaigns.map((c) => (
@@ -156,7 +156,7 @@ export default function ShotListsPage() {
                     <Input
                       value={formData.title}
                       onChange={(e) => setFormData((p) => ({ ...p, title: e.target.value }))}
-                      placeholder="e.g., Product Launch Shoot"
+                      placeholder="Ej: Filmación lanzamiento producto"
                     />
                   </div>
 
@@ -165,7 +165,7 @@ export default function ShotListsPage() {
                     <Textarea
                       value={formData.description}
                       onChange={(e) => setFormData((p) => ({ ...p, description: e.target.value }))}
-                      placeholder="Describe the shoot..."
+                      placeholder="Describe la filmación..."
                       rows={3}
                     />
                   </div>
@@ -175,7 +175,7 @@ export default function ShotListsPage() {
                     <Input
                       value={formData.location}
                       onChange={(e) => setFormData((p) => ({ ...p, location: e.target.value }))}
-                      placeholder="e.g., Studio A, Downtown"
+                      placeholder="Ej: Estudio A, Centro"
                     />
                   </div>
 
@@ -222,7 +222,7 @@ export default function ShotListsPage() {
           <div className="mt-4 relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search shot lists..."
+              placeholder="Buscar shot lists..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9"

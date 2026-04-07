@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, FolderKanban, Search, AlertTriangle, CheckCircle } from "lucide-react";
+import { Plus, FolderKanban, Search, AlertTriangle, CheckCircle, Download, Sparkles, Loader2 } from "lucide-react";
+import { exportToCsv } from "@/utils/exportCsv";
 import { motion } from "framer-motion";
 import { CampaignTemplate } from "@/types/thrive";
 import { format, isPast, isToday } from "date-fns";
@@ -45,6 +46,26 @@ export default function CampaignsPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiForm, setAiForm] = useState({ industry: "", objetivo: "", plataformas: "Instagram, TikTok" });
+
+  const handleAISuggest = async () => {
+    const client = clients.find(c => c.id === newCampaign.clientId);
+    if (!aiForm.objetivo.trim()) return toast.error("Describe el objetivo de la campaña");
+    setAiLoading(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type: "campaign", clientName: client?.name || "", ...aiForm }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setNewCampaign(p => ({ ...p, name: data.name }));
+      toast.success("Nombre generado con IA");
+    } catch (e: any) { toast.error(e.message); }
+    finally { setAiLoading(false); }
+  };
 
   const [newCampaign, setNewCampaign] = useState({
     name: "",
@@ -87,6 +108,21 @@ export default function CampaignsPage() {
               <span className="text-sm text-muted-foreground">({campaigns.length})</span>
             </div>
 
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => exportToCsv("campanas.csv", campaigns.map(c => ({
+                  Nombre: c.name,
+                  Cliente: clients.find(cl => cl.id === c.client_id)?.name || "",
+                  Template: c.template || "",
+                  Etapa: c.current_stage || "",
+                  Creada: c.created_at ? c.created_at.split("T")[0] : "",
+                })))}
+              >
+                <Download className="h-3.5 w-3.5" /> Exportar
+              </Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2"><Plus className="h-4 w-4" /> Nueva campaña</Button>
@@ -96,6 +132,29 @@ export default function CampaignsPage() {
                   <DialogTitle className="font-display">Crear campaña nueva</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 space-y-6">
+
+                  {/* AI Panel */}
+                  <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 space-y-3">
+                    <p className="text-sm font-medium text-primary flex items-center gap-2"><Sparkles className="h-4 w-4" /> Sugerir nombre con IA</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Industria</Label>
+                        <Input className="h-8 text-sm" placeholder="Ej: Moda, Fitness, Tech" value={aiForm.industry} onChange={e => setAiForm(f => ({ ...f, industry: e.target.value }))} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Plataformas</Label>
+                        <Input className="h-8 text-sm" placeholder="Instagram, TikTok" value={aiForm.plataformas} onChange={e => setAiForm(f => ({ ...f, plataformas: e.target.value }))} />
+                      </div>
+                      <div className="col-span-2 space-y-1">
+                        <Label className="text-xs">Objetivo *</Label>
+                        <Input className="h-8 text-sm" placeholder="Ej: Lanzar nueva línea de productos en verano" value={aiForm.objetivo} onChange={e => setAiForm(f => ({ ...f, objetivo: e.target.value }))} />
+                      </div>
+                    </div>
+                    <Button size="sm" variant="outline" className="gap-2 w-full" onClick={handleAISuggest} disabled={aiLoading}>
+                      {aiLoading ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Generando...</> : <><Sparkles className="h-3.5 w-3.5" /> Generar nombre</>}
+                    </Button>
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="campaignName">Nombre de la campaña</Label>
@@ -130,6 +189,7 @@ export default function CampaignsPage() {
                 </div>
               </DialogContent>
             </Dialog>
+            </div>
           </div>
 
           <div className="mt-4 relative max-w-md">

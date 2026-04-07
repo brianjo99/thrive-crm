@@ -9,12 +9,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Search, MoreVertical, User, Shield, Eye, Ban, RefreshCw, Mail } from "lucide-react";
+import { Search, MoreVertical, User, Shield, Eye, Ban, RefreshCw, Mail, UserPlus } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 type AccountStatus = "active" | "invited" | "suspended" | "disabled";
-type AppRole = "owner" | "editor" | "videographer" | "client";
+type AppRole = "owner" | "editor" | "videographer";
 
 type Account = {
   id: string;
@@ -37,7 +38,6 @@ const ROLE_CONFIG: Record<string, { label: string; color: string }> = {
   owner:        { label: "Owner",        color: "bg-primary/15 text-primary" },
   editor:       { label: "Editor",       color: "bg-purple-500/15 text-purple-400" },
   videographer: { label: "Videographer", color: "bg-cyan-500/15 text-cyan-400" },
-  client:       { label: "Cliente",      color: "bg-orange-500/15 text-orange-400" },
 };
 
 const MODULES = [
@@ -275,7 +275,6 @@ function AccountDetailDialog({
                   <SelectItem value="owner">Owner</SelectItem>
                   <SelectItem value="editor">Editor</SelectItem>
                   <SelectItem value="videographer">Videographer</SelectItem>
-                  <SelectItem value="client">Cliente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -311,12 +310,102 @@ function AccountDetailDialog({
   );
 }
 
+function useInviteUser() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ email, role, display_name }: { email: string; role: AppRole; display_name: string }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No session");
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ email, role, display_name }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Error al invitar");
+      return json;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["settings_accounts"] });
+      toast.success("Invitación enviada");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+}
+
+function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const inviteUser = useInviteUser();
+  const [form, setForm] = useState({ email: "", role: "editor" as AppRole, display_name: "" });
+
+  const handleInvite = async () => {
+    if (!form.email) return toast.error("El email es obligatorio");
+    await inviteUser.mutateAsync(form);
+    setForm({ email: "", role: "editor", display_name: "" });
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md p-0 flex flex-col">
+        <DialogHeader className="p-6 pb-4 shrink-0">
+          <DialogTitle className="font-display flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-primary" /> Invitar usuario
+          </DialogTitle>
+        </DialogHeader>
+        <div className="px-6 pb-6 space-y-4">
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input
+              type="email"
+              placeholder="usuario@email.com"
+              value={form.email}
+              onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Nombre (opcional)</Label>
+            <Input
+              placeholder="Nombre del usuario"
+              value={form.display_name}
+              onChange={(e) => setForm(f => ({ ...f, display_name: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Rol</Label>
+            <Select value={form.role} onValueChange={(v) => setForm(f => ({ ...f, role: v as AppRole }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="owner">Owner</SelectItem>
+                <SelectItem value="editor">Editor</SelectItem>
+                <SelectItem value="videographer">Videographer</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            El usuario recibirá un email con un enlace para crear su contraseña.
+          </p>
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button variant="outline" onClick={onClose}>Cancelar</Button>
+            <Button onClick={handleInvite} disabled={inviteUser.isPending || !form.email}>
+              Enviar invitación
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function AccountsSection() {
   const { data: accounts = [], isLoading } = useAccounts();
   const updateRole = useUpdateAccountRole();
   const updateStatus = useUpdateAccountStatus();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Account | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
 
   const filtered = accounts.filter(a =>
     (a.display_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
@@ -325,9 +414,14 @@ export default function AccountsSection() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-display text-xl font-semibold">Cuentas</h2>
-        <p className="text-sm text-muted-foreground mt-1">Gestiona todos los usuarios del CRM</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="font-display text-xl font-semibold">Cuentas</h2>
+          <p className="text-sm text-muted-foreground mt-1">Gestiona todos los usuarios del CRM</p>
+        </div>
+        <Button onClick={() => setInviteOpen(true)} className="gap-2">
+          <UserPlus className="h-4 w-4" /> Invitar usuario
+        </Button>
       </div>
 
       <div className="relative max-w-sm">
@@ -430,6 +524,8 @@ export default function AccountsSection() {
         open={!!selected}
         onClose={() => setSelected(null)}
       />
+
+      <InviteDialog open={inviteOpen} onClose={() => setInviteOpen(false)} />
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, isToday } from "date-fns";
+import { es } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -69,7 +70,7 @@ export default function BrianDashboard() {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">{format(new Date(), "EEEE, MMMM d")}</p>
+              <p className="text-sm text-muted-foreground capitalize">{format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}</p>
               <h1 className="font-display text-2xl font-bold">
                 {getGreeting()}, {displayName}
               </h1>

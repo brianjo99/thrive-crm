@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Users, FolderKanban, ClipboardList, CalendarDays,
   FileText, FileStack, FolderOpen, ShieldCheck, Receipt, TrendingUp,
   Megaphone, Clapperboard, Search, ChevronDown, BookOpen, Scissors, Camera,
+  BarChart3, MessageSquare,
 } from "lucide-react";
 
 type Step = string;
@@ -33,7 +34,8 @@ const SECTIONS: Section[] = [
       "Las 4 tarjetas arriba muestran: filmaciones de hoy, ediciones por revisar, aprobaciones pendientes y leads nuevos. Haz clic en cualquiera para ir directo a esa sección.",
       "En 'Today's Focus' ves las tareas con fecha de hoy. Si hay tareas vencidas aparece una alerta roja con el conteo.",
       "En 'Active Campaigns' ves el progreso de cada campaña con una barra que va desde Discovery hasta Complete.",
-      "El panel derecho 'Overview' muestra todos los números clave — clientes activos, campañas totales, aprobaciones pendientes. Cada fila es clickeable.",
+      "El panel derecho 'Resumen' muestra todos los números clave — clientes activos, campañas totales, aprobaciones pendientes. Cada fila es clickeable.",
+      "Para métricas detalladas de facturación y conversión, ve a la sección 'Reportes' en el menú lateral.",
     ],
     tips: [
       "Si ves 'All clear for today!' significa que no tienes tareas vencidas para hoy — es un buen día.",
@@ -87,15 +89,18 @@ const SECTIONS: Section[] = [
     subtitle: "Vista Kanban y lista de todas las tareas",
     description: "Vista global de todas las tareas de todas las campañas. Puedes verlas en modo Kanban (tablero) o en lista, filtrar por campaña o estado, y mover tareas entre columnas con drag & drop.",
     steps: [
-      "Al entrar verás el tablero Kanban con 4 columnas: To Do, In Progress, Review y Complete.",
+      "Al entrar verás el tablero Kanban con 4 columnas: Por hacer, En progreso, En revisión y Completado.",
       "Arrastra y suelta cualquier tarjeta de una columna a otra para cambiar su estado.",
-      "Usa el botón 'List' (arriba a la derecha) para cambiar a vista de lista si prefieres.",
-      "Filtra por campaña usando el selector 'All campaigns', o por estado con 'All statuses'.",
+      "Usa el botón 'Lista' (arriba a la derecha) para cambiar a vista de lista si prefieres.",
+      "Filtra por campaña usando el selector 'Todas las campañas', o por estado con 'Todos los estados'.",
       "El buscador filtra tareas por nombre en tiempo real.",
+      "Clic en 'Nueva tarea' (botón azul arriba a la derecha) para crear una tarea directamente desde esta pantalla sin entrar a una campaña.",
+      "Al crear una tarea puedes asignarla a un rol (Owner, Editor, Videógrafo) y también a una persona específica del equipo.",
+      "El botón 'Exportar' descarga todas las tareas en formato CSV para reportes externos.",
     ],
     tips: [
       "Las tareas en rojo en el Kanban tienen fecha vencida.",
-      "Las tareas se crean desde la página de detalle de cada campaña, no directamente aquí.",
+      "También puedes crear tareas desde la página de detalle de cada campaña — útil cuando quieres verlas en contexto de esa campaña.",
     ],
   },
   {
@@ -232,7 +237,7 @@ const SECTIONS: Section[] = [
       "Cambia el estado del lead según el avance: New → Contacted → Converted → Closed.",
       "Agrega notas internas para recordar detalles de conversaciones o llamadas.",
       "El botón de email abre tu cliente de correo con el email del lead pre-cargado.",
-      "Cuando conviertes un lead, crea el cliente desde la sección Clients.",
+      "El botón verde 'Convertir a cliente' hace el proceso completo: crea el cliente en la base de datos y te lleva directo a su perfil para que puedas agregar más información.",
     ],
     tips: [
       "Filtra por estado usando las pestañas arriba (All, New, Contacted, Converted, Closed).",
@@ -273,6 +278,46 @@ const SECTIONS: Section[] = [
     ],
     tips: [
       "Los templates están predefinidos según los servicios de Thrive Agency.",
+    ],
+  },
+  {
+    id: "reporting",
+    icon: BarChart3,
+    color: "text-primary",
+    title: "Reportes",
+    subtitle: "Analytics y métricas de la agencia",
+    description: "Panel de reportes con métricas clave de facturación, producción y conversión de leads. Todo en tiempo real basado en los datos del CRM.",
+    steps: [
+      "La sección de Facturación muestra: total facturado, cobrado, por cobrar y vencido — con conteo de facturas en cada estado.",
+      "En 'Campañas por etapa' ves cómo se distribuyen todas las campañas activas en el pipeline.",
+      "El embudo de leads muestra la distribución de nuevos, contactados, convertidos y cerrados, más la tasa de conversión.",
+      "En 'Tareas por rol' ves cuántas tareas tiene cada rol y qué porcentaje ha completado.",
+      "El panel derecho resume clientes activos, campañas, leads convertidos y stats de aprobaciones.",
+    ],
+    tips: [
+      "Los datos se actualizan en tiempo real — siempre reflejan el estado actual del CRM.",
+      "Úsalo para reportes semanales a clientes o para planificar capacidad del equipo.",
+    ],
+  },
+  {
+    id: "communications",
+    icon: MessageSquare,
+    color: "text-blue-400",
+    title: "Log de Comunicaciones",
+    subtitle: "Registra interacciones con cada cliente",
+    description: "Dentro del perfil de cada cliente hay un panel de Comunicaciones para registrar llamadas, emails, reuniones, mensajes de WhatsApp y notas internas. Crea un historial completo de la relación.",
+    steps: [
+      "Ve al perfil de un cliente (desde la sección Clientes, haz clic en su nombre).",
+      "En la columna izquierda encontrarás el panel 'Comunicaciones' debajo del Brand Kit.",
+      "Haz clic en 'Agregar' para registrar una nueva interacción.",
+      "Elige el tipo: Nota, Llamada, Email, Reunión o WhatsApp.",
+      "Escribe el resumen de la conversación o los puntos clave y haz clic en 'Guardar'.",
+      "Todas las entradas se muestran en orden cronológico inverso (lo más reciente primero).",
+      "Pasa el cursor sobre una entrada y haz clic en el ícono de papelera para eliminarla.",
+    ],
+    tips: [
+      "Registra cada punto de contacto con el cliente — te ayuda a tener contexto antes de reuniones.",
+      "Los emojis de tipo (📞 llamada, ✉️ email, etc.) hacen fácil escanear el historial de un vistazo.",
     ],
   },
 ];

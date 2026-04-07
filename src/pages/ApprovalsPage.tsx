@@ -178,7 +178,13 @@ export default function ApprovalsPage() {
 
                 {(selectedApproval as any).assets?.file_path && (
                   <div className="rounded-lg overflow-hidden bg-muted">
-                    {(selectedApproval as any).assets?.file_path && (
+                    {(selectedApproval as any).assets?.file_type?.startsWith("video/") ? (
+                      <video
+                        src={getAssetPublicUrl((selectedApproval as any).assets.file_path)}
+                        controls
+                        className="w-full max-h-64 object-contain"
+                      />
+                    ) : (
                       <img src={getAssetPublicUrl((selectedApproval as any).assets.file_path)} alt="Preview" className="w-full max-h-64 object-contain" />
                     )}
                   </div>

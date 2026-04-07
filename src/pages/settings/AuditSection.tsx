@@ -19,12 +19,19 @@ type AuditLog = {
 };
 
 const ACTION_CONFIG: Record<string, { label: string; color: string }> = {
-  change_role:    { label: "Cambio de rol",    color: "bg-blue-500/15 text-blue-400" },
-  change_status:  { label: "Cambio de estado", color: "bg-yellow-500/15 text-yellow-400" },
-  create_team:    { label: "Equipo creado",    color: "bg-green-500/15 text-green-400" },
-  delete_team:    { label: "Equipo eliminado", color: "bg-red-500/15 text-red-400" },
-  change_perm:    { label: "Permisos",         color: "bg-purple-500/15 text-purple-400" },
-  change_setting: { label: "Configuración",    color: "bg-orange-500/15 text-orange-400" },
+  change_role:      { label: "Cambio de rol",       color: "bg-blue-500/15 text-blue-400" },
+  change_status:    { label: "Cambio de estado",    color: "bg-yellow-500/15 text-yellow-400" },
+  create_team:      { label: "Equipo creado",       color: "bg-green-500/15 text-green-400" },
+  delete_team:      { label: "Equipo eliminado",    color: "bg-red-500/15 text-red-400" },
+  change_perm:      { label: "Permisos",            color: "bg-purple-500/15 text-purple-400" },
+  change_setting:   { label: "Configuración",       color: "bg-orange-500/15 text-orange-400" },
+  advance_stage:    { label: "Avance de etapa",     color: "bg-primary/15 text-primary" },
+  create_cost:      { label: "Costo registrado",    color: "bg-red-500/15 text-red-400" },
+  create_contract:  { label: "Contrato añadido",    color: "bg-teal-500/15 text-teal-400" },
+  lead_status:      { label: "Estado de lead",      color: "bg-yellow-500/15 text-yellow-400" },
+  convert_lead:     { label: "Lead convertido",     color: "bg-green-500/15 text-green-400" },
+  create_campaign:  { label: "Campaña creada",      color: "bg-primary/15 text-primary" },
+  create_client:    { label: "Cliente creado",      color: "bg-teal-500/15 text-teal-400" },
 };
 
 function useAuditLogs() {

@@ -20,8 +20,8 @@ import AssetsPage from "./pages/AssetsPage";
 import ApprovalsPage from "./pages/ApprovalsPage";
 import CampaignDetailPage from "./pages/CampaignDetailPage";
 import ClientDetailPage from "./pages/ClientDetailPage";
-import ClientPortalPage from "./pages/ClientPortalPage";
 import ShotListsPage from "./pages/ShotListsPage";
+import FilmacionPage from "./pages/FilmacionPage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import LeadsPage from "./pages/LeadsPage";
@@ -31,6 +31,8 @@ import InvoicesPage from "./pages/InvoicesPage";
 import ScriptsPage from "./pages/ScriptsPage";
 import CallSheetsPage from "./pages/CallSheetsPage";
 import TasksPage from "./pages/TasksPage";
+import ReportingPage from "./pages/ReportingPage";
+import QuotesPage from "./pages/QuotesPage";
 import HelpPage from "./pages/HelpPage";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -73,19 +75,21 @@ function ProtectedLayout() {
               <Route path="/templates" element={<ProtectedRoute module="templates"><TemplatesPage /></ProtectedRoute>} />
               <Route path="/assets" element={<ProtectedRoute module="assets"><AssetsPage /></ProtectedRoute>} />
               <Route path="/approvals" element={<ProtectedRoute module="approvals"><ApprovalsPage /></ProtectedRoute>} />
-              <Route path="/portal" element={<RoleRoute roles={["client"]}><ClientPortalPage /></RoleRoute>} />
               <Route path="/editor" element={<RoleRoute roles={["editor", "owner"]}><EditorDashboard /></RoleRoute>} />
               <Route path="/editor/assets" element={<RoleRoute roles={["editor", "owner"]}><EditorAssetsPage /></RoleRoute>} />
               <Route path="/videographer" element={<RoleRoute roles={["videographer", "owner"]}><VideographerDashboard /></RoleRoute>} />
               <Route path="/videographer/shots" element={<RoleRoute roles={["videographer", "owner"]}><VideographerShotsPage /></RoleRoute>} />
               <Route path="/shot-lists" element={<ProtectedRoute module="call_sheets"><ShotListsPage /></ProtectedRoute>} />
+              <Route path="/filmacion" element={<ProtectedRoute module="call_sheets"><FilmacionPage /></ProtectedRoute>} />
               <Route path="/leads" element={<ProtectedRoute module="leads"><LeadsPage /></ProtectedRoute>} />
               <Route path="/ads" element={<ProtectedRoute module="ads"><AdsPage /></ProtectedRoute>} />
               <Route path="/calendar" element={<ProtectedRoute module="calendar"><CalendarPage /></ProtectedRoute>} />
               <Route path="/invoices" element={<ProtectedRoute module="invoices"><InvoicesPage /></ProtectedRoute>} />
+              <Route path="/quotes" element={<ProtectedRoute module="invoices"><QuotesPage /></ProtectedRoute>} />
               <Route path="/scripts" element={<ProtectedRoute module="scripts"><ScriptsPage /></ProtectedRoute>} />
               <Route path="/call-sheets" element={<ProtectedRoute module="call_sheets"><CallSheetsPage /></ProtectedRoute>} />
               <Route path="/tasks" element={<ProtectedRoute module="tasks"><TasksPage /></ProtectedRoute>} />
+              <Route path="/reporting" element={<ProtectedRoute module="dashboard"><ReportingPage /></ProtectedRoute>} />
               <Route path="/help" element={<HelpPage />} />
               <Route path="/manual" element={<Navigate to="/help" replace />} />
               <Route path="/settings" element={<ProtectedRoute module="settings"><SettingsPage /></ProtectedRoute>} />

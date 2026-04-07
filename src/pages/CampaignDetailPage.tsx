@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCampaigns, useTasks, useCreateTask, useUpdateCampaign, useApprovals, useClients, useAssets, useShotLists, useDeliverables, getAssetPublicUrl } from "@/hooks/useSupabaseData";
+import { useCampaigns, useTasks, useCreateTask, useUpdateCampaign, useApprovals, useClients, useAssets, useShotLists, useDeliverables, getAssetPublicUrl, useCampaignCosts, useCreateCost, useDeleteCost, useLogAudit } from "@/hooks/useSupabaseData";
 import { DeliverablesPanel } from "@/components/thrive/DeliverablesPanel";
 import { WorkflowPipeline } from "@/components/thrive/WorkflowPipeline";
 import { TemplateBadge, StatusBadge, ServiceBadge } from "@/components/thrive/Badges";
@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import {
   ArrowLeft, ArrowRight, Plus, CheckCircle, FolderKanban, AlertTriangle,
   User, Camera, FileText, ImageIcon, Package, Clock, MapPin, Calendar,
-  LayoutGrid, Film, Layers, ExternalLink
+  LayoutGrid, Film, Layers, ExternalLink, DollarSign, Trash2, FolderOpen
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format, isPast, isToday } from "date-fns";
@@ -73,10 +73,29 @@ export default function CampaignDetailPage() {
   const { data: shotLists = [] } = useShotLists({ campaignId: id });
   const { data: deliverables = [] } = useDeliverables({ campaignId: id });
   const { data: scripts = [] } = useCampaignScripts(id!);
+  const { data: stageHistory = [] } = useQuery({
+    queryKey: ["campaign_stage_history", id],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("campaign_stage_history")
+        .select("*")
+        .eq("campaign_id", id)
+        .order("entered_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as { id: string; stage: string; entered_at: string }[];
+    },
+    enabled: !!id,
+  });
 
   const createTask = useCreateTask();
   const updateCampaign = useUpdateCampaign();
+  const { data: costs = [] } = useCampaignCosts(id);
+  const createCost = useCreateCost();
+  const deleteCost = useDeleteCost();
+  const logAudit = useLogAudit();
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
+  const [costForm, setCostForm] = useState({ description: "", amount: "", category: "other", cost_date: new Date().toISOString().split("T")[0] });
+  const [showCostForm, setShowCostForm] = useState(false);
 
   const campaign = campaigns.find(c => c.id === id);
   const client = clients.find(c => c.id === campaign?.client_id);
@@ -116,6 +135,7 @@ export default function CampaignDetailPage() {
     if (currentStageIndex < stages.length - 1) {
       const nextStage = stages[currentStageIndex + 1];
       await updateCampaign.mutateAsync({ id: campaign.id, current_stage: nextStage });
+      logAudit.mutate({ action: "advance_stage", resource_type: "campaign", resource_id: campaign.id, resource_name: campaign.name, old_value: { stage: campaign.current_stage }, new_value: { stage: nextStage } });
       toast.success(`Avanzado a ${nextStage}`);
     }
   };
@@ -353,6 +373,15 @@ export default function CampaignDetailPage() {
                   Assets
                   {assets.length > 0 && <span className="text-xs opacity-60">({assets.length})</span>}
                 </TabsTrigger>
+                <TabsTrigger value="history" className="gap-2">
+                  <Clock className="h-4 w-4" />
+                  Historial
+                </TabsTrigger>
+                <TabsTrigger value="costos" className="gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Costos
+                  {costs.length > 0 && <span className="text-xs opacity-60">({costs.length})</span>}
+                </TabsTrigger>
               </TabsList>
 
               {/* ── Tasks tab ── */}
@@ -589,6 +618,129 @@ export default function CampaignDetailPage() {
                   )}
                 </Card>
               </TabsContent>
+
+              {/* ── History tab ── */}
+              <TabsContent value="history">
+                <Card className="luxury-card p-5">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <h3 className="font-display font-semibold">Historial de etapas</h3>
+                  </div>
+                  {stageHistory.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Clock className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">Sin cambios de etapa registrados todavía</p>
+                      <p className="text-xs text-muted-foreground mt-1">Los cambios futuros de etapa aparecerán aquí</p>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <div className="absolute left-3.5 top-2 bottom-2 w-px bg-border" />
+                      <div className="space-y-4">
+                        {stageHistory.map((entry, i) => (
+                          <div key={entry.id} className="flex gap-4 relative">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 z-10 ${i === 0 ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
+                              <CheckCircle className={`h-3.5 w-3.5 ${i === 0 ? "" : "text-muted-foreground"}`} />
+                            </div>
+                            <div className="flex-1 pb-1">
+                              <p className="text-sm font-medium capitalize">{entry.stage.replace("-", " ")}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(entry.entered_at), "d MMM yyyy · HH:mm")}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              </TabsContent>
+
+              {/* ── Costos tab ── */}
+              <TabsContent value="costos" className="space-y-4">
+                <Card className="luxury-card p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="h-4 w-4 text-primary" />
+                      <h3 className="font-display font-semibold">Registro de costos</h3>
+                    </div>
+                    <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={() => setShowCostForm(v => !v)}>
+                      <Plus className="h-3.5 w-3.5" /> Añadir costo
+                    </Button>
+                  </div>
+
+                  {showCostForm && (
+                    <div className="mb-4 p-4 rounded-xl bg-muted/30 border border-border space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="col-span-2 space-y-1">
+                          <label className="text-xs text-muted-foreground">Descripción</label>
+                          <Input placeholder="Ej: Renta de equipo" value={costForm.description} onChange={e => setCostForm(f => ({ ...f, description: e.target.value }))} className="h-8 text-sm" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Monto (USD)</label>
+                          <Input type="number" placeholder="0.00" value={costForm.amount} onChange={e => setCostForm(f => ({ ...f, amount: e.target.value }))} className="h-8 text-sm" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Categoría</label>
+                          <Select value={costForm.category} onValueChange={v => setCostForm(f => ({ ...f, category: v }))}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="equipment">Equipo</SelectItem>
+                              <SelectItem value="talent">Talento</SelectItem>
+                              <SelectItem value="location">Locación</SelectItem>
+                              <SelectItem value="editing">Edición</SelectItem>
+                              <SelectItem value="advertising">Publicidad</SelectItem>
+                              <SelectItem value="other">Otro</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Fecha</label>
+                          <Input type="date" value={costForm.cost_date} onChange={e => setCostForm(f => ({ ...f, cost_date: e.target.value }))} className="h-8 text-sm" />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" disabled={!costForm.description || !costForm.amount || createCost.isPending} onClick={async () => {
+                          try {
+                            await createCost.mutateAsync({ campaign_id: campaign.id, description: costForm.description, amount: parseFloat(costForm.amount), category: costForm.category, cost_date: costForm.cost_date });
+                            logAudit.mutate({ action: "create_cost", resource_type: "campaign", resource_id: campaign.id, resource_name: campaign.name, new_value: { description: costForm.description, amount: costForm.amount } });
+                            setCostForm({ description: "", amount: "", category: "other", cost_date: new Date().toISOString().split("T")[0] });
+                            setShowCostForm(false);
+                            toast.success("Costo registrado");
+                          } catch (e: any) { toast.error(e.message); }
+                        }}>Guardar</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setShowCostForm(false)}>Cancelar</Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {costs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">Sin costos registrados</p>
+                  ) : (
+                    <>
+                      <div className="space-y-2 mb-4">
+                        {costs.map(cost => (
+                          <div key={cost.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 group">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{cost.description}</p>
+                              <p className="text-xs text-muted-foreground">{cost.category} · {cost.cost_date}</p>
+                            </div>
+                            <div className="flex items-center gap-3 ml-3 shrink-0">
+                              <span className="text-sm font-semibold text-destructive">${cost.amount.toLocaleString()}</span>
+                              <button onClick={() => deleteCost.mutate({ id: cost.id, campaignId: campaign.id })} className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="pt-3 border-t border-border flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Total costos</span>
+                        <span className="font-bold text-destructive">${costs.reduce((s, c) => s + c.amount, 0).toLocaleString()}</span>
+                      </div>
+                    </>
+                  )}
+                </Card>
+              </TabsContent>
             </Tabs>
           </div>
 
@@ -658,6 +810,25 @@ export default function CampaignDetailPage() {
                   </div>
                 )}
               </div>
+              {(campaign as any).drive_folder_url ? (
+                <a href={(campaign as any).drive_folder_url} target="_blank" rel="noreferrer" className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-xs text-primary hover:underline">
+                  <FolderOpen className="h-3.5 w-3.5" /> Carpeta de Drive
+                </a>
+              ) : (
+                <div className="mt-3 pt-3 border-t border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Carpeta Google Drive</p>
+                  <Input
+                    className="h-7 text-xs"
+                    placeholder="https://drive.google.com/..."
+                    onBlur={async e => {
+                      const url = e.target.value.trim();
+                      if (!url) return;
+                      await updateCampaign.mutateAsync({ id: campaign.id, drive_folder_url: url } as any);
+                      toast.success("Enlace de Drive guardado");
+                    }}
+                  />
+                </div>
+              )}
             </Card>
 
             {/* Pending approvals */}

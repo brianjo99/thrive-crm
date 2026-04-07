@@ -11,8 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Receipt, DollarSign, Send, CheckCircle, AlertCircle,
-  Plus, Trash2, FileText, Clock, ChevronRight, ArrowLeft, Printer, Save
+  Plus, Trash2, FileText, Clock, ChevronRight, ArrowLeft, Printer, Save, Download
 } from "lucide-react";
+import { exportToCsv } from "@/utils/exportCsv";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { format, isPast, parseISO } from "date-fns";
@@ -160,7 +161,7 @@ function LineItemRow({
       <Input
         value={item.description}
         onChange={e => onChange(index, "description", e.target.value)}
-        placeholder="Description"
+        placeholder="Descripción"
         className="text-sm h-8"
       />
       <Input
@@ -685,13 +686,32 @@ export default function InvoicesPage() {
               <Receipt className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h1 className="font-display text-2xl font-bold">Invoices</h1>
-              <p className="text-sm text-muted-foreground">{invoices.length} total invoices</p>
+              <h1 className="font-display text-2xl font-bold">Facturas</h1>
+              <p className="text-sm text-muted-foreground">{invoices.length} facturas en total</p>
             </div>
           </div>
-          <Button onClick={() => { setCreateForm(EMPTY_FORM); setNewDialogOpen(true); }} className="gap-2">
-            <Plus className="h-4 w-4" /> New Invoice
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => exportToCsv("facturas.csv", invoices.map(inv => ({
+                "Nº Factura": inv.invoice_number,
+                Cliente: clients.find(c => c.id === inv.client_id)?.name || "",
+                Estado: inv.status,
+                Subtotal: inv.subtotal,
+                Impuesto: inv.tax,
+                Total: inv.total,
+                Vencimiento: inv.due_date ? inv.due_date.split("T")[0] : "",
+                Pagada: inv.paid_date ? inv.paid_date.split("T")[0] : "",
+              })))}
+            >
+              <Download className="h-3.5 w-3.5" /> Exportar
+            </Button>
+            <Button onClick={() => { setCreateForm(EMPTY_FORM); setNewDialogOpen(true); }} className="gap-2">
+              <Plus className="h-4 w-4" /> Nueva factura
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -794,7 +814,7 @@ export default function InvoicesPage() {
         <DialogContent className="sm:max-w-2xl p-0 flex flex-col max-h-[90vh]">
           <DialogHeader className="p-6 pb-0 shrink-0">
             <DialogTitle className="font-display flex items-center gap-2">
-              <Receipt className="h-4 w-4" /> New Invoice
+              <Receipt className="h-4 w-4" /> Nueva factura
             </DialogTitle>
           </DialogHeader>
           <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-4">

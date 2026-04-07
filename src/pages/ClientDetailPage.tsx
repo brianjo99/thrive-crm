@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useClients, useAssets, useClientOnboarding, useUpdateClient, getAssetPublicUrl } from "@/hooks/useSupabaseData";
+import { useClients, useAssets, useClientOnboarding, useUpdateClient, getAssetPublicUrl, useClientContracts, useCreateContract, useDeleteContract, useLogAudit } from "@/hooks/useSupabaseData";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -12,11 +12,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ServiceBadge, ClientTypeBadge } from "@/components/thrive/Badges";
 import { ClientOnboardingWizard } from "@/components/thrive/ClientOnboardingWizard";
 import { BrandKitCard } from "@/components/thrive/BrandKitCard";
+import { ClientNotesPanel } from "@/components/thrive/ClientNotesPanel";
 import {
   ArrowLeft, Users, Mail, Calendar, Pencil, FolderKanban,
   CheckCircle, ShieldCheck, Receipt, Clock, AlertCircle,
   Send, FileText, DollarSign, Layers, Image as ImageIcon,
-  ChevronRight, ExternalLink,
+  ChevronRight, ExternalLink, MessageCircle, FolderOpen, FileSignature, Trash2, Plus, Phone,
 } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -118,12 +119,20 @@ export default function ClientDetailPage() {
   const { data: assets = [] } = useAssets({ clientId: id });
   const { data: invoices = [] } = useClientInvoices(id!);
   const { data: onboarding } = useClientOnboarding(id);
+  const { data: contracts = [] } = useClientContracts(id);
+  const createContract = useCreateContract();
+  const deleteContract = useDeleteContract();
+  const logAudit = useLogAudit();
 
   const [editOpen, setEditOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [contractForm, setContractForm] = useState({ name: "", file_url: "", notes: "", signed_at: "" });
+  const [showContractForm, setShowContractForm] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
     email: "",
+    phone: "",
+    drive_folder_url: "",
     type: "business" as ClientType,
     enabledServices: [] as ServiceType[],
   });
@@ -153,6 +162,8 @@ export default function ClientDetailPage() {
     setEditForm({
       name: client.name,
       email: client.email ?? "",
+      phone: (client as any).phone ?? "",
+      drive_folder_url: (client as any).drive_folder_url ?? "",
       type: client.type as ClientType,
       enabledServices: (client.enabled_services ?? []) as ServiceType[],
     });
@@ -168,7 +179,9 @@ export default function ClientDetailPage() {
         email: editForm.email,
         type: editForm.type,
         enabledServices: editForm.enabledServices,
-      });
+        phone: editForm.phone || undefined,
+        drive_folder_url: editForm.drive_folder_url || undefined,
+      } as any);
       toast.success("Cliente actualizado");
       setEditOpen(false);
     } catch (err: any) {
@@ -250,7 +263,21 @@ export default function ClientDetailPage() {
                 </p>
               )}
             </div>
-            <div className="flex gap-2 flex-shrink-0">
+            <div className="flex gap-2 flex-shrink-0 flex-wrap">
+              {(client as any).phone && (
+                <Button asChild variant="outline" size="sm" className="gap-1.5 text-green-500 border-green-500/30 hover:bg-green-500/10">
+                  <a href={`https://wa.me/${(client as any).phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
+                    <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
+                  </a>
+                </Button>
+              )}
+              {(client as any).drive_folder_url && (
+                <Button asChild variant="outline" size="sm" className="gap-1.5">
+                  <a href={(client as any).drive_folder_url} target="_blank" rel="noreferrer">
+                    <FolderOpen className="h-3.5 w-3.5" /> Drive
+                  </a>
+                </Button>
+              )}
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setOnboardingOpen(true)}>
                 <CheckCircle className="h-3.5 w-3.5" /> Onboarding
               </Button>
@@ -324,6 +351,9 @@ export default function ClientDetailPage() {
 
             {/* Brand Kit */}
             <BrandKitCard clientId={client.id} />
+
+            {/* Communication log */}
+            <ClientNotesPanel clientId={client.id} />
 
             {/* Campaigns */}
             <Card className="luxury-card p-5">
@@ -480,6 +510,62 @@ export default function ClientDetailPage() {
               </Card>
             )}
 
+            {/* Contratos */}
+            <Card className="luxury-card p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display font-semibold flex items-center gap-2">
+                  <FileSignature className="h-4 w-4 text-primary" /> Contratos
+                </h3>
+                <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setShowContractForm(v => !v)}>
+                  <Plus className="h-3 w-3" /> Añadir
+                </Button>
+              </div>
+              {showContractForm && (
+                <div className="mb-4 p-3 rounded-xl bg-muted/30 border border-border space-y-2">
+                  <Input className="h-8 text-sm" placeholder="Nombre del contrato" value={contractForm.name} onChange={e => setContractForm(f => ({ ...f, name: e.target.value }))} />
+                  <Input className="h-8 text-sm" placeholder="URL del archivo (Drive, Dropbox...)" value={contractForm.file_url} onChange={e => setContractForm(f => ({ ...f, file_url: e.target.value }))} />
+                  <Input type="date" className="h-8 text-sm" placeholder="Fecha de firma" value={contractForm.signed_at} onChange={e => setContractForm(f => ({ ...f, signed_at: e.target.value }))} />
+                  <Input className="h-8 text-sm" placeholder="Notas (opcional)" value={contractForm.notes} onChange={e => setContractForm(f => ({ ...f, notes: e.target.value }))} />
+                  <div className="flex gap-2">
+                    <Button size="sm" disabled={!contractForm.name || createContract.isPending} onClick={async () => {
+                      try {
+                        await createContract.mutateAsync({ client_id: id!, name: contractForm.name, file_url: contractForm.file_url || undefined, notes: contractForm.notes || undefined, signed_at: contractForm.signed_at || undefined });
+                        logAudit.mutate({ action: "create_contract", resource_type: "client", resource_id: id, resource_name: client.name, new_value: { name: contractForm.name } });
+                        setContractForm({ name: "", file_url: "", notes: "", signed_at: "" });
+                        setShowContractForm(false);
+                        toast.success("Contrato guardado");
+                      } catch (e: any) { toast.error(e.message); }
+                    }}>Guardar</Button>
+                    <Button size="sm" variant="ghost" onClick={() => setShowContractForm(false)}>Cancelar</Button>
+                  </div>
+                </div>
+              )}
+              {contracts.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">Sin contratos adjuntos</p>
+              ) : (
+                <div className="space-y-2">
+                  {contracts.map(c => (
+                    <div key={c.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 group">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{c.name}</p>
+                        <p className="text-xs text-muted-foreground">{c.signed_at ? `Firmado: ${c.signed_at}` : "Sin fecha de firma"}</p>
+                      </div>
+                      <div className="flex items-center gap-1 ml-2 shrink-0">
+                        {c.file_url && (
+                          <a href={c.file_url} target="_blank" rel="noreferrer" className="p-1 text-muted-foreground hover:text-primary">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        )}
+                        <button onClick={() => deleteContract.mutate({ id: c.id, clientId: id! })} className="p-1 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
             {/* Recent Assets */}
             <Card className="luxury-card p-5">
               <div className="flex items-center justify-between mb-4">
@@ -544,12 +630,18 @@ export default function ClientDetailPage() {
                     <span className="text-muted-foreground flex items-center gap-1.5 flex-shrink-0">
                       <Mail className="h-3.5 w-3.5" /> Email
                     </span>
-                    <a
-                      href={`mailto:${client.email}`}
-                      className="font-medium text-primary hover:underline truncate text-right"
-                      title={client.email}
-                    >
+                    <a href={`mailto:${client.email}`} className="font-medium text-primary hover:underline truncate text-right" title={client.email}>
                       {client.email}
+                    </a>
+                  </div>
+                )}
+                {(client as any).phone && (
+                  <div className="flex items-center justify-between text-sm gap-2">
+                    <span className="text-muted-foreground flex items-center gap-1.5 flex-shrink-0">
+                      <Phone className="h-3.5 w-3.5" /> Teléfono
+                    </span>
+                    <a href={`https://wa.me/${(client as any).phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="font-medium text-green-500 hover:underline text-right">
+                      {(client as any).phone}
                     </a>
                   </div>
                 )}
@@ -684,6 +776,14 @@ export default function ClientDetailPage() {
             <div className="space-y-2">
               <Label>Email</Label>
               <Input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} placeholder="cliente@ejemplo.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Teléfono / WhatsApp</Label>
+              <Input type="tel" value={editForm.phone} onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))} placeholder="+52 55 1234 5678" />
+            </div>
+            <div className="space-y-2">
+              <Label>Carpeta Google Drive</Label>
+              <Input value={editForm.drive_folder_url} onChange={e => setEditForm(f => ({ ...f, drive_folder_url: e.target.value }))} placeholder="https://drive.google.com/..." />
             </div>
             <div className="space-y-2">
               <Label>Tipo</Label>

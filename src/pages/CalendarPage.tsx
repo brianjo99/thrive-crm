@@ -51,15 +51,15 @@ const PLATFORM_CONFIG: Record<Platform, { color: string; bg: string; icon: React
 };
 
 const STATUS_CONFIG: Record<ContentStatus, { label: string; color: string; dot: string }> = {
-  draft:     { label: "Draft",     color: "bg-muted text-muted-foreground",   dot: "bg-muted-foreground" },
-  scheduled: { label: "Scheduled", color: "bg-blue-500/15 text-blue-400",     dot: "bg-blue-400" },
-  posted:    { label: "Posted",    color: "bg-green-500/15 text-green-400",   dot: "bg-green-400" },
-  cancelled: { label: "Cancelled", color: "bg-red-500/15 text-red-400",       dot: "bg-red-400" },
+  draft:     { label: "Borrador",    color: "bg-muted text-muted-foreground",   dot: "bg-muted-foreground" },
+  scheduled: { label: "Programado",  color: "bg-blue-500/15 text-blue-400",     dot: "bg-blue-400" },
+  posted:    { label: "Publicado",   color: "bg-green-500/15 text-green-400",   dot: "bg-green-400" },
+  cancelled: { label: "Cancelado",   color: "bg-red-500/15 text-red-400",       dot: "bg-red-400" },
 };
 
 const PLATFORMS: Platform[] = ["Instagram", "TikTok", "YouTube", "Facebook", "LinkedIn", "Twitter", "Pinterest"];
 const CONTENT_TYPES: ContentType[] = ["Reel", "Post", "Story", "Short", "Video", "Carousel"];
-const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAYS_OF_WEEK = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
 
 // ---------- Local Hooks ----------
 function useContentCalendar(month: Date) {
@@ -277,9 +277,9 @@ export default function CalendarPage() {
         {/* Stats Bar */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Scheduled", value: scheduled, color: "text-blue-400" },
-            { label: "Posted",    value: posted,    color: "text-green-400" },
-            { label: "Drafts",    value: drafts,    color: "text-muted-foreground" },
+            { label: "Programados", value: scheduled, color: "text-blue-400" },
+            { label: "Publicados",  value: posted,    color: "text-green-400" },
+            { label: "Borradores",  value: drafts,    color: "text-muted-foreground" },
             { label: "Total",     value: entries.length, color: "text-primary" },
           ].map((stat, i) => (
             <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>

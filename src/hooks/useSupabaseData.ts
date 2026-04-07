@@ -145,7 +145,7 @@ export function useTasks(filters?: { campaignId?: string; assignee?: "owner" | "
   return useQuery({
     queryKey: ["tasks", filters],
     queryFn: async () => {
-      let query = supabase.from("tasks").select("*, clients(name)").order("due_date", { ascending: true });
+      let query = supabase.from("tasks").select("*, clients(name), campaigns(name), profiles!tasks_assigned_user_id_fkey(display_name, email)").order("due_date", { ascending: true });
       if (filters?.campaignId) query = query.eq("campaign_id", filters.campaignId);
       if (filters?.assignee) query = query.eq("assignee", filters.assignee);
       if (filters?.status) query = query.eq("status", filters.status);
@@ -626,6 +626,109 @@ export function useDeleteComment() {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["comments"] }),
+  });
+}
+
+// ---- Audit Logging ----
+export function useLogAudit() {
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (entry: {
+      action: string;
+      resource_type?: string;
+      resource_id?: string;
+      resource_name?: string;
+      old_value?: any;
+      new_value?: any;
+    }) => {
+      const profile = user ? await supabase.from("profiles").select("display_name").eq("id", user.id).single() : null;
+      const actor_name = (profile?.data as any)?.display_name || user?.email?.split("@")[0] || "Sistema";
+      await supabase.from("audit_logs" as any).insert({
+        actor_id: user?.id,
+        actor_name,
+        ...entry,
+      });
+    },
+  });
+}
+
+// ---- Campaign Costs ----
+export function useCampaignCosts(campaignId?: string) {
+  return useQuery({
+    queryKey: ["campaign_costs", campaignId],
+    queryFn: async () => {
+      if (!campaignId) return [];
+      const { data, error } = await (supabase as any)
+        .from("campaign_costs")
+        .select("*")
+        .eq("campaign_id", campaignId)
+        .order("cost_date", { ascending: false });
+      if (error) throw error;
+      return (data || []) as { id: string; description: string; amount: number; category: string; cost_date: string; created_at: string }[];
+    },
+    enabled: !!campaignId,
+  });
+}
+
+export function useCreateCost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { campaign_id: string; description: string; amount: number; category: string; cost_date: string }) => {
+      const { error } = await (supabase as any).from("campaign_costs").insert(input);
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ["campaign_costs", v.campaign_id] }),
+  });
+}
+
+export function useDeleteCost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, campaignId }: { id: string; campaignId: string }) => {
+      const { error } = await (supabase as any).from("campaign_costs").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ["campaign_costs", v.campaignId] }),
+  });
+}
+
+// ---- Contracts ----
+export function useClientContracts(clientId?: string) {
+  return useQuery({
+    queryKey: ["contracts", clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      const { data, error } = await (supabase as any)
+        .from("contracts")
+        .select("*")
+        .eq("client_id", clientId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as { id: string; name: string; file_url: string | null; notes: string | null; signed_at: string | null; created_at: string }[];
+    },
+    enabled: !!clientId,
+  });
+}
+
+export function useCreateContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: { client_id: string; name: string; file_url?: string; notes?: string; signed_at?: string }) => {
+      const { error } = await (supabase as any).from("contracts").insert(input);
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ["contracts", v.client_id] }),
+  });
+}
+
+export function useDeleteContract() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, clientId }: { id: string; clientId: string }) => {
+      const { error } = await (supabase as any).from("contracts").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ["contracts", v.clientId] }),
   });
 }
 
