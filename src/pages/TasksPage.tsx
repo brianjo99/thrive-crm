@@ -80,8 +80,8 @@ export default function TasksPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los estados</SelectItem>
-                <SelectItem value="todo">Por hacer</SelectItem>
-                <SelectItem value="in_progress">En progreso</SelectItem>
+                <SelectItem value="pending">Por hacer</SelectItem>
+                <SelectItem value="in-progress">En progreso</SelectItem>
                 <SelectItem value="review">En revisión</SelectItem>
                 <SelectItem value="complete">Completado</SelectItem>
               </SelectContent>

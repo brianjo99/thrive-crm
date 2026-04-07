@@ -16,7 +16,7 @@ import {
   ArrowLeft, Users, Mail, Calendar, Pencil, FolderKanban,
   CheckCircle, ShieldCheck, Receipt, Clock, AlertCircle,
   Send, FileText, DollarSign, Layers, Image as ImageIcon,
-  ChevronRight,
+  ChevronRight, ExternalLink,
 } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
@@ -430,6 +430,55 @@ export default function ClientDetailPage() {
                 </div>
               )}
             </Card>
+
+            {/* Invoices */}
+            {invoices.length > 0 && (
+              <Card className="luxury-card p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-display font-semibold flex items-center gap-2">
+                    <Receipt className="h-4 w-4 text-primary" /> Facturas
+                  </h3>
+                  <button
+                    onClick={() => navigate("/invoices")}
+                    className="text-xs text-primary hover:underline flex items-center gap-1"
+                  >
+                    Ver todas <ExternalLink className="h-3 w-3" />
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {invoices.slice(0, 6).map(inv => {
+                    const cfg = INVOICE_STATUS[inv.status] ?? INVOICE_STATUS["draft"];
+                    const Icon = cfg.icon;
+                    return (
+                      <div key={inv.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium font-mono truncate">{inv.invoice_number}</p>
+                            {inv.due_date && (
+                              <p className="text-xs text-muted-foreground">
+                                Vence {format(new Date(inv.due_date), "d MMM yyyy")}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 ml-3 flex-shrink-0">
+                          <span className="text-sm font-semibold">${inv.total.toLocaleString()}</span>
+                          <span className={cn("text-xs px-2 py-0.5 rounded-full font-medium", cfg.color)}>
+                            {cfg.label}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {invoices.length > 6 && (
+                    <p className="text-xs text-muted-foreground text-center pt-1">
+                      +{invoices.length - 6} facturas más
+                    </p>
+                  )}
+                </div>
+              </Card>
+            )}
 
             {/* Recent Assets */}
             <Card className="luxury-card p-5">

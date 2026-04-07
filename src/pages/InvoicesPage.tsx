@@ -46,19 +46,19 @@ type Invoice = {
 
 // ---------- Config ----------
 const STATUS_CONFIG: Record<InvoiceStatus, { label: string; color: string; icon: React.ReactNode }> = {
-  draft:     { label: "Draft",     color: "bg-muted text-muted-foreground",   icon: <FileText className="h-3 w-3" /> },
-  sent:      { label: "Sent",      color: "bg-blue-500/15 text-blue-400",     icon: <Send className="h-3 w-3" /> },
-  paid:      { label: "Paid",      color: "bg-green-500/15 text-green-400",   icon: <CheckCircle className="h-3 w-3" /> },
-  overdue:   { label: "Overdue",   color: "bg-red-500/15 text-red-400",       icon: <AlertCircle className="h-3 w-3" /> },
-  cancelled: { label: "Cancelled", color: "bg-zinc-500/15 text-zinc-400",     icon: <Clock className="h-3 w-3" /> },
+  draft:     { label: "Borrador",  color: "bg-muted text-muted-foreground",   icon: <FileText className="h-3 w-3" /> },
+  sent:      { label: "Enviada",   color: "bg-blue-500/15 text-blue-400",     icon: <Send className="h-3 w-3" /> },
+  paid:      { label: "Pagada",    color: "bg-green-500/15 text-green-400",   icon: <CheckCircle className="h-3 w-3" /> },
+  overdue:   { label: "Vencida",   color: "bg-red-500/15 text-red-400",       icon: <AlertCircle className="h-3 w-3" /> },
+  cancelled: { label: "Cancelada", color: "bg-zinc-500/15 text-zinc-400",     icon: <Clock className="h-3 w-3" /> },
 };
 
 const TABS: { value: InvoiceStatus | "all"; label: string }[] = [
-  { value: "all",     label: "All" },
-  { value: "draft",   label: "Draft" },
-  { value: "sent",    label: "Sent" },
-  { value: "paid",    label: "Paid" },
-  { value: "overdue", label: "Overdue" },
+  { value: "all",     label: "Todas" },
+  { value: "draft",   label: "Borrador" },
+  { value: "sent",    label: "Enviadas" },
+  { value: "paid",    label: "Pagadas" },
+  { value: "overdue", label: "Vencidas" },
 ];
 
 const usd = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(n);
@@ -307,18 +307,18 @@ function InvoiceForm({
       {/* Client + Campaign */}
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <label className="text-sm text-muted-foreground">Client <span className="text-destructive">*</span></label>
+          <label className="text-sm text-muted-foreground">Cliente <span className="text-destructive">*</span></label>
           <Select value={form.client_id} onValueChange={v => { setField("client_id", v); setField("campaign_id", ""); }}>
-            <SelectTrigger><SelectValue placeholder="Select client" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger>
             <SelectContent>
               {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm text-muted-foreground">Campaign <span className="text-xs">(optional)</span></label>
+          <label className="text-sm text-muted-foreground">Campaña <span className="text-xs">(opcional)</span></label>
           <Select value={form.campaign_id} onValueChange={v => setField("campaign_id", v)} disabled={!form.client_id}>
-            <SelectTrigger><SelectValue placeholder="Select campaign" /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder="Seleccionar campaña" /></SelectTrigger>
             <SelectContent>
               {filteredCampaigns.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
@@ -328,17 +328,17 @@ function InvoiceForm({
 
       {/* Due date */}
       <div className="space-y-1.5 max-w-[200px]">
-        <label className="text-sm text-muted-foreground">Due Date</label>
+        <label className="text-sm text-muted-foreground">Fecha de vencimiento</label>
         <Input type="date" value={form.due_date} onChange={e => setField("due_date", e.target.value)} />
       </div>
 
       {/* Line items */}
       <div className="space-y-2">
         <div className="grid grid-cols-[1fr_72px_100px_90px_32px] gap-2 text-xs text-muted-foreground font-medium pb-1 border-b border-border">
-          <span>Description</span>
-          <span className="text-right">Qty</span>
-          <span className="text-right">Unit Price ($)</span>
-          <span className="text-right">Amount</span>
+          <span>Descripción</span>
+          <span className="text-right">Cant.</span>
+          <span className="text-right">Precio unit. ($)</span>
+          <span className="text-right">Total</span>
           <span />
         </div>
         {form.items.map((item, i) => (
@@ -352,14 +352,14 @@ function InvoiceForm({
           />
         ))}
         <Button variant="outline" size="sm" onClick={addItem} className="gap-1 mt-1">
-          <Plus className="h-3.5 w-3.5" /> Add Line Item
+          <Plus className="h-3.5 w-3.5" /> Añadir línea
         </Button>
       </div>
 
       {/* Tax + Totals */}
       <div className="grid grid-cols-2 gap-6 items-start">
         <div className="space-y-1.5">
-          <label className="text-sm text-muted-foreground">Tax %</label>
+          <label className="text-sm text-muted-foreground">Impuesto %</label>
           <Input
             type="number" min={0} max={100} step={0.5}
             value={form.tax_pct === 0 ? "" : form.tax_pct}
@@ -383,11 +383,11 @@ function InvoiceForm({
 
       {/* Notes */}
       <div className="space-y-1.5">
-        <label className="text-sm text-muted-foreground">Notes</label>
+        <label className="text-sm text-muted-foreground">Notas</label>
         <Textarea
           value={form.notes}
           onChange={e => setField("notes", e.target.value)}
-          placeholder="Payment terms, bank info, additional notes..."
+          placeholder="Condiciones de pago, datos bancarios, notas adicionales..."
           rows={2}
           className="text-sm resize-none"
         />
@@ -395,10 +395,10 @@ function InvoiceForm({
 
       {/* Actions */}
       <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
-        <Button variant="outline" size="sm" onClick={onCancel}>Cancel</Button>
+        <Button variant="outline" size="sm" onClick={onCancel}>Cancelar</Button>
         <Button size="sm" onClick={onSave} disabled={isSaving} className="gap-1">
           <Save className="h-3.5 w-3.5" />
-          {isSaving ? "Saving..." : saveLabel}
+          {isSaving ? "Guardando..." : saveLabel}
         </Button>
       </div>
     </div>
@@ -451,8 +451,8 @@ export default function InvoicesPage() {
   };
 
   const handleCreate = async () => {
-    if (!createForm.client_id) { toast.error("Client is required"); return; }
-    if (createForm.items.every(i => !i.description)) { toast.error("At least one line item is required"); return; }
+    if (!createForm.client_id) { toast.error("Selecciona un cliente"); return; }
+    if (createForm.items.every(i => !i.description)) { toast.error("Añade al menos una línea de servicio"); return; }
     const { subtotal, taxAmount, total } = calcTotals(createForm.items, createForm.tax_pct);
     try {
       await createInvoice.mutateAsync({
@@ -468,7 +468,7 @@ export default function InvoicesPage() {
         notes: createForm.notes || null,
         items: createForm.items.filter(i => i.description),
       });
-      toast.success("Invoice created");
+      toast.success("Factura creada");
       setNewDialogOpen(false);
       setCreateForm(EMPTY_FORM);
     } catch (err: any) {
@@ -478,7 +478,7 @@ export default function InvoicesPage() {
 
   const handleSaveEdit = async () => {
     if (!detail) return;
-    if (!editForm.client_id) { toast.error("Client is required"); return; }
+    if (!editForm.client_id) { toast.error("Selecciona un cliente"); return; }
     const { subtotal, taxAmount, total } = calcTotals(editForm.items, editForm.tax_pct);
     try {
       await updateInvoice.mutateAsync({
@@ -492,7 +492,7 @@ export default function InvoicesPage() {
         total,
         items: editForm.items.filter(i => i.description),
       });
-      toast.success("Invoice updated");
+      toast.success("Factura actualizada");
       setEditDialogOpen(false);
     } catch (err: any) {
       toast.error(err.message ?? "Failed");
@@ -503,14 +503,14 @@ export default function InvoicesPage() {
     const extra: Partial<Invoice> = {};
     if (status === "paid") extra.paid_date = new Date().toISOString().split("T")[0];
     await updateInvoice.mutateAsync({ id: inv.id, status, ...extra });
-    toast.success(`Marked as ${STATUS_CONFIG[status].label}`);
+    toast.success(`Estado actualizado: ${STATUS_CONFIG[status].label}`);
   };
 
   const handleDelete = async (inv: Invoice) => {
-    if (!confirm(`Delete invoice ${inv.invoice_number}?`)) return;
+    if (!confirm(`¿Eliminar la factura ${inv.invoice_number}?`)) return;
     await deleteInvoice.mutateAsync(inv.id);
     setDetail(null);
-    toast.success("Invoice deleted");
+    toast.success("Factura eliminada");
   };
 
   // -------- Detail View --------
@@ -533,11 +533,11 @@ export default function InvoicesPage() {
             </div>
             <div className="ml-auto flex items-center gap-2 flex-wrap">
               <StatusBadge status={inv.status} />
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => printInvoice(inv, client?.name ?? "Client")}>
-                <Printer className="h-3.5 w-3.5" /> Print / PDF
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => printInvoice(inv, client?.name ?? "Cliente")}>
+                <Printer className="h-3.5 w-3.5" /> Imprimir / PDF
               </Button>
               <Button size="sm" className="gap-1.5" onClick={() => openEdit(inv)}>
-                <Save className="h-3.5 w-3.5" /> Edit Invoice
+                <Save className="h-3.5 w-3.5" /> Editar factura
               </Button>
             </div>
           </div>
@@ -548,26 +548,26 @@ export default function InvoicesPage() {
           <Card className="luxury-card p-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <p className="text-muted-foreground mb-1">Client</p>
+                <p className="text-muted-foreground mb-1">Cliente</p>
                 <p className="font-medium">{client?.name ?? "—"}</p>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Invoice #</p>
+                <p className="text-muted-foreground mb-1">Factura #</p>
                 <p className="font-medium font-mono">{inv.invoice_number}</p>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Due Date</p>
+                <p className="text-muted-foreground mb-1">Vence</p>
                 <p className={cn("font-medium", inv.due_date && inv.status !== "paid" && isPast(parseISO(inv.due_date)) && "text-red-400")}>
                   {inv.due_date ? format(parseISO(inv.due_date), "MMM d, yyyy") : "—"}
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">Created</p>
+                <p className="text-muted-foreground mb-1">Creada</p>
                 <p className="font-medium">{format(new Date(inv.created_at), "MMM d, yyyy")}</p>
               </div>
               {inv.paid_date && (
                 <div>
-                  <p className="text-muted-foreground mb-1">Paid On</p>
+                  <p className="text-muted-foreground mb-1">Pagada el</p>
                   <p className="font-medium text-green-400">{format(parseISO(inv.paid_date), "MMM d, yyyy")}</p>
                 </div>
               )}
@@ -576,13 +576,13 @@ export default function InvoicesPage() {
 
           {/* Line Items */}
           <Card className="luxury-card p-6">
-            <h3 className="font-display font-semibold mb-4">Line Items</h3>
+            <h3 className="font-display font-semibold mb-4">Servicios</h3>
             <div className="divide-y divide-border">
               <div className="grid grid-cols-[1fr_72px_96px_88px] gap-2 pb-2 text-xs text-muted-foreground font-medium">
-                <span>Description</span>
-                <span className="text-right">Qty</span>
-                <span className="text-right">Unit Price</span>
-                <span className="text-right">Amount</span>
+                <span>Descripción</span>
+                <span className="text-right">Cant.</span>
+                <span className="text-right">Precio unit.</span>
+                <span className="text-right">Total</span>
               </div>
               {inv.items.map((item, i) => (
                 <div key={i} className="grid grid-cols-[1fr_72px_96px_88px] gap-2 py-2.5 text-sm">
@@ -608,37 +608,37 @@ export default function InvoicesPage() {
 
           {inv.notes && (
             <Card className="luxury-card p-6">
-              <h3 className="font-display font-semibold mb-2">Notes</h3>
+              <h3 className="font-display font-semibold mb-2">Notas</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">{inv.notes}</p>
             </Card>
           )}
 
           {/* Status Actions */}
           <Card className="luxury-card p-4">
-            <p className="text-sm text-muted-foreground mb-3">Update Status</p>
+            <p className="text-sm text-muted-foreground mb-3">Cambiar estado</p>
             <div className="flex flex-wrap gap-2">
               {inv.status !== "sent" && inv.status !== "paid" && (
                 <Button size="sm" variant="outline" className="gap-1 border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
                   onClick={() => handleStatusChange(inv, "sent")} disabled={updateInvoice.isPending}>
-                  <Send className="h-3 w-3" /> Mark as Sent
+                  <Send className="h-3 w-3" /> Marcar enviada
                 </Button>
               )}
               {inv.status !== "paid" && (
                 <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 text-white"
                   onClick={() => handleStatusChange(inv, "paid")} disabled={updateInvoice.isPending}>
-                  <CheckCircle className="h-3 w-3" /> Mark as Paid
+                  <CheckCircle className="h-3 w-3" /> Marcar pagada
                 </Button>
               )}
               {inv.status !== "overdue" && inv.status !== "paid" && (
                 <Button size="sm" variant="outline" className="gap-1 border-red-500/30 text-red-400 hover:bg-red-500/10"
                   onClick={() => handleStatusChange(inv, "overdue")} disabled={updateInvoice.isPending}>
-                  <AlertCircle className="h-3 w-3" /> Mark as Overdue
+                  <AlertCircle className="h-3 w-3" /> Marcar vencida
                 </Button>
               )}
               {inv.status !== "cancelled" && inv.status !== "paid" && (
                 <Button size="sm" variant="ghost" className="gap-1 text-muted-foreground"
                   onClick={() => handleStatusChange(inv, "cancelled")} disabled={updateInvoice.isPending}>
-                  Cancel Invoice
+                  Cancelar factura
                 </Button>
               )}
               <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-destructive ml-auto"
@@ -666,7 +666,7 @@ export default function InvoicesPage() {
                 onSave={handleSaveEdit}
                 onCancel={() => setEditDialogOpen(false)}
                 isSaving={updateInvoice.isPending}
-                saveLabel="Save Changes"
+                saveLabel="Guardar cambios"
               />
             </div>
           </DialogContent>
@@ -774,7 +774,7 @@ export default function InvoicesPage() {
                             Due {format(parseISO(inv.due_date), "MMM d, yyyy")}
                           </span>
                         )}
-                        <span className="hidden md:block">Created {format(new Date(inv.created_at), "MMM d, yyyy")}</span>
+                        <span className="hidden md:block">Creada {format(new Date(inv.created_at), "d MMM yyyy")}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0">

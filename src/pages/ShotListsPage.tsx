@@ -17,10 +17,10 @@ import { Tables } from "@/integrations/supabase/types";
 type ShotList = Tables<"shot_lists">;
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  planned: { label: "Planned", color: "bg-blue-500/15 text-blue-500", icon: Clock },
-  "in-progress": { label: "In Progress", color: "bg-yellow-500/15 text-yellow-500", icon: Clock },
-  completed: { label: "Completed", color: "bg-green-500/15 text-green-500", icon: CheckCircle },
-  cancelled: { label: "Cancelled", color: "bg-red-500/15 text-red-500", icon: Clock },
+  planned: { label: "Planificado", color: "bg-blue-500/15 text-blue-500", icon: Clock },
+  "in-progress": { label: "En progreso", color: "bg-yellow-500/15 text-yellow-500", icon: Clock },
+  completed: { label: "Completado", color: "bg-green-500/15 text-green-500", icon: CheckCircle },
+  cancelled: { label: "Cancelado", color: "bg-red-500/15 text-red-500", icon: Clock },
 };
 
 export default function ShotListsPage() {
@@ -198,10 +198,10 @@ export default function ShotListsPage() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="planned">Planned</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                        <SelectItem value="planned">Planificado</SelectItem>
+                        <SelectItem value="in-progress">En progreso</SelectItem>
+                        <SelectItem value="completed">Completado</SelectItem>
+                        <SelectItem value="cancelled">Cancelado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
