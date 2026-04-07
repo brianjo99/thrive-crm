@@ -6,12 +6,12 @@ import {
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarFooter, SidebarSeparator, useSidebar,
 } from "@/components/ui/sidebar";
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, Sparkles, FolderOpen, ShieldCheck, Clapperboard, TrendingUp, Megaphone, CalendarDays, Receipt, FileText, ClipboardList, BookOpen, Settings } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, FileStack, Scissors, Camera, Crown, Sparkles, FolderOpen, ShieldCheck, Clapperboard, TrendingUp, Megaphone, CalendarDays, Receipt, FileText, ClipboardList, BookOpen, Settings, BarChart3, Film, FileCheck } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-type ViewRole = "owner" | "editor" | "videographer" | "client";
+type ViewRole = "owner" | "editor" | "videographer";
 
 type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; module?: string };
 type NavGroup = { label: string; items: NavItem[] };
@@ -21,31 +21,34 @@ const roleNavItems: Record<ViewRole, NavGroup[]> = {
     {
       label: "Producción",
       items: [
-        { title: "Today",        url: "/dashboard",  icon: LayoutDashboard, module: "dashboard" },
+        { title: "Dashboard",    url: "/dashboard",  icon: LayoutDashboard, module: "dashboard" },
         { title: "Clientes",     url: "/clients",    icon: Users,           module: "clients" },
         { title: "Campañas",     url: "/campaigns",  icon: FolderKanban,    module: "campaigns" },
         { title: "Tareas",       url: "/tasks",      icon: ClipboardList,   module: "tasks" },
         { title: "Calendario",   url: "/calendar",   icon: CalendarDays,    module: "calendar" },
         { title: "Scripts",      url: "/scripts",    icon: FileText,        module: "scripts" },
-        { title: "Call Sheets",  url: "/shot-lists", icon: FileStack,       module: "call_sheets" },
+        { title: "Filmación",    url: "/filmacion",  icon: Film,            module: "call_sheets" },
         { title: "Archivos",     url: "/assets",     icon: FolderOpen,      module: "assets" },
         { title: "Aprobaciones", url: "/approvals",  icon: ShieldCheck,     module: "approvals" },
+        { title: "Plantillas",   url: "/templates",  icon: Clapperboard,    module: "templates" },
       ],
     },
     {
       label: "Gestión",
       items: [
-        { title: "Facturas", url: "/invoices",  icon: Receipt,      module: "invoices" },
-        { title: "Leads",    url: "/leads",     icon: TrendingUp,   module: "leads" },
+        { title: "Cotizaciones", url: "/quotes",   icon: FileCheck,  module: "invoices" },
+        { title: "Facturas",     url: "/invoices", icon: Receipt,    module: "invoices" },
+        { title: "Reportes",  url: "/reporting",  icon: BarChart3,  module: "dashboard" },
+        { title: "Leads",     url: "/leads",      icon: TrendingUp, module: "leads" },
         { title: "Media Buying", url: "/ads",       icon: Megaphone,    module: "ads" },
-        { title: "Plantillas",   url: "/templates", icon: Clapperboard, module: "templates" },
       ],
     },
     {
       label: "Sistema",
       items: [
-        { title: "Help",     url: "/help",      icon: BookOpen },
-        { title: "Settings", url: "/settings",  icon: Settings, module: "settings" },
+        { title: "Usuarios",       url: "/settings?tab=accounts", icon: Users,    module: "settings" },
+        { title: "Ayuda",         url: "/help",                  icon: BookOpen },
+        { title: "Configuración", url: "/settings",              icon: Settings, module: "settings" },
       ],
     },
   ],
@@ -53,36 +56,27 @@ const roleNavItems: Record<ViewRole, NavGroup[]> = {
     {
       label: "Producción",
       items: [
-        { title: "My Tasks",  url: "/editor",        icon: Scissors },
-        { title: "Archivos",  url: "/editor/assets", icon: FolderOpen },
-        { title: "Shot Lists",url: "/shot-lists",    icon: FileStack },
+        { title: "Mis Tareas", url: "/editor",        icon: Scissors },
+        { title: "Archivos",   url: "/editor/assets", icon: FolderOpen },
+        { title: "Filmación",  url: "/filmacion",     icon: Film },
       ],
     },
     {
       label: "Ayuda",
-      items: [{ title: "Help", url: "/help", icon: BookOpen }],
+      items: [{ title: "Ayuda", url: "/help", icon: BookOpen }],
     },
   ],
   videographer: [
     {
       label: "Producción",
       items: [
-        { title: "My Tasks",   url: "/videographer",       icon: Camera },
-        { title: "Shot Lists", url: "/videographer/shots", icon: FileStack },
+        { title: "Mis Tareas",   url: "/videographer",       icon: Camera },
+        { title: "Shot Lists",   url: "/videographer/shots", icon: FileStack },
       ],
     },
     {
       label: "Ayuda",
-      items: [{ title: "Help", url: "/help", icon: BookOpen }],
-    },
-  ],
-  client: [
-    {
-      label: "Mi proyecto",
-      items: [
-        { title: "Resumen",      url: "/portal", icon: LayoutDashboard },
-        { title: "Help",         url: "/help",   icon: BookOpen },
-      ],
+      items: [{ title: "Ayuda", url: "/help", icon: BookOpen }],
     },
   ],
 };
@@ -107,7 +101,6 @@ const roleConfig: Record<ViewRole, { label: string; icon: typeof Crown; color: s
   owner: { label: "Owner", icon: Crown, color: "text-primary" },
   editor: { label: "Editor", icon: Scissors, color: "text-[hsl(280_60%_50%)]" },
   videographer: { label: "Videographer", icon: Camera, color: "text-[hsl(200_70%_50%)]" },
-  client: { label: "Portal cliente", icon: Users, color: "text-muted-foreground" },
 };
 
 export function AppSidebar() {
@@ -122,7 +115,7 @@ export function AppSidebar() {
   // Map known roles to their nav. Unknown/null falls to "owner" nav but
   // ProtectedRoute blocks actual route access — this is cosmetic only.
   const currentRole: ViewRole =
-    userRole === "editor" || userRole === "videographer" || userRole === "client"
+    userRole === "editor" || userRole === "videographer"
       ? userRole
       : "owner";
   const isCollapsed = state === "collapsed";

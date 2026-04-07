@@ -88,7 +88,7 @@ export function TopBar() {
         <div className="h-6 w-px bg-border" />
         <div className="flex items-center gap-2">
           <RoleIcon className={cn("h-4 w-4", config.color)} />
-          <span className="text-sm font-medium">{config.label} View</span>
+          <span className="text-sm font-medium">{config.label}</span>
         </div>
       </div>
 
