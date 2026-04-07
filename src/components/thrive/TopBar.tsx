@@ -69,6 +69,16 @@ export function TopBar() {
     await Promise.all(unread.map(n => markRead.mutateAsync(n.id)));
   };
 
+  const handleRefreshNotifications = async () => {
+    try {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/smart-notifications`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+    } catch (_) {}
+  };
+
   return (
     <>
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
@@ -91,7 +101,7 @@ export function TopBar() {
         <Button variant="ghost" size="icon" className="sm:hidden" onClick={() => setSearchOpen(true)}>
           <Search className="h-4 w-4" />
         </Button>
-        <Popover>
+        <Popover onOpenChange={(open) => { if (open) handleRefreshNotifications(); }}>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
@@ -104,10 +114,10 @@ export function TopBar() {
           </PopoverTrigger>
           <PopoverContent align="end" className="w-96 p-0 shadow-xl">
             <div className="p-4 border-b border-border flex items-center justify-between">
-              <h4 className="font-display font-semibold">Notifications</h4>
+              <h4 className="font-display font-semibold">Notificaciones</h4>
               {unreadCount > 0 && (
                 <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={handleMarkAllRead}>
-                  <CheckCheck className="h-3 w-3" /> Mark all read
+                  <CheckCheck className="h-3 w-3" /> Marcar todo como leído
                 </Button>
               )}
             </div>
@@ -116,7 +126,7 @@ export function TopBar() {
               {alerts.length === 0 && notifications.length === 0 ? (
                 <div className="p-8 text-center">
                   <Bell className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">All caught up!</p>
+                  <p className="text-sm text-muted-foreground">¡Todo al día!</p>
                 </div>
               ) : (
                 <div className="divide-y divide-border">
