@@ -41,6 +41,7 @@ type Invoice = {
   due_date: string | null;
   paid_date: string | null;
   notes: string | null;
+  company_name: string | null;
   items: LineItem[];
   created_at: string;
 };
@@ -132,11 +133,12 @@ type FormState = {
   due_date: string;
   tax_pct: number;
   notes: string;
+  company_name: string;
   items: LineItem[];
 };
 
 const EMPTY_FORM: FormState = {
-  client_id: "", campaign_id: "", due_date: "", tax_pct: 0, notes: "",
+  client_id: "", campaign_id: "", due_date: "", tax_pct: 0, notes: "", company_name: "",
   items: [{ ...EMPTY_ITEM }],
 };
 
@@ -327,10 +329,20 @@ function InvoiceForm({
         </div>
       </div>
 
-      {/* Due date */}
-      <div className="space-y-1.5 max-w-[200px]">
-        <label className="text-sm text-muted-foreground">Fecha de vencimiento</label>
-        <Input type="date" value={form.due_date} onChange={e => setField("due_date", e.target.value)} />
+      {/* Company name + Due date */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label className="text-sm text-muted-foreground">Nombre de la empresa</label>
+          <Input
+            value={form.company_name}
+            onChange={e => setField("company_name", e.target.value)}
+            placeholder="Thrive Agency"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-sm text-muted-foreground">Fecha de vencimiento</label>
+          <Input type="date" value={form.due_date} onChange={e => setField("due_date", e.target.value)} />
+        </div>
       </div>
 
       {/* Line items */}
@@ -446,6 +458,7 @@ export default function InvoicesPage() {
       due_date: inv.due_date ?? "",
       tax_pct: taxPct,
       notes: inv.notes ?? "",
+      company_name: inv.company_name ?? "",
       items: inv.items.length > 0 ? inv.items : [{ ...EMPTY_ITEM }],
     });
     setEditDialogOpen(true);
@@ -467,6 +480,7 @@ export default function InvoicesPage() {
         due_date: createForm.due_date || null,
         paid_date: null,
         notes: createForm.notes || null,
+        company_name: createForm.company_name.trim() || null,
         items: createForm.items.filter(i => i.description),
       });
       toast.success("Factura creada");
@@ -488,6 +502,7 @@ export default function InvoicesPage() {
         campaign_id: editForm.campaign_id || null,
         due_date: editForm.due_date || null,
         notes: editForm.notes || null,
+        company_name: editForm.company_name.trim() || null,
         subtotal,
         tax: taxAmount,
         total,
@@ -534,7 +549,7 @@ export default function InvoicesPage() {
             </div>
             <div className="ml-auto flex items-center gap-2 flex-wrap">
               <StatusBadge status={inv.status} />
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => printInvoice(inv, client?.name ?? "Cliente")}>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => printInvoice(inv, client?.name ?? "Cliente", inv.company_name || "Thrive Agency")}>
                 <Printer className="h-3.5 w-3.5" /> Imprimir / PDF
               </Button>
               <Button size="sm" className="gap-1.5" onClick={() => openEdit(inv)}>
