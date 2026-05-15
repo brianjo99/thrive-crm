@@ -372,7 +372,7 @@ function InvoiceForm({
       {/* Tax + Totals */}
       <div className="grid grid-cols-2 gap-6 items-start">
         <div className="space-y-1.5">
-          <label className="text-sm text-muted-foreground">Impuesto %</label>
+          <label className="text-sm text-muted-foreground">Impuesto % <span className="text-xs">(opcional)</span></label>
           <Input
             type="number" min={0} max={100} step={0.5}
             value={form.tax_pct === 0 ? "" : form.tax_pct}
