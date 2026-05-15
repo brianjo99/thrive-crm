@@ -263,7 +263,7 @@ function printInvoice(inv: Invoice, clientName: string, companyName = "Thrive Ag
 <div class="totals">
   <table>
     <tr><td>Subtotal</td><td style="text-align:right">${usd(inv.subtotal)}</td></tr>
-    <tr><td>Tax</td><td style="text-align:right">${usd(inv.tax)}</td></tr>
+    ${inv.tax > 0 ? `<tr><td>Tax</td><td style="text-align:right">${usd(inv.tax)}</td></tr>` : ""}
     <tr class="total-row"><td>Total</td><td style="text-align:right">${usd(inv.total)}</td></tr>
   </table>
 </div>
@@ -613,9 +613,11 @@ export default function InvoicesPage() {
               <div className="flex justify-between text-muted-foreground">
                 <span>Subtotal</span><span>{usd(inv.subtotal)}</span>
               </div>
-              <div className="flex justify-between text-muted-foreground">
-                <span>Tax</span><span>{usd(inv.tax)}</span>
-              </div>
+              {inv.tax > 0 && (
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Tax</span><span>{usd(inv.tax)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-semibold text-base pt-1 border-t border-border">
                 <span>Total</span><span className="text-primary">{usd(inv.total)}</span>
               </div>
