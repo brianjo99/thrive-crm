@@ -340,7 +340,7 @@ function InvoiceForm({
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-sm text-muted-foreground">Fecha de vencimiento</label>
+          <label className="text-sm text-muted-foreground">Fecha de vencimiento <span className="text-xs">(opcional)</span></label>
           <Input type="date" value={form.due_date} onChange={e => setField("due_date", e.target.value)} />
         </div>
       </div>
