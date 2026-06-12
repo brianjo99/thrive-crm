@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
@@ -16,7 +16,7 @@ import {
   Megaphone, Plus, ExternalLink, CheckCircle, Clock, PauseCircle,
   XCircle, DollarSign, Settings, Share2, Sparkles, RefreshCw,
   TrendingUp, Users, ArrowUpRight, BarChart3, HelpCircle, Layers,
-  Check, Play, Pause, AlertCircle
+  Check, Play, Pause, AlertCircle, Key, Link
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -39,7 +39,19 @@ interface AdCampaign {
   dailyBudget: number;
 }
 
-// Simulated data for chart
+interface MetaAdAccount {
+  id: string;
+  name: string;
+  currency: string;
+  amount_spent?: string;
+}
+
+// LocalStorage Keys
+const META_TOKEN_KEY = "thrive_meta_ads_token";
+const META_APP_ID_KEY = "thrive_meta_app_id";
+const META_SELECTED_ACCOUNT_KEY = "thrive_meta_selected_account_id";
+
+// Simulated performance data
 const PERFORMANCE_DATA = [
   { date: "05-12", Meta: 400, Google: 240, TikTok: 150 },
   { date: "05-18", Meta: 450, Google: 280, TikTok: 180 },
@@ -52,19 +64,28 @@ const PERFORMANCE_DATA = [
 export default function AdsPage() {
   const queryClient = useQueryClient();
 
-  // Local storage configurations for mock account connections
+  // Connected platforms state
   const [connectedAccounts, setConnectedAccounts] = useState<Record<string, boolean>>({
-    meta_ads: true,
+    meta_ads: false,
     google_ads: false,
     tiktok_ads: false,
     linkedin_ads: false
   });
 
-  const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
+  // Dialog configurations
+  const [isMetaConnectOpen, setIsMetaConnectOpen] = useState(false);
+  const [appIdInput, setAppIdInput] = useState("");
+  const [tokenInput, setTokenInput] = useState("");
+  const [isFetchingMeta, setIsFetchingMeta] = useState(false);
 
-  // Active campaigns state
-  const [campaigns, setCampaigns] = useState<AdCampaign[]>([
-    { id: "c1", name: "Gym Promo - Verano 2026", platform: "meta_ads", status: "active", spend: 320.5, clicks: 420, impressions: 12500, conversions: 24, dailyBudget: 15 },
+  // Meta Live integration states
+  const [metaToken, setMetaToken] = useState<string | null>(null);
+  const [metaAccounts, setMetaAccounts] = useState<MetaAdAccount[]>([]);
+  const [selectedMetaAccountId, setSelectedMetaAccountId] = useState<string>("");
+  const [metaCampaigns, setMetaCampaigns] = useState<AdCampaign[]>([]);
+
+  // Base list of campaigns (includes standard fallback / mock ones)
+  const [baseCampaigns, setBaseCampaigns] = useState<AdCampaign[]>([
     { id: "c2", name: "Retargeting - Leads Fieles", platform: "meta_ads", status: "active", spend: 180.2, clicks: 210, impressions: 6800, conversions: 18, dailyBudget: 10 },
     { id: "c3", name: "Búsqueda Local - Implante Dental", platform: "google_ads", status: "active", spend: 450.0, clicks: 380, impressions: 5200, conversions: 35, dailyBudget: 25 },
     { id: "c4", name: "TikTok Trend Challenge - FitNation", platform: "tiktok_ads", status: "paused", spend: 120.0, clicks: 890, impressions: 45000, conversions: 12, dailyBudget: 20 }
@@ -86,7 +107,7 @@ export default function AdsPage() {
 
   // Lead injection state
   const [leadForm, setLeadForm] = useState({
-    campaignId: "c1",
+    campaignId: "c2",
     name: "",
     email: "",
     phone: "",
@@ -94,41 +115,209 @@ export default function AdsPage() {
   });
   const [injectingLead, setInjectingLead] = useState(false);
 
-  // Connect platform mock animation flow
-  const handleConnectPlatform = (platformId: string) => {
+  // ─── Live Meta API Fetch Functions ─────────────────────────────────────────
+
+  // Fetch Meta Ad Accounts list
+  const fetchMetaAdAccounts = async (token: string) => {
+    setIsFetchingMeta(true);
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/v19.0/me/adaccounts?fields=name,account_id,currency,amount_spent&access_token=${token}`
+      );
+      const resData = await response.json();
+      
+      if (resData.error) {
+        throw new Error(resData.error.message);
+      }
+
+      const accounts = (resData.data || []).map((acc: any) => ({
+        id: acc.id,
+        name: acc.name || `Act ${acc.account_id}`,
+        currency: acc.currency,
+        amount_spent: acc.amount_spent
+      }));
+
+      setMetaAccounts(accounts);
+      if (accounts.length > 0) {
+        // Auto select first account or load previously selected
+        const savedAccount = localStorage.getItem(META_SELECTED_ACCOUNT_KEY);
+        const match = accounts.find((a: any) => a.id === savedAccount);
+        const targetId = match ? match.id : accounts[0].id;
+        setSelectedMetaAccountId(targetId);
+        localStorage.setItem(META_SELECTED_ACCOUNT_KEY, targetId);
+        fetchMetaCampaigns(targetId, token);
+      } else {
+        toast.warning("No se encontraron cuentas publicitarias de Facebook activas.");
+      }
+    } catch (err: any) {
+      console.error("Meta Graph API error:", err);
+      toast.error(`Error al conectar con Meta Graph API: ${err.message}`);
+      // Remove bad token
+      setMetaToken(null);
+      localStorage.removeItem(META_TOKEN_KEY);
+      setConnectedAccounts(prev => ({ ...prev, meta_ads: false }));
+    } finally {
+      setIsFetchingMeta(false);
+    }
+  };
+
+  // Fetch campaigns for selected Meta Ad Account
+  const fetchMetaCampaigns = async (accountId: string, token: string) => {
+    try {
+      const response = await fetch(
+        `https://graph.facebook.com/v19.0/${accountId}/campaigns?fields=name,status,daily_budget,objective,insights{impressions,clicks,spend}&limit=10&access_token=${token}`
+      );
+      const resData = await response.json();
+
+      if (resData.error) {
+        throw new Error(resData.error.message);
+      }
+
+      const campaignsMapped: AdCampaign[] = (resData.data || []).map((c: any) => {
+        const insights = c.insights?.data?.[0] || {};
+        return {
+          id: c.id,
+          name: c.name,
+          platform: "meta_ads",
+          status: c.status?.toLowerCase() === "active" ? "active" : "paused",
+          spend: insights.spend ? parseFloat(insights.spend) : 0,
+          clicks: insights.clicks ? parseInt(insights.clicks) : 0,
+          impressions: insights.impressions ? parseInt(insights.impressions) : 0,
+          conversions: Math.round((insights.clicks ? parseInt(insights.clicks) : 0) * 0.08), // simulate conversions as 8% of clicks
+          dailyBudget: c.daily_budget ? (parseInt(c.daily_budget) / 100) : 10 // Meta returns budget in cents
+        };
+      });
+
+      setMetaCampaigns(campaignsMapped);
+      if (campaignsMapped.length > 0 && leadForm.campaignId === "c2") {
+        setLeadForm(prev => ({ ...prev, campaignId: campaignsMapped[0].id }));
+      }
+    } catch (err: any) {
+      console.error("Error fetching Meta Campaigns:", err);
+      toast.error(`Error al obtener campañas de Meta: ${err.message}`);
+    }
+  };
+
+  // ─── OAuth Callback & Initial Load ──────────────────────────────────────────
+  useEffect(() => {
+    // 1. Detect access_token in URL hash (retuned by Facebook Login)
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token=")) {
+      const params = new URLSearchParams(hash.substring(1));
+      const token = params.get("access_token");
+      
+      if (token) {
+        localStorage.setItem(META_TOKEN_KEY, token);
+        setMetaToken(token);
+        setConnectedAccounts(prev => ({ ...prev, meta_ads: true }));
+        toast.success("¡Autenticación con Facebook exitosa!");
+        fetchMetaAdAccounts(token);
+      }
+      
+      // Clean URL hash
+      window.history.replaceState(null, "", window.location.pathname);
+    } else {
+      // 2. Load stored tokens on page load
+      const storedToken = localStorage.getItem(META_TOKEN_KEY);
+      const storedAppId = localStorage.getItem(META_APP_ID_KEY);
+      
+      if (storedAppId) setAppIdInput(storedAppId);
+      if (storedToken) {
+        setMetaToken(storedToken);
+        setConnectedAccounts(prev => ({ ...prev, meta_ads: true }));
+        fetchMetaAdAccounts(storedToken);
+      }
+    }
+  }, []);
+
+  // Update selected account and reload campaigns
+  const handleMetaAccountChange = (accountId: string) => {
+    setSelectedMetaAccountId(accountId);
+    localStorage.setItem(META_SELECTED_ACCOUNT_KEY, accountId);
+    if (metaToken) {
+      fetchMetaCampaigns(accountId, metaToken);
+    }
+  };
+
+  // ─── Connection Flows ──────────────────────────────────────────────────────
+
+  // Redirect to Facebook OAuth Page
+  const handleMetaOAuthRedirect = () => {
+    if (!appIdInput.trim()) {
+      toast.warning("Por favor ingresa tu Facebook Developer App ID");
+      return;
+    }
+    localStorage.setItem(META_APP_ID_KEY, appIdInput);
+    
+    const redirectUri = window.location.origin + "/ads";
+    const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${appIdInput.trim()}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=ads_management,ads_read,business_management&response_type=token&state=meta_ads`;
+    
+    toast.loading("Redirigiendo a Facebook Login...");
+    window.location.href = authUrl;
+  };
+
+  // Paste direct token handler
+  const handleSaveDirectToken = () => {
+    if (!tokenInput.trim()) {
+      toast.warning("Por favor ingresa un token válido");
+      return;
+    }
+    localStorage.setItem(META_TOKEN_KEY, tokenInput.trim());
+    setMetaToken(tokenInput.trim());
+    setConnectedAccounts(prev => ({ ...prev, meta_ads: true }));
+    setIsMetaConnectOpen(false);
+    toast.success("Token de acceso cargado correctamente");
+    fetchMetaAdAccounts(tokenInput.trim());
+  };
+
+  // Disconnect Meta
+  const handleDisconnectMeta = () => {
+    if (confirm("¿Seguro que deseas desconectar tu cuenta publicitaria de Meta?")) {
+      localStorage.removeItem(META_TOKEN_KEY);
+      localStorage.removeItem(META_SELECTED_ACCOUNT_KEY);
+      setMetaToken(null);
+      setMetaAccounts([]);
+      setMetaCampaigns([]);
+      setSelectedMetaAccountId("");
+      setConnectedAccounts(prev => ({ ...prev, meta_ads: false }));
+      toast.success("Cuenta de Meta Ads desconectada con éxito.");
+    }
+  };
+
+  // Simulated connect for other platforms
+  const handleSimulatedConnect = (platformId: string) => {
     if (connectedAccounts[platformId]) {
       setConnectedAccounts(prev => ({ ...prev, [platformId]: false }));
       toast.success("Cuenta desconectada exitosamente");
       return;
     }
-
-    setConnectingPlatform(platformId);
+    toast.loading(`Conectando con la cuenta de ${platformId.replace("_", " ").toUpperCase()}...`);
     setTimeout(() => {
       setConnectedAccounts(prev => ({ ...prev, [platformId]: true }));
-      setConnectingPlatform(null);
-      toast.success(`Cuenta de ${platformId.replace("_", " ").toUpperCase()} conectada con éxito`);
-    }, 2000);
+      toast.dismiss();
+      toast.success(`Cuenta de ${platformId.replace("_", " ").toUpperCase()} conectada con éxito (Demo Mode)`);
+    }, 1200);
   };
 
-  // Toggle campaigns state
+  // Combine live Meta campaigns and fallback campaigns
+  const campaignsList = connectedAccounts.meta_ads && metaCampaigns.length > 0
+    ? [...metaCampaigns, ...baseCampaigns.filter(c => c.platform !== "meta_ads")]
+    : [
+        { id: "c1", name: "Gym Promo - Verano 2026", platform: "meta_ads", status: "active", spend: 320.5, clicks: 420, impressions: 12500, conversions: 24, dailyBudget: 15 },
+        ...baseCampaigns
+      ];
+
+  // Campaign control action
   const toggleCampaignStatus = (campaignId: string) => {
-    setCampaigns(prev => prev.map(c => {
-      if (c.id === campaignId) {
-        const nextStatus = c.status === "active" ? "paused" : "active";
-        toast.info(`Campaña "${c.name}" ${nextStatus === "active" ? "activada" : "pausada"}`);
-        return { ...c, status: nextStatus };
-      }
-      return c;
-    }));
+    toast.info("Para campañas reales, debes cambiar el estado directamente en Meta Ads Manager.");
+    // Update local state cosmetically
+    setMetaCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: c.status === "active" ? "paused" : "active" } : c));
+    setBaseCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, status: c.status === "active" ? "paused" : "active" } : c));
   };
 
   const updateCampaignBudget = (campaignId: string, budget: number) => {
-    setCampaigns(prev => prev.map(c => {
-      if (c.id === campaignId) {
-        return { ...c, dailyBudget: budget };
-      }
-      return c;
-    }));
+    setMetaCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, dailyBudget: budget } : c));
+    setBaseCampaigns(prev => prev.map(c => c.id === campaignId ? { ...c, dailyBudget: budget } : c));
   };
 
   // AI Copywriting simulation
@@ -165,7 +354,7 @@ export default function AdsPage() {
       }
       setGeneratingAi(false);
       toast.success("Copia publicitaria generada con Inteligencia Artificial");
-    }, 1500);
+    }, 1200);
   };
 
   // Inject lead into CRM
@@ -177,7 +366,7 @@ export default function AdsPage() {
     }
 
     setInjectingLead(true);
-    const selectedCampaign = campaigns.find(c => c.id === leadForm.campaignId);
+    const selectedCampaign = campaignsList.find(c => c.id === leadForm.campaignId);
     const platformName = selectedCampaign ? selectedCampaign.platform.replace("_", " ").toUpperCase() : "ADS INTEGRATION";
     
     try {
@@ -193,46 +382,37 @@ export default function AdsPage() {
       if (error) throw error;
 
       // Increment leads count in state
-      setCampaigns(prev => prev.map(c => {
-        if (c.id === leadForm.campaignId) {
-          return { ...c, conversions: c.conversions + 1 };
-        }
-        return c;
-      }));
+      if (connectedAccounts.meta_ads && selectedCampaign?.platform === "meta_ads") {
+        setMetaCampaigns(prev => prev.map(c => c.id === leadForm.campaignId ? { ...c, conversions: c.conversions + 1 } : c));
+      } else {
+        setBaseCampaigns(prev => prev.map(c => c.id === leadForm.campaignId ? { ...c, conversions: c.conversions + 1 } : c));
+      }
 
       toast.success("¡Lead capturado e inyectado al CRM exitosamente!");
-      setLeadForm({
-        campaignId: "c1",
+      setLeadForm(prev => ({
+        ...prev,
         name: "",
         email: "",
         phone: "",
         message: ""
-      });
+      }));
     } catch (err: any) {
       console.error(err);
-      // Fallback message if table doesn't exist
-      toast.error(`Error de base de datos: ${err.message}. Intentando simulación local...`);
-      // Simular incremento de lead de todos modos para que el flujo visual no se rompa
-      setCampaigns(prev => prev.map(c => {
-        if (c.id === leadForm.campaignId) {
-          return { ...c, conversions: c.conversions + 1 };
-        }
-        return c;
-      }));
+      toast.error(`Error al conectar con la base de datos de leads.`);
     } finally {
       setInjectingLead(false);
     }
   };
 
   // Metrics calculators
-  const totalSpend = campaigns.reduce((acc, c) => acc + (c.status === "active" ? c.spend : 0), 0);
-  const totalConversions = campaigns.reduce((acc, c) => acc + c.conversions, 0);
-  const totalClicks = campaigns.reduce((acc, c) => acc + c.clicks, 0);
-  const totalImpressions = campaigns.reduce((acc, c) => acc + c.impressions, 0);
+  const totalSpend = campaignsList.reduce((acc, c) => acc + (c.status === "active" ? c.spend : 0), 0);
+  const totalConversions = campaignsList.reduce((acc, c) => acc + c.conversions, 0);
+  const totalClicks = campaignsList.reduce((acc, c) => acc + c.clicks, 0);
+  const totalImpressions = campaignsList.reduce((acc, c) => acc + c.impressions, 0);
   
   const avgCPL = totalConversions > 0 ? (totalSpend / totalConversions) : 0;
   const avgCTR = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100) : 0;
-  const simulatedROI = avgCPL > 0 ? ((150 - avgCPL) / avgCPL * 100) : 0; // Simulated customer lifetime value of $150
+  const simulatedROI = avgCPL > 0 ? ((150 - avgCPL) / avgCPL * 100) : 0;
 
   return (
     <div className="min-h-screen bg-background pb-12">
@@ -245,13 +425,27 @@ export default function AdsPage() {
             </div>
             <div>
               <h1 className="font-display text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/80">
-                Ads Manager
+                Media Buying
               </h1>
-              <p className="text-xs text-muted-foreground">Panel unificado para campañas, copywriting con IA e inyección directa al CRM</p>
+              <p className="text-xs text-muted-foreground">Panel unificado con conexión real Meta Graph API, IA Copywriting e inyección al CRM</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="px-3 py-1 bg-primary/5 text-primary border-primary/20 flex items-center gap-1.5">
+            {connectedAccounts.meta_ads && (
+              <Select value={selectedMetaAccountId} onValueChange={handleMetaAccountChange}>
+                <SelectTrigger className="w-[240px] text-xs h-9 bg-card">
+                  <SelectValue placeholder="Selecciona Cuenta Publicitaria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {metaAccounts.map(acc => (
+                    <SelectItem key={acc.id} value={acc.id} className="text-xs">
+                      {acc.name} ({acc.currency})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Badge variant="outline" className="px-3 py-1 bg-primary/5 text-primary border-primary/20 flex items-center gap-1.5 h-9">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               Sincronizado
             </Badge>
@@ -260,17 +454,6 @@ export default function AdsPage() {
       </header>
 
       <main className="p-6 space-y-6 max-w-7xl mx-auto">
-        {/* Connection Dialog Loading */}
-        <Dialog open={connectingPlatform !== null}>
-          <DialogContent className="sm:max-w-md flex flex-col items-center py-12 text-center">
-            <RefreshCw className="h-12 w-12 text-primary animate-spin mb-4" />
-            <DialogTitle className="font-display text-lg mb-1">Vinculando cuenta publicitaria</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">
-              Estableciendo túnel seguro e importando píxeles y campañas desde {connectingPlatform?.replace("_", " ").toUpperCase()}...
-            </DialogDescription>
-          </DialogContent>
-        </Dialog>
-
         {/* 1. Metrics Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="luxury-card p-4 relative overflow-hidden group">
@@ -362,16 +545,43 @@ export default function AdsPage() {
           {/* Account Connectors */}
           <Card className="luxury-card p-6 space-y-4">
             <div>
-              <h3 className="font-display text-lg font-bold">Conectores GoHighLevel</h3>
+              <h3 className="font-display text-lg font-bold">Conectores de Cuentas</h3>
               <p className="text-xs text-muted-foreground">Vincula tus cuentas publicitarias externas para sincronizar píxeles y campañas.</p>
             </div>
             
             <div className="space-y-3">
+              {/* Meta Ads Card */}
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card/30">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold bg-[#1877F2]">
+                    M
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium">Meta Ads (Real Link)</p>
+                    <p className="text-[10px] text-muted-foreground">Facebook & Instagram</p>
+                  </div>
+                </div>
+                <Button
+                  variant={connectedAccounts.meta_ads ? "outline" : "default"}
+                  size="sm"
+                  className="h-8 text-xs px-3"
+                  onClick={() => {
+                    if (connectedAccounts.meta_ads) {
+                      handleDisconnectMeta();
+                    } else {
+                      setIsMetaConnectOpen(true);
+                    }
+                  }}
+                >
+                  {connectedAccounts.meta_ads ? "Desconectar" : "Conectar"}
+                </Button>
+              </div>
+
+              {/* Other demo cards */}
               {[
-                { id: "meta_ads", name: "Meta Ads", logo: "M", desc: "Facebook & Instagram", color: "bg-[#1877F2]" },
                 { id: "google_ads", name: "Google Ads", logo: "G", desc: "Search, Display, YouTube", color: "bg-[#4285F4]" },
                 { id: "tiktok_ads", name: "TikTok Ads", logo: "TT", desc: "TikTok for Business", color: "bg-[#010101]" },
-                { id: "linkedin_ads", name: "LinkedIn Ads", logo: "IN", desc: "B2B Marketing Campaigns", color: "bg-[#0A66C2]" }
+                { id: "linkedin_ads", name: "LinkedIn Ads", logo: "IN", desc: "B2B Campaigns Manager", color: "bg-[#0A66C2]" }
               ].map(platform => {
                 const isConnected = connectedAccounts[platform.id];
                 return (
@@ -389,7 +599,7 @@ export default function AdsPage() {
                       variant={isConnected ? "outline" : "default"}
                       size="sm"
                       className="h-8 text-xs px-3"
-                      onClick={() => handleConnectPlatform(platform.id)}
+                      onClick={() => handleSimulatedConnect(platform.id)}
                     >
                       {isConnected ? "Desconectar" : "Conectar"}
                     </Button>
@@ -414,74 +624,96 @@ export default function AdsPage() {
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h3 className="font-display text-lg font-bold">Listado de Campañas Activas</h3>
-                  <p className="text-xs text-muted-foreground">Gestiona y actualiza los presupuestos diarios y estados de tus campañas en tiempo real.</p>
+                  <p className="text-xs text-muted-foreground">
+                    {connectedAccounts.meta_ads
+                      ? "Cargadas mediante la API Graph de Meta para la cuenta publicitaria seleccionada."
+                      : "Visualización en tiempo real. Conecta tus cuentas para importar datos reales."}
+                  </p>
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-border text-xs text-muted-foreground uppercase">
-                      <th className="py-3 px-2">Campaña</th>
-                      <th className="py-3 px-2">Plataforma</th>
-                      <th className="py-3 px-2 text-center">Estado</th>
-                      <th className="py-3 px-2">Presupuesto Diario</th>
-                      <th className="py-3 px-2 text-right">Inversión</th>
-                      <th className="py-3 px-2 text-right">Clics / CTR</th>
-                      <th className="py-3 px-2 text-right">Leads</th>
-                      <th className="py-3 px-2 text-right">Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {campaigns.map(c => {
-                      const ctr = c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0;
-                      return (
-                        <tr key={c.id} className="border-b border-border text-sm hover:bg-card/20 transition-colors">
-                          <td className="py-4 px-2 font-medium">{c.name}</td>
-                          <td className="py-4 px-2">
-                            <Badge variant="outline" className="capitalize text-xs">
-                              {c.platform.replace("_", " ")}
-                            </Badge>
-                          </td>
-                          <td className="py-4 px-2 text-center">
-                            <Badge className={cn("text-xs font-semibold", c.status === "active" ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20")}>
-                              {c.status === "active" ? "En Marcha" : "Pausada"}
-                            </Badge>
-                          </td>
-                          <td className="py-4 px-2 w-[220px]">
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs text-muted-foreground font-mono">${c.dailyBudget}/día</span>
-                              <Slider
-                                defaultValue={[c.dailyBudget]}
-                                max={100}
-                                min={5}
-                                step={1}
-                                onValueChange={(val) => updateCampaignBudget(c.id, val[0])}
-                                className="w-24"
-                              />
-                            </div>
-                          </td>
-                          <td className="py-4 px-2 text-right font-mono font-medium">${c.spend.toFixed(2)}</td>
-                          <td className="py-4 px-2 text-right font-mono text-xs">
-                            {c.clicks} <span className="text-muted-foreground">({ctr.toFixed(1)}%)</span>
-                          </td>
-                          <td className="py-4 px-2 text-right font-mono font-bold text-primary">{c.conversions}</td>
-                          <td className="py-4 px-2 text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => toggleCampaignStatus(c.id)}
-                              className="h-8 w-8 hover:bg-primary/10"
-                            >
-                              {c.status === "active" ? <Pause className="h-4 w-4 text-yellow-500" /> : <Play className="h-4 w-4 text-green-500" />}
-                            </Button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+              {isFetchingMeta ? (
+                <div className="py-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
+                  <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+                  <p className="text-xs">Obteniendo campañas de Meta en vivo...</p>
+                </div>
+              ) : campaignsList.length === 0 ? (
+                <div className="py-12 text-center text-muted-foreground space-y-2">
+                  <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto" />
+                  <p className="text-sm font-semibold">No se encontraron campañas</p>
+                  <p className="text-xs">Esta cuenta publicitaria de Facebook no tiene campañas creadas.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-border text-xs text-muted-foreground uppercase">
+                        <th className="py-3 px-2">Campaña</th>
+                        <th className="py-3 px-2">Plataforma</th>
+                        <th className="py-3 px-2 text-center">Estado</th>
+                        <th className="py-3 px-2">Presupuesto Diario</th>
+                        <th className="py-3 px-2 text-right">Inversión</th>
+                        <th className="py-3 px-2 text-right">Clics / CTR</th>
+                        <th className="py-3 px-2 text-right">Leads</th>
+                        <th className="py-3 px-2 text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {campaignsList.map(c => {
+                        const ctr = c.impressions > 0 ? (c.clicks / c.impressions) * 100 : 0;
+                        return (
+                          <tr key={c.id} className="border-b border-border text-sm hover:bg-card/20 transition-colors">
+                            <td className="py-4 px-2 font-medium">
+                              <div className="space-y-0.5">
+                                <p className="truncate max-w-[280px]">{c.name}</p>
+                                <span className="text-[10px] text-muted-foreground font-mono">ID: {c.id}</span>
+                              </div>
+                            </td>
+                            <td className="py-4 px-2">
+                              <Badge variant="outline" className="capitalize text-xs">
+                                {c.platform.replace("_", " ")}
+                              </Badge>
+                            </td>
+                            <td className="py-4 px-2 text-center">
+                              <Badge className={cn("text-xs font-semibold", c.status === "active" ? "bg-green-500/10 text-green-500 border-green-500/20" : "bg-yellow-500/10 text-yellow-500 border-yellow-500/20")}>
+                                {c.status === "active" ? "En Marcha" : "Pausada"}
+                              </Badge>
+                            </td>
+                            <td className="py-4 px-2 w-[220px]">
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-muted-foreground font-mono">${c.dailyBudget}/día</span>
+                                <Slider
+                                  value={[c.dailyBudget]}
+                                  max={150}
+                                  min={5}
+                                  step={1}
+                                  onValueChange={(val) => updateCampaignBudget(c.id, val[0])}
+                                  className="w-24"
+                                />
+                              </div>
+                            </td>
+                            <td className="py-4 px-2 text-right font-mono font-medium">${c.spend.toFixed(2)}</td>
+                            <td className="py-4 px-2 text-right font-mono text-xs">
+                              {c.clicks} <span className="text-muted-foreground">({ctr.toFixed(1)}%)</span>
+                            </td>
+                            <td className="py-4 px-2 text-right font-mono font-bold text-primary">{c.conversions}</td>
+                            <td className="py-4 px-2 text-right">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => toggleCampaignStatus(c.id)}
+                                className="h-8 w-8 hover:bg-primary/10"
+                              >
+                                {c.status === "active" ? <Pause className="h-4 w-4 text-yellow-500" /> : <Play className="h-4 w-4 text-green-500" />}
+                              </Button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </Card>
           </TabsContent>
 
@@ -493,7 +725,7 @@ export default function AdsPage() {
                   <Sparkles className="h-5 w-5 text-primary animate-pulse" />
                   Redacción de Anuncios con IA
                 </h3>
-                <p className="text-xs text-muted-foreground">Nuestra inteligencia artificial genera copys de alto impacto optimizados para conversiones y CTR.</p>
+                <p className="text-xs text-muted-foreground">Redacta copys publicitarios de alto impacto optimizados para conversiones y CTR.</p>
               </div>
 
               <form onSubmit={handleGenerateAdCopy} className="space-y-4">
@@ -682,7 +914,7 @@ export default function AdsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {campaigns.map(c => (
+                      {campaignsList.map(c => (
                         <SelectItem key={c.id} value={c.id}>
                           [{c.platform.replace("_ads", "").toUpperCase()}] - {c.name}
                         </SelectItem>
@@ -761,6 +993,72 @@ export default function AdsPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Meta Connection Dialog */}
+      <Dialog open={isMetaConnectOpen} onOpenChange={setIsMetaConnectOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-display">
+              <Megaphone className="h-5 w-5 text-[#1877F2]" />
+              Conectar Cuenta de Meta Ads
+            </DialogTitle>
+            <DialogDescription>
+              Configura tu conexión en vivo con la API Graph de Meta. Elige OAuth de Facebook o ingresa un token de desarrollo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <Tabs defaultValue="oauth" className="space-y-4 py-2">
+            <TabsList className="grid grid-cols-2">
+              <TabsTrigger value="oauth" className="gap-1.5"><Link className="h-3.5 w-3.5" /> Facebook Login (OAuth)</TabsTrigger>
+              <TabsTrigger value="token" className="gap-1.5"><Key className="h-3.5 w-3.5" /> Token de Acceso Directo</TabsTrigger>
+            </TabsList>
+
+            {/* TAB: OAuth Redirect */}
+            <TabsContent value="oauth" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="meta-app-id">Facebook App ID (Client ID)</Label>
+                <Input
+                  id="meta-app-id"
+                  value={appIdInput}
+                  onChange={(e) => setAppIdInput(e.target.value)}
+                  placeholder="Ej: 1082937502847192"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Ingresa el App ID de tu aplicación registrada en **developers.facebook.com**. Asegúrate de agregar `{window.location.origin}/ads` en tus URIs de redirección válidos de OAuth de Facebook.
+                </p>
+              </div>
+              <Button onClick={handleMetaOAuthRedirect} className="w-full gap-2 bg-[#1877F2] hover:bg-[#156cd4] text-white">
+                <Link className="h-4 w-4" /> Iniciar Facebook Login
+              </Button>
+            </TabsContent>
+
+            {/* TAB: Direct Access Token */}
+            <TabsContent value="token" className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="meta-access-token">Meta User Access Token</Label>
+                <Textarea
+                  id="meta-access-token"
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value)}
+                  placeholder="EAACEdEose0cBA..."
+                  rows={4}
+                  className="font-mono text-xs"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Pega un token con permisos `ads_read` y `ads_management` generado en el **Graph API Explorer** de Meta Developers. Este método no requiere configuración de redirecciones.
+                </p>
+              </div>
+              <Button onClick={handleSaveDirectToken} className="w-full gap-2">
+                <Check className="h-4 w-4" /> Conectar con Token
+              </Button>
+            </TabsContent>
+          </Tabs>
+
+          <DialogFooter className="border-t border-border pt-4">
+            <Button variant="outline" onClick={() => setIsMetaConnectOpen(false)}>Cancelar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
