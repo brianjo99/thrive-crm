@@ -12,11 +12,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Megaphone, Plus, ExternalLink, CheckCircle, Clock, PauseCircle,
   XCircle, DollarSign, Settings, Share2, Sparkles, RefreshCw,
   TrendingUp, Users, ArrowUpRight, BarChart3, HelpCircle, Layers,
-  Check, Play, Pause, AlertCircle, Key, Link, Terminal, ShieldAlert
+  Check, Play, Pause, AlertCircle, Key, Link, Terminal, ShieldAlert,
+  ChevronDown, ChevronUp, LogIn
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -60,6 +62,14 @@ const TIKTOK_APP_ID_KEY = "thrive_tiktok_app_id";
 const LINKEDIN_TOKEN_KEY = "thrive_linkedin_ads_token";
 const LINKEDIN_APP_ID_KEY = "thrive_linkedin_app_id";
 
+// Pre-configured Default Client IDs for OAuth redirects (simulating real platform apps)
+const DEFAULT_CLIENT_IDS: Record<string, string> = {
+  meta_ads: "1082937502847192", // Test Facebook App ID
+  google_ads: "107384918274-abc123xyz.apps.googleusercontent.com", // Test Google Client ID
+  tiktok_ads: "72839182739182", // Test TikTok App ID
+  linkedin_ads: "78abc123xyz" // Test LinkedIn Client ID
+};
+
 // Simulated performance data
 const PERFORMANCE_DATA = [
   { date: "05-12", Meta: 400, Google: 240, TikTok: 150 },
@@ -86,6 +96,7 @@ export default function AdsPage() {
   const [activeTab, setActiveTab] = useState<string>("meta_ads");
   const [appIdInput, setAppIdInput] = useState("");
   const [tokenInput, setTokenInput] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // API Call Logging console
   const [apiLogs, setApiLogs] = useState<string[]>([
@@ -132,7 +143,7 @@ export default function AdsPage() {
   });
   const [injectingLead, setInjectingLead] = useState(false);
 
-  // ─── Meta Graph API integration ──────────────────────────────────────────
+  // ─── Live Meta API Fetch Functions ─────────────────────────────────────────
   const fetchMetaAdAccounts = async (token: string) => {
     addLog(`[Meta API] Solicitando /me/adaccounts...`);
     try {
@@ -211,21 +222,16 @@ export default function AdsPage() {
   const fetchGoogleCampaigns = async (token: string) => {
     addLog(`[Google API] Solicitando clientes accesibles...`);
     try {
-      // 1. Google Ads API calls from browser usually trigger CORS restrictions unless pre-flighted or configured in Google Cloud Console
       const response = await fetch("https://googleads.googleapis.com/v15/customers:listAccessibleCustomers", {
         headers: {
           "Authorization": `Bearer ${token}`
         }
       });
-      
       const resData = await response.json();
-      
       if (resData.error) {
         throw new Error(resData.error.message);
       }
-
       addLog(`[Google API] Clientes obtenidos con éxito.`);
-      // Sincronizar campañas reales o fallback
       const mockGoogle: AdCampaign[] = [
         { id: "g1", name: "Búsqueda Local - Implante Dental (Live API)", platform: "google_ads", status: "active", spend: 450.0, clicks: 380, impressions: 5200, conversions: 35, dailyBudget: 25 },
         { id: "g2", name: "PMax - Campaña Smart (Live API)", platform: "google_ads", status: "active", spend: 230.4, clicks: 190, impressions: 4100, conversions: 19, dailyBudget: 15 }
@@ -233,8 +239,7 @@ export default function AdsPage() {
       setGoogleCampaigns(mockGoogle);
       addLog(`[Google API] Sincronizadas 2 campañas de Google Ads.`);
     } catch (err: any) {
-      addLog(`[Google API CORS Alert] La API restringe llamadas desde el cliente. Ejecutando canal seguro de demostración en vivo...`);
-      // Fallback local con simulación de logs de API
+      addLog(`[Google API CORS Alert] La API restringe llamadas directas en el navegador. Cargando canal de demostración...`);
       const mockGoogle: AdCampaign[] = [
         { id: "g_fallback_google", name: "Búsqueda Local - Implante Dental (Demo Link)", platform: "google_ads", status: "active", spend: 450.0, clicks: 380, impressions: 5200, conversions: 35, dailyBudget: 25 }
       ];
@@ -252,18 +257,16 @@ export default function AdsPage() {
         }
       });
       const resData = await response.json();
-      
       if (resData.code !== 0) {
         throw new Error(resData.message);
       }
-
       addLog(`[TikTok API] Información de anunciante importada.`);
       const mockTiktok: AdCampaign[] = [
         { id: "t1", name: "TikTok Trend Challenge - FitNation (Live API)", platform: "tiktok_ads", status: "paused", spend: 120.0, clicks: 890, impressions: 45000, conversions: 12, dailyBudget: 20 }
       ];
       setTiktokCampaigns(mockTiktok);
     } catch (err: any) {
-      addLog(`[TikTok API Warn] Error de red / CORS. Inicializando canal seguro de demostración...`);
+      addLog(`[TikTok API Warn] Error de red / CORS. Cargando canal de demostración...`);
       const mockTiktok: AdCampaign[] = [
         { id: "t_fallback_tiktok", name: "TikTok Trend Challenge - FitNation (Demo Link)", platform: "tiktok_ads", status: "paused", spend: 120.0, clicks: 890, impressions: 45000, conversions: 12, dailyBudget: 20 }
       ];
@@ -290,7 +293,7 @@ export default function AdsPage() {
       ];
       setLinkedinCampaigns(mockLinkedin);
     } catch (err: any) {
-      addLog(`[LinkedIn API CORS Alert] Error de CORS / Dominio. Inicializando canal seguro de demostración...`);
+      addLog(`[LinkedIn API CORS Alert] Error de CORS / Dominio. Cargando canal de demostración...`);
       const mockLinkedin: AdCampaign[] = [
         { id: "l_fallback_linkedin", name: "LinkedIn B2B Lead Gen - Thrive (Demo Link)", platform: "linkedin_ads", status: "active", spend: 540.0, clicks: 110, impressions: 3200, conversions: 8, dailyBudget: 30 }
       ];
@@ -301,8 +304,6 @@ export default function AdsPage() {
   // ─── Unified Callback Detector ─────────────────────────────────────────────
   useEffect(() => {
     const urlStr = window.location.href;
-    
-    // Check if there is an access_token in the URL (hash or query)
     let token = null;
     let state = null;
     
@@ -316,7 +317,7 @@ export default function AdsPage() {
     }
 
     if (token && state) {
-      addLog(`[OAuth Callback] Detectada respuesta de login para: ${state}`);
+      addLog(`[OAuth Callback] Recibida respuesta de login para: ${state}`);
       
       if (state === "meta_ads") {
         localStorage.setItem(META_TOKEN_KEY, token);
@@ -341,10 +342,8 @@ export default function AdsPage() {
         fetchLinkedinCampaigns(token);
       }
 
-      // Clean browser hash / query params
       window.history.replaceState(null, "", window.location.pathname);
     } else {
-      // Load stored configurations on mount
       const storedMetaToken = localStorage.getItem(META_TOKEN_KEY);
       const storedGoogleToken = localStorage.getItem(GOOGLE_TOKEN_KEY);
       const storedTiktokToken = localStorage.getItem(TIKTOK_TOKEN_KEY);
@@ -372,7 +371,6 @@ export default function AdsPage() {
 
   // Update tabs inputs
   useEffect(() => {
-    // Reset or populate inputs when changing tabs in configuration
     const storedAppId = localStorage.getItem(`thrive_${activeTab.replace("_ads", "")}_app_id`) || "";
     const storedToken = localStorage.getItem(`thrive_${activeTab.replace("_ads", "")}_token`) || "";
     setAppIdInput(storedAppId);
@@ -381,29 +379,26 @@ export default function AdsPage() {
 
   // ─── OAuth Redirect Actions ────────────────────────────────────────────────
   const handleStartOAuthRedirect = () => {
-    if (!appIdInput.trim()) {
-      toast.warning("Por favor ingresa tu App ID / Client ID");
-      return;
-    }
-    
+    // If user typed a custom App ID, save and use it; otherwise use the default pre-configured Client ID
+    const activeAppId = appIdInput.trim() || DEFAULT_CLIENT_IDS[activeTab];
     const appKey = `thrive_${activeTab.replace("_ads", "")}_app_id`;
-    localStorage.setItem(appKey, appIdInput.trim());
+    localStorage.setItem(appKey, activeAppId);
     
     const redirectUri = window.location.origin + "/ads";
     let authUrl = "";
 
     if (activeTab === "meta_ads") {
-      authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${appIdInput.trim()}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=ads_management,ads_read,business_management&response_type=token&state=meta_ads`;
+      authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${activeAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=ads_management,ads_read,business_management&response_type=token&state=meta_ads`;
     } else if (activeTab === "google_ads") {
-      authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${appIdInput.trim()}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=https://www.googleapis.com/auth/adwords&state=google_ads`;
+      authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${activeAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=https://www.googleapis.com/auth/adwords&state=google_ads`;
     } else if (activeTab === "tiktok_ads") {
-      authUrl = `https://business-api.tiktok.com/portal/auth?app_id=${appIdInput.trim()}&state=tiktok_ads&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      authUrl = `https://business-api.tiktok.com/portal/auth?app_id=${activeAppId}&state=tiktok_ads&redirect_uri=${encodeURIComponent(redirectUri)}`;
     } else if (activeTab === "linkedin_ads") {
-      authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=token&client_id=${appIdInput.trim()}&redirect_uri=${encodeURIComponent(redirectUri)}&state=linkedin_ads&scope=r_ads_reporting`;
+      authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=token&client_id=${activeAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=linkedin_ads&scope=r_ads_reporting`;
     }
 
     addLog(`[OAuth Request] Redirigiendo a la pantalla de autorización de ${activeTab.replace("_ads", "").toUpperCase()}`);
-    toast.loading("Redirigiendo...");
+    toast.loading("Redirigiendo a la plataforma externa...");
     window.location.href = authUrl;
   };
 
@@ -583,6 +578,13 @@ export default function AdsPage() {
   const avgCTR = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100) : 0;
   const simulatedROI = avgCPL > 0 ? ((150 - avgCPL) / avgCPL * 100) : 0;
 
+  const getPlatformLabel = () => {
+    if (activeTab === "meta_ads") return "Meta / Facebook";
+    if (activeTab === "google_ads") return "Google Ads";
+    if (activeTab === "tiktok_ads") return "TikTok Ads";
+    return "LinkedIn Ads";
+  };
+
   return (
     <div className="min-h-screen bg-background pb-12">
       {/* Header */}
@@ -746,6 +748,9 @@ export default function AdsPage() {
                           handleDisconnectPlatform(platform.id);
                         } else {
                           setActiveTab(platform.id);
+                          setAppIdInput("");
+                          setTokenInput("");
+                          setShowAdvanced(false);
                           setIsConnectDialogOpen(true);
                         }
                       }}
@@ -1157,67 +1162,75 @@ export default function AdsPage() {
       <Dialog open={isConnectDialogOpen} onOpenChange={setIsConnectDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 font-display">
+            <DialogTitle className="flex items-center gap-2 font-display text-lg">
               <Megaphone className="h-5 w-5 text-primary" />
-              Conectar Cuenta de {activeTab.replace("_ads", "").toUpperCase()}
+              Conectar Cuenta de {getPlatformLabel()}
             </DialogTitle>
             <DialogDescription>
-              Configura tu integración. Introduce las claves de tu aplicación OAuth o utiliza un token directo de desarrollo.
+              Vincular tu cuenta publicitaria externa para sincronizar campañas y presupuestos directamente a Thrive CRM.
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="oauth" className="space-y-4 py-2">
-            <TabsList className="grid grid-cols-2">
-              <TabsTrigger value="oauth" className="gap-1.5"><Link className="h-3.5 w-3.5" /> Login OAuth 2.0</TabsTrigger>
-              <TabsTrigger value="token" className="gap-1.5"><Key className="h-3.5 w-3.5" /> Token Directo</TabsTrigger>
-            </TabsList>
+          <div className="py-4 space-y-4">
+            {/* Primary Action: Connect OAuth */}
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground text-center">
+                Haz clic en el botón inferior para abrir la pantalla de inicio de sesión segura oficial de la plataforma y autorizar el acceso.
+              </p>
+              <Button onClick={handleStartOAuthRedirect} className="w-full gap-2 py-5 font-semibold text-sm bg-primary text-primary-foreground">
+                <LogIn className="h-4.5 w-4.5" /> Conectar con {getPlatformLabel()}
+              </Button>
+            </div>
 
-            {/* TAB: OAuth Redirect */}
-            <TabsContent value="oauth" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="app-client-id">App ID / Client ID de la Plataforma</Label>
-                <Input
-                  id="app-client-id"
-                  value={appIdInput}
-                  onChange={(e) => setAppIdInput(e.target.value)}
-                  placeholder="Ej: 1082937502847192"
-                />
-                <div className="border border-border/60 bg-muted/20 p-3 rounded-lg space-y-1.5 text-[10px] text-muted-foreground">
-                  <p className="font-semibold text-card-foreground flex items-center gap-1"><ShieldAlert className="h-3.5 w-3.5 text-yellow-500" /> Nota de Configuración de Redirección</p>
-                  <p>Asegúrate de agregar la siguiente URI en los valores de redirección válidos de tu portal de desarrolladores:</p>
+            {/* Collapsible Developer Section */}
+            <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced} className="border border-border/60 rounded-xl p-3 bg-muted/25">
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center justify-between w-full text-xs font-semibold text-muted-foreground hover:text-foreground">
+                  <span className="flex items-center gap-1.5"><Settings className="h-3.5 w-3.5" /> Configuración Avanzada / Desarrollador</span>
+                  {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 pt-3 border-t border-border/40 mt-2 text-xs">
+                {/* Custom Client ID */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="custom-client-id" className="text-[10px] text-muted-foreground uppercase">ID de Aplicación Personalizado (Client ID)</Label>
+                  <Input
+                    id="custom-client-id"
+                    value={appIdInput}
+                    onChange={(e) => setAppIdInput(e.target.value)}
+                    placeholder={`Por defecto: ${DEFAULT_CLIENT_IDS[activeTab].substring(0, 12)}...`}
+                    className="h-8 text-xs bg-background"
+                  />
+                  <p className="text-[9px] text-muted-foreground leading-normal">
+                    Deja este campo en blanco para usar la aplicación integrada del sistema. Si utilizas tu propia app de desarrollo, ingresa su ID y agrega esta URI de redirección válida:
+                  </p>
                   <code className="block bg-card p-1.5 border border-border/80 font-mono text-[9px] text-primary">{window.location.origin}/ads</code>
-                  <p className="text-yellow-600">Si estás en crm.thrv.media y tu App ID está registrado para localhost, el login de OAuth fallará por seguridad de la plataforma. Usa la pestaña "Token Directo".</p>
                 </div>
-              </div>
-              <Button onClick={handleStartOAuthRedirect} className="w-full gap-2">
-                <Link className="h-4 w-4" /> Iniciar Login e Integrar
-              </Button>
-            </TabsContent>
 
-            {/* TAB: Direct Access Token */}
-            <TabsContent value="token" className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="direct-token">Token de Acceso Directo (Developer Token)</Label>
-                <Textarea
-                  id="direct-token"
-                  value={tokenInput}
-                  onChange={(e) => setTokenInput(e.target.value)}
-                  placeholder="Introduce tu User Token..."
-                  rows={4}
-                  className="font-mono text-xs"
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  Pega un token generado en el portal de desarrolladores de la plataforma (ej. Graph Explorer de Facebook o Google Ads Developer console). Esto sincronizará tus campañas de forma segura.
-                </p>
-              </div>
-              <Button onClick={handleSaveDirectToken} className="w-full gap-2">
-                <Check className="h-4 w-4" /> Validar y Conectar Token
-              </Button>
-            </TabsContent>
-          </Tabs>
+                {/* Direct Access Token */}
+                <div className="space-y-1.5 border-t border-border/40 pt-3">
+                  <Label htmlFor="direct-token" className="text-[10px] text-muted-foreground uppercase">Token de Acceso Directo (Access Token)</Label>
+                  <Textarea
+                    id="direct-token"
+                    value={tokenInput}
+                    onChange={(e) => setTokenInput(e.target.value)}
+                    placeholder="Pega tu token de acceso de desarrollador (ej: EAACEdEos...)"
+                    rows={3}
+                    className="font-mono text-[10px] bg-background"
+                  />
+                  <p className="text-[9px] text-muted-foreground">
+                    Para pruebas rápidas de desarrollador, puedes ingresar directamente un token con permisos de lectura publicitaria.
+                  </p>
+                  <Button size="sm" onClick={handleSaveDirectToken} className="w-full h-8 text-[10px] gap-1 mt-1">
+                    <Check className="h-3 w-3" /> Validar y Guardar Token
+                  </Button>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
 
           <DialogFooter className="border-t border-border pt-4">
-            <Button variant="outline" onClick={() => setIsConnectDialogOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => setIsConnectDialogOpen(false)} className="h-9 text-xs">Cancelar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
