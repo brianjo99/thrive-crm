@@ -35,6 +35,9 @@ import ReportingPage from "./pages/ReportingPage";
 import QuotesPage from "./pages/QuotesPage";
 import HelpPage from "./pages/HelpPage";
 import SettingsPage from "./pages/SettingsPage";
+import WebsitesPage from "./pages/WebsitesPage";
+import WebsiteEditorPage from "./pages/WebsiteEditorPage";
+import WebsitePreviewPage from "./pages/WebsitePreviewPage";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute, RoleRoute } from "@/components/thrive/ProtectedRoute";
 
@@ -83,6 +86,8 @@ function ProtectedLayout() {
               <Route path="/filmacion" element={<ProtectedRoute module="call_sheets"><FilmacionPage /></ProtectedRoute>} />
               <Route path="/leads" element={<ProtectedRoute module="leads"><LeadsPage /></ProtectedRoute>} />
               <Route path="/ads" element={<ProtectedRoute module="ads"><AdsPage /></ProtectedRoute>} />
+              <Route path="/sites" element={<ProtectedRoute module="leads"><WebsitesPage /></ProtectedRoute>} />
+              <Route path="/sites/editor/:id" element={<ProtectedRoute module="leads"><WebsiteEditorPage /></ProtectedRoute>} />
               <Route path="/calendar" element={<ProtectedRoute module="calendar"><CalendarPage /></ProtectedRoute>} />
               <Route path="/invoices" element={<ProtectedRoute module="invoices"><InvoicesPage /></ProtectedRoute>} />
               <Route path="/quotes" element={<ProtectedRoute module="invoices"><QuotesPage /></ProtectedRoute>} />
@@ -112,6 +117,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/sites/preview/:id" element={<WebsitePreviewPage />} />
             <Route path="/*" element={<ProtectedLayout />} />
           </Routes>
         </BrowserRouter>
