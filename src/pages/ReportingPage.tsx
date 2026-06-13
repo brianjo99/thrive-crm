@@ -17,7 +17,7 @@ function useInvoiceStats() {
     queryKey: ["invoice_stats"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("invoices" as any)
+        .from("invoices")
         .select("total, status");
       if (error) throw error;
       const rows = (data || []) as { total: number; status: string }[];
@@ -36,7 +36,7 @@ function useClientProfitability() {
   return useQuery({
     queryKey: ["client_profitability"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("invoices")
         .select("total, status, client_id, clients(name)");
       if (error) throw error;
@@ -62,7 +62,7 @@ function useLeadStats() {
   return useQuery({
     queryKey: ["lead_stats"],
     queryFn: async () => {
-      const { data } = await supabase.from("leads" as any).select("status");
+      const { data } = await supabase.from("leads").select("status");
       const rows = (data || []) as { status: string }[];
       return {
         total: rows.length,

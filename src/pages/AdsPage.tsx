@@ -18,7 +18,7 @@ import {
   XCircle, DollarSign, Settings, Share2, Sparkles, RefreshCw,
   TrendingUp, Users, ArrowUpRight, BarChart3, HelpCircle, Layers,
   Check, Play, Pause, AlertCircle, Key, Link, Terminal, ShieldAlert,
-  ChevronDown, ChevronUp, LogIn
+  ChevronDown, ChevronUp, LogIn, AlertTriangle, ShieldCheck
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
@@ -218,6 +218,14 @@ export default function AdsPage() {
     }
   };
 
+  const handleMetaAccountChange = (accountId: string) => {
+    setSelectedMetaAccountId(accountId);
+    localStorage.setItem(META_SELECTED_ACCOUNT_KEY, accountId);
+    if (metaToken) {
+      fetchMetaCampaigns(accountId, metaToken);
+    }
+  };
+
   // ─── Google Ads API integration ──────────────────────────────────────────
   const fetchGoogleCampaigns = async (token: string) => {
     addLog(`[Google API] Solicitando clientes accesibles...`);
@@ -379,22 +387,36 @@ export default function AdsPage() {
 
   // ─── OAuth Redirect Actions ────────────────────────────────────────────────
   const handleStartOAuthRedirect = () => {
-    // If user typed a custom App ID, save and use it; otherwise use the default pre-configured Client ID
-    const activeAppId = appIdInput.trim() || DEFAULT_CLIENT_IDS[activeTab];
+    // Check if the user inputted a custom App ID. 
+    // If not, explain that Facebook strictly blocks requests with invalid App IDs and provide options.
+    const customAppId = appIdInput.trim();
+    
+    if (!customAppId) {
+      toast.error("Para redirección real de OAuth, se requiere un App ID válido en la Configuración Avanzada.", {
+        duration: 5000,
+        action: {
+          label: "Abrir Avanzado",
+          onClick: () => setShowAdvanced(true)
+        }
+      });
+      addLog(`[OAuth Blocked] Redirección detenida: se requiere configurar un App ID registrado en Meta Developers.`);
+      return;
+    }
+
     const appKey = `thrive_${activeTab.replace("_ads", "")}_app_id`;
-    localStorage.setItem(appKey, activeAppId);
+    localStorage.setItem(appKey, customAppId);
     
     const redirectUri = window.location.origin + "/ads";
     let authUrl = "";
 
     if (activeTab === "meta_ads") {
-      authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${activeAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=ads_management,ads_read,business_management&response_type=token&state=meta_ads`;
+      authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${customAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=ads_management,ads_read,business_management&response_type=token&state=meta_ads`;
     } else if (activeTab === "google_ads") {
-      authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${activeAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=https://www.googleapis.com/auth/adwords&state=google_ads`;
+      authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${customAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=https://www.googleapis.com/auth/adwords&state=google_ads`;
     } else if (activeTab === "tiktok_ads") {
-      authUrl = `https://business-api.tiktok.com/portal/auth?app_id=${activeAppId}&state=tiktok_ads&redirect_uri=${encodeURIComponent(redirectUri)}`;
+      authUrl = `https://business-api.tiktok.com/portal/auth?app_id=${customAppId}&state=tiktok_ads&redirect_uri=${encodeURIComponent(redirectUri)}`;
     } else if (activeTab === "linkedin_ads") {
-      authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=token&client_id=${activeAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=linkedin_ads&scope=r_ads_reporting`;
+      authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=token&client_id=${customAppId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=linkedin_ads&scope=r_ads_reporting`;
     }
 
     addLog(`[OAuth Request] Redirigiendo a la pantalla de autorización de ${activeTab.replace("_ads", "").toUpperCase()}`);
@@ -424,6 +446,17 @@ export default function AdsPage() {
     } else if (activeTab === "linkedin_ads") {
       fetchLinkedinCampaigns(tokenInput.trim());
     }
+  };
+
+  const handleSimulateOAuthFlow = () => {
+    setIsConnectDialogOpen(false);
+    toast.loading("Simulando autorización de cuenta...");
+    setTimeout(() => {
+      setConnectedAccounts(prev => ({ ...prev, [activeTab]: true }));
+      addLog(`[Connection Simulated] Conexión simulada con éxito para ${activeTab.replace("_ads", "").toUpperCase()}`);
+      toast.dismiss();
+      toast.success("Cuenta vinculada en modo demostración con éxito.");
+    }, 1500);
   };
 
   const handleDisconnectPlatform = (platformId: string) => {
@@ -883,82 +916,6 @@ export default function AdsPage() {
 
           {/* Tab 2: AI Copy Generator */}
           <TabsContent value="ai-generator" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="luxury-card p-6 space-y-4">
-              <div>
-                <h3 className="font-display text-lg font-bold flex items-center gap-1.5">
-                  <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-                  Redacción de Anuncios con IA
-                </h3>
-                <p className="text-xs text-muted-foreground">Redacta copys publicitarios de alto impacto optimizados para conversiones y CTR.</p>
-              </div>
-
-              <form onSubmit={handleGenerateAdCopy} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="business-name">Nombre de tu Negocio / Empresa</Label>
-                  <Input
-                    id="business-name"
-                    value={aiForm.businessName}
-                    onChange={(e) => setAiForm(prev => ({ ...prev, businessName: e.target.value }))}
-                    placeholder="Ej. FitNation Center"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="business-type">Giro de Negocio</Label>
-                    <Select value={aiForm.businessType} onValueChange={(val) => setAiForm(prev => ({ ...prev, businessType: val }))}>
-                      <SelectTrigger id="business-type">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="gym">Gimnasio & Fitness</SelectItem>
-                        <SelectItem value="dental">Clínica Dental</SelectItem>
-                        <SelectItem value="realestate">Inmobiliaria</SelectItem>
-                        <SelectItem value="consulting">Servicios Profesionales</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="platform">Plataforma Objetivo</Label>
-                    <Select value={aiForm.platform} onValueChange={(val) => setAiForm(prev => ({ ...prev, platform: val }))}>
-                      <SelectTrigger id="platform">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="meta_ads">Meta Ads (Facebook/Insta)</SelectItem>
-                        <SelectItem value="google_ads">Google Ads (Search)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="offer">Oferta Gancho (Lead Magnet)</Label>
-                  <Textarea
-                    id="offer"
-                    value={aiForm.offer}
-                    onChange={(e) => setAiForm(prev => ({ ...prev, offer: e.target.value }))}
-                    placeholder="Ej. Plan de 3 días gratis de entrenamiento + Consulta nutricional inicial gratis."
-                    rows={3}
-                  />
-                </div>
-
-                <Button type="submit" className="w-full gap-2" disabled={generatingAi}>
-                  {generatingAi ? (
-                    <>
-                      <RefreshCw className="h-4 w-4 animate-spin" /> Generando Creativos...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="h-4 w-4" /> Generar Variaciones de Ads
-                    </>
-                  )}
-                </Button>
-              </form>
-            </Card>
-
-            {/* AI Copy Preview */}
             <Card className="luxury-card p-6 flex flex-col justify-between">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
@@ -1167,18 +1124,29 @@ export default function AdsPage() {
               Conectar Cuenta de {getPlatformLabel()}
             </DialogTitle>
             <DialogDescription>
-              Vincular tu cuenta publicitaria externa para sincronizar campañas y presupuestos directamente a Thrive CRM.
+              Vincula tu cuenta publicitaria externa para sincronizar campañas y presupuestos directamente a Thrive CRM.
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-4 space-y-4">
-            {/* Primary Action: Connect OAuth */}
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground text-center">
-                Haz clic en el botón inferior para abrir la pantalla de inicio de sesión segura oficial de la plataforma y autorizar el acceso.
-              </p>
-              <Button onClick={handleStartOAuthRedirect} className="w-full gap-2 py-5 font-semibold text-sm bg-primary text-primary-foreground">
-                <LogIn className="h-4.5 w-4.5" /> Conectar con {getPlatformLabel()}
+            {/* Real Connection Options Alert */}
+            <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-lg flex gap-2 text-xs text-amber-500">
+              <AlertTriangle className="h-4.5 w-4.5 flex-shrink-0 mt-0.5" />
+              <div className="space-y-1 leading-normal">
+                <p className="font-bold">Nota de Integración Real de Meta/Google</p>
+                <p>Las APIs oficiales exigen un **App Client ID de producción aprobado** para usar el flujo OAuth.</p>
+                <p>Si deseas importar tus datos **reales** al instante, utiliza un token directo de desarrollo. De lo contrario, puedes usar el Simulador para una prueba de la UI.</p>
+              </div>
+            </div>
+
+            {/* Selection Options */}
+            <div className="space-y-2">
+              <Button onClick={handleStartOAuthRedirect} variant="outline" className="w-full gap-2 py-5 justify-start text-xs border-primary/30 hover:bg-primary/5">
+                <LogIn className="h-4 w-4 text-primary" /> Conectar vía Login OAuth 2.0 (Requiere App ID)
+              </Button>
+              
+              <Button onClick={handleSimulateOAuthFlow} className="w-full gap-2 py-5 justify-start text-xs bg-primary hover:bg-primary/95 text-primary-foreground">
+                <Sparkles className="h-4 w-4" /> Simular Conexión Rápida (Ver Dashboard Demo)
               </Button>
             </div>
 
@@ -1193,16 +1161,16 @@ export default function AdsPage() {
               <CollapsibleContent className="space-y-4 pt-3 border-t border-border/40 mt-2 text-xs">
                 {/* Custom Client ID */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="custom-client-id" className="text-[10px] text-muted-foreground uppercase">ID de Aplicación Personalizado (Client ID)</Label>
+                  <Label htmlFor="custom-client-id" className="text-[10px] text-muted-foreground uppercase">Facebook/Google App Client ID</Label>
                   <Input
                     id="custom-client-id"
                     value={appIdInput}
                     onChange={(e) => setAppIdInput(e.target.value)}
-                    placeholder={`Por defecto: ${DEFAULT_CLIENT_IDS[activeTab].substring(0, 12)}...`}
+                    placeholder="Ej. Ingresa tu App ID registrado..."
                     className="h-8 text-xs bg-background"
                   />
                   <p className="text-[9px] text-muted-foreground leading-normal">
-                    Deja este campo en blanco para usar la aplicación integrada del sistema. Si utilizas tu propia app de desarrollo, ingresa su ID y agrega esta URI de redirección válida:
+                    Ingresa tu App ID registrado en tu portal de desarrolladores y agrega esta URI de redirección autorizada:
                   </p>
                   <code className="block bg-card p-1.5 border border-border/80 font-mono text-[9px] text-primary">{window.location.origin}/ads</code>
                 </div>
@@ -1214,15 +1182,15 @@ export default function AdsPage() {
                     id="direct-token"
                     value={tokenInput}
                     onChange={(e) => setTokenInput(e.target.value)}
-                    placeholder="Pega tu token de acceso de desarrollador (ej: EAACEdEos...)"
+                    placeholder="Pega tu token de acceso (ej: EAACEdEos...)"
                     rows={3}
                     className="font-mono text-[10px] bg-background"
                   />
                   <p className="text-[9px] text-muted-foreground">
-                    Para pruebas rápidas de desarrollador, puedes ingresar directamente un token con permisos de lectura publicitaria.
+                    Para importar tus campañas reales de Facebook al instante sin configurar URLs de redirección, copia tu User Token desde **developers.facebook.com/tools/explorer** y pégalo aquí.
                   </p>
                   <Button size="sm" onClick={handleSaveDirectToken} className="w-full h-8 text-[10px] gap-1 mt-1">
-                    <Check className="h-3 w-3" /> Validar y Guardar Token
+                    <Check className="h-3 w-3" /> Validar y Conectar Token Real
                   </Button>
                 </div>
               </CollapsibleContent>

@@ -62,7 +62,7 @@ function useBrandKit(clientId: string) {
     queryKey: ["brand_kit", clientId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("brand_kit" as any)
+        .from("brand_kit")
         .select("*")
         .eq("client_id", clientId)
         .maybeSingle();
@@ -78,7 +78,7 @@ function useUpsertBrandKit() {
   return useMutation({
     mutationFn: async (kit: Omit<BrandKit, "id"> & { id?: string }) => {
       const { error } = await supabase
-        .from("brand_kit" as any)
+        .from("brand_kit")
         .upsert(
           { ...kit },
           { onConflict: "client_id" }

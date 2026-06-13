@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowLeft, Save, Globe, Eye, Smartphone, Tablet, Monitor, Plus, Trash2,
   ChevronUp, ChevronDown, Palette, Type, Settings, PlusCircle, CheckCircle2,
@@ -88,8 +89,9 @@ export default function WebsiteEditorPage() {
 
         if (error) throw error;
         setSite(data as Website);
-        setSections(data.content?.sections || []);
-        setThemeName(data.content?.theme || "emerald");
+        const siteContent = data.content as any;
+        setSections(siteContent?.sections || []);
+        setThemeName(siteContent?.theme || "emerald");
       } catch (err: any) {
         console.warn("DB Single Fetch failed, loading from LocalStorage:", err.message);
         const localData = localStorage.getItem(LOCAL_STORAGE_KEY);

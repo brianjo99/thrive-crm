@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -526,7 +527,7 @@ export default function WebsitesPage() {
                         <div className="space-y-1">
                           <p className="font-display font-bold text-sm flex items-center gap-1.5">
                             {template.name}
-                            {isSelected && <Badge size="sm" className="bg-primary hover:bg-primary text-[9px] font-normal px-1.5 h-4">Elegido</Badge>}
+                            {isSelected && <Badge className="bg-primary hover:bg-primary text-[9px] font-normal px-1.5 h-4">Elegido</Badge>}
                           </p>
                           <p className="text-xs text-muted-foreground leading-relaxed">{template.desc}</p>
                         </div>

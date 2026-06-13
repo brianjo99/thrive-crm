@@ -109,8 +109,9 @@ export default function WebsitePreviewPage() {
 
         if (error) throw error;
         setSite(data as Website);
-        setSections(data.content?.sections || []);
-        setThemeName(data.content?.theme || "emerald");
+        const siteContent = data.content as any;
+        setSections(siteContent?.sections || []);
+        setThemeName(siteContent?.theme || "emerald");
 
         // Increment view count inside Supabase
         await supabase
