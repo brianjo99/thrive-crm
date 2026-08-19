@@ -34,6 +34,7 @@ import {
   isWithinInterval,
 } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Tables } from "@/integrations/supabase/types";
 
 type CrewMember = {
   name: string;
@@ -48,23 +49,26 @@ type ScheduleItem = {
   notes: string;
 };
 
-type CallSheet = {
-  id: string;
-  campaign_id: string | null;
-  title: string;
-  shoot_date: string | null;
-  location: string | null;
-  call_time: string | null;
-  wrap_time: string | null;
-  notes: string | null;
+type CallSheet = Omit<Tables<"call_sheets">, "crew" | "schedule"> & {
   crew: CrewMember[];
   schedule: ScheduleItem[];
-  created_at: string;
 };
 
 type CallSheetWithCampaign = CallSheet & {
   campaigns: { name: string; clients: { name: string } | null } | null;
 };
+
+function isCrewMember(value: unknown): value is CrewMember {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return [item.name, item.role, item.call_time, item.phone].every((field) => typeof field === "string");
+}
+
+function isScheduleItem(value: unknown): value is ScheduleItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return [item.time, item.activity, item.notes].every((field) => typeof field === "string");
+}
 
 function useCallSheets() {
   return useQuery({
@@ -75,10 +79,10 @@ function useCallSheets() {
         .select("*, campaigns(name, clients(name))")
         .order("shoot_date", { ascending: true });
       if (error) throw error;
-      return (data ?? []).map((d: any) => ({
+      return (data ?? []).map((d) => ({
         ...d,
-        crew: Array.isArray(d.crew) ? d.crew : [],
-        schedule: Array.isArray(d.schedule) ? d.schedule : [],
+        crew: Array.isArray(d.crew) ? d.crew.filter(isCrewMember) : [],
+        schedule: Array.isArray(d.schedule) ? d.schedule.filter(isScheduleItem) : [],
       })) as CallSheetWithCampaign[];
     },
   });
@@ -88,7 +92,7 @@ function useCreateCallSheet() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (
-      input: Omit<CallSheet, "id" | "created_at">
+      input: Omit<CallSheet, "id" | "created_at" | "updated_at">
     ) => {
       const { data, error } = await supabase
         .from("call_sheets")
@@ -108,7 +112,7 @@ function useUpdateCallSheet() {
     mutationFn: async ({
       id,
       ...updates
-    }: { id: string } & Partial<Omit<CallSheet, "id" | "created_at">>) => {
+    }: { id: string } & Partial<Omit<CallSheet, "id" | "created_at" | "updated_at">>) => {
       const { error } = await supabase
         .from("call_sheets")
         .update(updates)
@@ -235,10 +239,11 @@ export default function CallSheetsPage() {
 
   const handleCreate = async () => {
     if (!form.title.trim()) return toast.error("El título es obligatorio");
+    if (!form.shoot_date) return toast.error("La fecha de rodaje es obligatoria");
     await createCallSheet.mutateAsync({
       title: form.title.trim(),
-      campaign_id: form.campaign_id || null,
-      shoot_date: form.shoot_date || null,
+      campaign_id: form.campaign_id && form.campaign_id !== "none" ? form.campaign_id : null,
+      shoot_date: form.shoot_date,
       location: form.location || null,
       call_time: form.call_time || null,
       wrap_time: form.wrap_time || null,
@@ -276,11 +281,12 @@ export default function CallSheetsPage() {
   const handleUpdate = async () => {
     if (!editSheet) return;
     if (!editForm.title.trim()) return toast.error("El título es obligatorio");
+    if (!editForm.shoot_date) return toast.error("La fecha de rodaje es obligatoria");
     await updateCallSheet.mutateAsync({
       id: editSheet.id,
       title: editForm.title.trim(),
-      campaign_id: editForm.campaign_id || null,
-      shoot_date: editForm.shoot_date || null,
+      campaign_id: editForm.campaign_id && editForm.campaign_id !== "none" ? editForm.campaign_id : null,
+      shoot_date: editForm.shoot_date,
       location: editForm.location || null,
       call_time: editForm.call_time || null,
       wrap_time: editForm.wrap_time || null,
@@ -541,7 +547,7 @@ export default function CallSheetsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">Sin campaña</SelectItem>
-                      {(campaigns as any[]).map((c: any) => (
+                      {campaigns.map((c) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
                           {c.clients?.name && (
@@ -555,7 +561,7 @@ export default function CallSheetsPage() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Shoot Date</Label>
+                  <Label>Fecha de rodaje *</Label>
                   <Input
                     type="date"
                     value={form.shoot_date}
@@ -852,7 +858,7 @@ export default function CallSheetsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">Sin campaña</SelectItem>
-                        {(campaigns as any[]).map((c: any) => (
+                        {campaigns.map((c) => (
                           <SelectItem key={c.id} value={c.id}>
                             {c.name}
                             {c.clients?.name && (

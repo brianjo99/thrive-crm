@@ -16,8 +16,14 @@ import { cn } from "@/lib/utils";
 import type { Database } from "@/integrations/supabase/types";
 
 type AccountStatus = "active" | "invited" | "suspended" | "disabled";
-type AppRole = "owner" | "editor" | "videographer";
+type AppRole = "owner" | "editor" | "videographer" | "client";
 type ModuleVisibility = Pick<Database["public"]["Tables"]["module_visibility"]["Row"], "module" | "is_visible">;
+type ClientOption = Pick<Database["public"]["Tables"]["clients"]["Row"], "id" | "name" | "email">;
+type PortalAccessRow = {
+  user_id: string;
+  client_id: string;
+  clients: { name: string } | null;
+};
 
 type Account = {
   profile_id: string;
@@ -28,6 +34,8 @@ type Account = {
   last_seen_at: string | null;
   created_at: string;
   role: AppRole | null;
+  portal_client_id: string | null;
+  portal_client_name: string | null;
 };
 
 function errorMessage(error: unknown) {
@@ -45,6 +53,7 @@ const ROLE_CONFIG: Record<string, { label: string; color: string }> = {
   owner:        { label: "Owner",        color: "bg-primary/15 text-primary" },
   editor:       { label: "Editor",       color: "bg-purple-500/15 text-purple-400" },
   videographer: { label: "Videographer", color: "bg-cyan-500/15 text-cyan-400" },
+  client:       { label: "Cliente",      color: "bg-orange-500/15 text-orange-400" },
 };
 
 const MODULES = [
@@ -58,20 +67,25 @@ const MODULE_LABELS: Record<string, string> = {
   tasks: "Tareas", calendar: "Calendario", scripts: "Scripts",
   call_sheets: "Call Sheets", assets: "Archivos", approvals: "Aprobaciones",
   invoices: "Facturas", leads: "Leads", ads: "Media Buying",
-  templates: "Plantillas", settings: "Settings",
+  templates: "Plantillas", settings: "Settings", portal: "Portal de cliente",
 };
 
 function useAccounts() {
   return useQuery({
     queryKey: ["settings_accounts"],
     queryFn: async () => {
-      const [profilesRes, rolesRes] = await Promise.all([
+      const [profilesRes, rolesRes, portalRes] = await Promise.all([
         supabase.from("profiles").select("id, user_id, display_name, email, status, last_seen_at, created_at").order("created_at"),
         supabase.from("user_roles").select("user_id, role"),
+        supabase.from("client_portal_access").select("user_id, client_id, clients(name)"),
       ]);
       if (profilesRes.error) throw profilesRes.error;
       if (rolesRes.error) throw rolesRes.error;
+      if (portalRes.error) throw portalRes.error;
       const roles = new Map((rolesRes.data ?? []).map(r => [r.user_id, r.role as AppRole]));
+      const portalAccess = new Map(
+        ((portalRes.data ?? []) as PortalAccessRow[]).map(access => [access.user_id, access])
+      );
       return (profilesRes.data ?? []).map(p => ({
         profile_id: p.id,
         user_id: p.user_id,
@@ -81,7 +95,20 @@ function useAccounts() {
         last_seen_at: p.last_seen_at,
         created_at: p.created_at,
         role: roles.get(p.user_id) ?? null,
+        portal_client_id: portalAccess.get(p.user_id)?.client_id ?? null,
+        portal_client_name: portalAccess.get(p.user_id)?.clients?.name ?? null,
       })) as Account[];
+    },
+  });
+}
+
+function useClientOptions() {
+  return useQuery({
+    queryKey: ["settings_client_options"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("clients").select("id, name, email").order("name");
+      if (error) throw error;
+      return (data ?? []) as ClientOption[];
     },
   });
 }
@@ -89,10 +116,12 @@ function useAccounts() {
 function useUpdateAccountRole() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ userId, role }: { userId: string; role: AppRole }) => {
-      const { error } = await supabase
-        .from("user_roles")
-        .upsert({ user_id: userId, role }, { onConflict: "user_id" });
+    mutationFn: async ({ userId, role, clientId }: { userId: string; role: AppRole; clientId?: string | null }) => {
+      const { error } = await supabase.rpc("set_account_role", {
+        p_user_id: userId,
+        p_role: role,
+        p_client_id: clientId ?? null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -107,7 +136,10 @@ function useUpdateAccountStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, status }: { userId: string; status: AccountStatus }) => {
-      const { error } = await supabase.from("profiles").update({ status }).eq("user_id", userId);
+      const { error } = await supabase.rpc("set_account_status", {
+        p_user_id: userId,
+        p_status: status,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -137,8 +169,8 @@ function EffectiveAccessPanel({ account }: { account: Account }) {
   const { data: visibility = [] } = useModuleVisibility(account.role);
 
   const visibleMap = new Map(visibility.map(v => [v.module, v.is_visible]));
-  const visibleModules = MODULES.filter(m => visibleMap.get(m) !== false);
-  const hiddenModules = MODULES.filter(m => visibleMap.get(m) === false);
+  const visibleModules = account.role === "client" ? ["portal"] : MODULES.filter(m => visibleMap.get(m) !== false);
+  const hiddenModules = account.role === "client" ? MODULES : MODULES.filter(m => visibleMap.get(m) === false);
 
   return (
     <div className="space-y-4">
@@ -187,6 +219,13 @@ function EffectiveAccessPanel({ account }: { account: Account }) {
         </div>
       )}
 
+      {account.role === "client" && (
+        <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 p-3 text-sm">
+          <p className="text-xs font-semibold uppercase tracking-wider text-orange-400">Cliente vinculado</p>
+          <p className="mt-1 text-foreground">{account.portal_client_name ?? "Sin cliente asignado"}</p>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -202,6 +241,7 @@ function AccountDetailDialog({
 }) {
   const updateRole = useUpdateAccountRole();
   const updateStatus = useUpdateAccountStatus();
+  const { data: clients = [] } = useClientOptions();
 
   if (!account) return null;
 
@@ -226,13 +266,21 @@ function AccountDetailDialog({
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rol</p>
               <Select
                 value={account.role ?? ""}
-                onValueChange={(v) => updateRole.mutate({ userId: account.user_id, role: v as AppRole })}
+                onValueChange={(value) => {
+                  const role = value as AppRole;
+                  if (role === "client" && !account.portal_client_id) {
+                    toast.error("Selecciona primero el cliente que verá en el portal");
+                    return;
+                  }
+                  updateRole.mutate({ userId: account.user_id, role, clientId: account.portal_client_id });
+                }}
               >
                 <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Sin rol" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="owner">Owner</SelectItem>
                   <SelectItem value="editor">Editor</SelectItem>
                   <SelectItem value="videographer">Videographer</SelectItem>
+                  <SelectItem value="client">Cliente</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -254,6 +302,30 @@ function AccountDetailDialog({
             </div>
           </div>
 
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Acceso al portal de cliente</p>
+            <Select
+              value={account.portal_client_id ?? ""}
+              onValueChange={(clientId) => updateRole.mutate({
+                userId: account.user_id,
+                role: "client",
+                clientId,
+              })}
+            >
+              <SelectTrigger className="text-sm"><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger>
+              <SelectContent>
+                {clients.map(client => (
+                  <SelectItem key={client.id} value={client.id}>
+                    {client.name}{client.email ? ` — ${client.email}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Al seleccionar un cliente, la cuenta cambia al rol Cliente y solo podrá abrir su portal.
+            </p>
+          </div>
+
           <div className="text-xs text-muted-foreground space-y-1">
             <p>Creado: {format(new Date(account.created_at), "d MMM yyyy")}</p>
             {account.last_seen_at && (
@@ -271,7 +343,7 @@ function AccountDetailDialog({
 function useInviteUser() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ email, role, display_name }: { email: string; role: AppRole; display_name: string }) => {
+    mutationFn: async ({ email, role, display_name, client_id }: { email: string; role: AppRole; display_name: string; client_id?: string }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("No session");
       const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/invite-user`, {
@@ -280,7 +352,7 @@ function useInviteUser() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ email, role, display_name }),
+        body: JSON.stringify({ email, role, display_name, client_id }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Error al invitar");
@@ -296,12 +368,14 @@ function useInviteUser() {
 
 function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const inviteUser = useInviteUser();
-  const [form, setForm] = useState({ email: "", role: "editor" as AppRole, display_name: "" });
+  const { data: clients = [] } = useClientOptions();
+  const [form, setForm] = useState({ email: "", role: "editor" as AppRole, display_name: "", client_id: "" });
 
   const handleInvite = async () => {
     if (!form.email) return toast.error("El email es obligatorio");
+    if (form.role === "client" && !form.client_id) return toast.error("Selecciona el cliente que verá en el portal");
     await inviteUser.mutateAsync(form);
-    setForm({ email: "", role: "editor", display_name: "" });
+    setForm({ email: "", role: "editor", display_name: "", client_id: "" });
     onClose();
   };
 
@@ -333,21 +407,37 @@ function InviteDialog({ open, onClose }: { open: boolean; onClose: () => void })
           </div>
           <div className="space-y-2">
             <Label>Rol</Label>
-            <Select value={form.role} onValueChange={(v) => setForm(f => ({ ...f, role: v as AppRole }))}>
+            <Select value={form.role} onValueChange={(v) => setForm(f => ({ ...f, role: v as AppRole, client_id: v === "client" ? f.client_id : "" }))}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="owner">Owner</SelectItem>
                 <SelectItem value="editor">Editor</SelectItem>
                 <SelectItem value="videographer">Videographer</SelectItem>
+                <SelectItem value="client">Cliente</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          {form.role === "client" && (
+            <div className="space-y-2">
+              <Label>Cliente visible en el portal</Label>
+              <Select value={form.client_id} onValueChange={(client_id) => setForm(f => ({ ...f, client_id }))}>
+                <SelectTrigger><SelectValue placeholder="Seleccionar cliente" /></SelectTrigger>
+                <SelectContent>
+                  {clients.map(client => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.name}{client.email ? ` — ${client.email}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
             El usuario recibirá un email con un enlace para crear su contraseña.
           </p>
           <div className="flex justify-end gap-2 pt-2 border-t border-border">
             <Button variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button onClick={handleInvite} disabled={inviteUser.isPending || !form.email}>
+            <Button onClick={handleInvite} disabled={inviteUser.isPending || !form.email || (form.role === "client" && !form.client_id)}>
               Enviar invitación
             </Button>
           </div>

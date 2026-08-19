@@ -27,6 +27,8 @@ export function useCreateClient() {
     mutationFn: async (input: {
       name: string;
       email?: string;
+      phone?: string;
+      drive_folder_url?: string;
       type: ClientType;
       enabledServices: ServiceType[];
     }) => {
@@ -35,6 +37,8 @@ export function useCreateClient() {
         .insert({
           name: input.name,
           email: input.email || null,
+          phone: input.phone || null,
+          drive_folder_url: input.drive_folder_url || null,
           type: input.type,
           enabled_services: input.enabledServices,
           default_checklist: JSON.parse(JSON.stringify(CLIENT_TYPE_CHECKLISTS[input.type])),
@@ -67,6 +71,8 @@ export function useUpdateClient() {
       id: string;
       name: string;
       email?: string;
+      phone?: string;
+      drive_folder_url?: string;
       type: ClientType;
       enabledServices: ServiceType[];
     }) => {
@@ -75,6 +81,8 @@ export function useUpdateClient() {
         .update({
           name: input.name,
           email: input.email || null,
+          phone: input.phone || null,
+          drive_folder_url: input.drive_folder_url || null,
           type: input.type,
           enabled_services: input.enabledServices,
         })
@@ -255,7 +263,7 @@ export function useApprovals(filters?: { campaignId?: string; status?: string })
   return useQuery({
     queryKey: ["approvals", filters],
     queryFn: async () => {
-      let query = supabase.from("approvals").select("*, tasks(title), clients(name), assets(name, file_path)").order("created_at", { ascending: false });
+      let query = supabase.from("approvals").select("*, tasks(title), clients(name), assets(name, file_path, file_type)").order("created_at", { ascending: false });
       if (filters?.campaignId) query = query.eq("campaign_id", filters.campaignId);
       if (filters?.status) query = query.eq("status", filters.status);
       const { data, error } = await query;

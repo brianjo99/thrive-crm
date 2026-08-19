@@ -617,6 +617,38 @@ export type Database = {
           },
         ]
       }
+      client_portal_access: {
+        Row: {
+          client_id: string
+          created_at: string
+          granted_by: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          granted_by?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          granted_by?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_access_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           avatar_url: string | null
@@ -1602,6 +1634,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_client_portal_snapshot: { Args: never; Returns: Json }
       get_current_access_state: { Args: never; Returns: Json }
       has_role: {
         Args: {
@@ -1619,6 +1652,26 @@ export type Database = {
         Returns: undefined
       }
       is_internal_user: { Args: never; Returns: boolean }
+      set_account_role: {
+        Args: {
+          p_client_id?: string | null
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      set_account_status: {
+        Args: { p_status: string; p_user_id: string }
+        Returns: undefined
+      }
+      submit_client_approval_decision: {
+        Args: {
+          p_approval_id: string
+          p_feedback?: string | null
+          p_status: string
+        }
+        Returns: undefined
+      }
       submit_public_lead: {
         Args: {
           p_email: string

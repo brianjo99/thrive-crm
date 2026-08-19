@@ -61,8 +61,8 @@ export default function AssetsPage() {
       toast.success(`${uploadForm.files.length} archivo(s) subido(s)`);
       setUploadForm({ files: [], clientId: "", campaignId: "", notes: "" });
       setIsUploadOpen(false);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible subir los archivos");
     }
   };
 
@@ -204,8 +204,8 @@ export default function AssetsPage() {
                         <span className="text-xs text-muted-foreground">{formatFileSize(asset.file_size)}</span>
                         <span className="text-xs text-muted-foreground">{format(new Date(asset.created_at), "MMM d")}</span>
                       </div>
-                      {(asset as any).clients?.name && (
-                        <p className="text-xs text-primary mt-1 truncate">{(asset as any).clients.name}</p>
+                      {asset.clients?.name && (
+                        <p className="text-xs text-primary mt-1 truncate">{asset.clients.name}</p>
                       )}
                     </div>
                   </Card>
@@ -232,7 +232,7 @@ export default function AssetsPage() {
                   <div><span className="text-muted-foreground">Tipo:</span> <span className="font-medium">{previewAsset.file_type}</span></div>
                   <div><span className="text-muted-foreground">Tamaño:</span> <span className="font-medium">{formatFileSize(previewAsset.file_size)}</span></div>
                   <div><span className="text-muted-foreground">Subido:</span> <span className="font-medium">{format(new Date(previewAsset.created_at), "d MMM yyyy")}</span></div>
-                  {(previewAsset as any).clients?.name && <div><span className="text-muted-foreground">Cliente:</span> <span className="font-medium">{(previewAsset as any).clients.name}</span></div>}
+                  {previewAsset.clients?.name && <div><span className="text-muted-foreground">Cliente:</span> <span className="font-medium">{previewAsset.clients.name}</span></div>}
                 </div>
                 {previewAsset.notes && <div><span className="text-muted-foreground text-sm">Notas:</span><p className="text-sm mt-1">{previewAsset.notes}</p></div>}
                 <div className="flex gap-2 pt-4 border-t border-border">

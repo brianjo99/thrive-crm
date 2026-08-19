@@ -91,7 +91,7 @@ function useModuleVisibility(role: string | null) {
         .from("module_visibility")
         .select("module, is_visible")
         .eq("role", role);
-      return new Map((data ?? []).map((r: any) => [r.module, r.is_visible]));
+      return new Map((data ?? []).map(r => [r.module, r.is_visible]));
     },
     enabled: !!role,
     staleTime: 60_000,

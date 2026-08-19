@@ -12,161 +12,47 @@ import {
   Receipt, MessageSquare, Sparkles, FolderKanban,
   Instagram, Youtube, Facebook, Linkedin, Twitter, DollarSign,
   ChevronRight, ArrowRight, FileVideo, FileImage, FileText,
-  File, Bell,
+  File, Bell, LogOut,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  ApprovalDecisionStatus,
+  parsePortalSnapshot,
+  PortalApproval,
+} from "@/lib/clientPortal";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type ApprovalStatus = "pending" | "approved" | "revision-requested" | "rejected";
 
 // ─── Data hooks ──────────────────────────────────────────────────────────────
 
-function useClientByEmail(email: string | undefined) {
+function useClientPortalSnapshot() {
   return useQuery({
-    queryKey: ["client_by_email", email],
+    queryKey: ["client_portal_snapshot"],
     queryFn: async () => {
-      if (!email) return null;
-      const { data } = await supabase
-        .from("clients")
-        .select("*")
-        .eq("email", email)
-        .maybeSingle();
-      return data ?? null;
-    },
-    enabled: !!email,
-  });
-}
-
-function usePortalCampaigns(clientId: string | undefined) {
-  return useQuery({
-    queryKey: ["portal_campaigns", clientId],
-    queryFn: async () => {
-      if (!clientId) return [];
-      const { data, error } = await supabase
-        .from("campaigns")
-        .select("*")
-        .eq("client_id", clientId)
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.rpc("get_client_portal_snapshot");
       if (error) throw error;
-      return data || [];
+      return parsePortalSnapshot(data);
     },
-    enabled: !!clientId,
-  });
-}
-
-function usePortalApprovals(clientId: string | undefined) {
-  return useQuery({
-    queryKey: ["portal_approvals", clientId],
-    queryFn: async () => {
-      if (!clientId) return [];
-      const { data, error } = await supabase
-        .from("approvals")
-        .select("*, tasks(title, description), campaigns(name), assets(name, file_type)")
-        .eq("client_id", clientId)
-        .eq("reviewer_type", "client")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!clientId,
-  });
-}
-
-function usePortalDeliverables(campaignIds: string[]) {
-  return useQuery({
-    queryKey: ["portal_deliverables", campaignIds],
-    queryFn: async () => {
-      if (campaignIds.length === 0) return [];
-      const { data, error } = await supabase
-        .from("deliverables")
-        .select("*, campaigns(name)")
-        .in("campaign_id", campaignIds)
-        .order("due_date", { ascending: true });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: campaignIds.length > 0,
-  });
-}
-
-function usePortalCalendar(clientId: string | undefined) {
-  return useQuery({
-    queryKey: ["portal_calendar", clientId],
-    queryFn: async () => {
-      if (!clientId) return [];
-      const today = new Date().toISOString().split("T")[0];
-      const { data, error } = await supabase
-        .from("content_calendar")
-        .select("*")
-        .eq("client_id", clientId)
-        .gte("scheduled_date", today)
-        .in("status", ["scheduled", "draft"])
-        .order("scheduled_date", { ascending: true })
-        .limit(6);
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!clientId,
-  });
-}
-
-function usePortalInvoices(clientId: string | undefined) {
-  return useQuery({
-    queryKey: ["portal_invoices", clientId],
-    queryFn: async () => {
-      if (!clientId) return [];
-      const { data, error } = await supabase
-        .from("invoices")
-        .select("*")
-        .eq("client_id", clientId)
-        .in("status", ["sent", "overdue", "paid"])
-        .order("created_at", { ascending: false })
-        .limit(8);
-      if (error) throw error;
-      return (data || []) as Array<{
-        id: string; invoice_number: string; status: string;
-        total: number; due_date: string | null; paid_date: string | null; created_at: string;
-      }>;
-    },
-    enabled: !!clientId,
-  });
-}
-
-function usePortalAlerts(clientId: string | undefined) {
-  return useQuery({
-    queryKey: ["portal_alerts", clientId],
-    queryFn: async () => {
-      if (!clientId) return [];
-      const { data, error } = await supabase
-        .from("unpaid_alerts")
-        .select("*")
-        .eq("client_id", clientId)
-        .eq("dismissed", false)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: !!clientId,
   });
 }
 
 function useSubmitApprovalDecision() {
   const qc = useQueryClient();
-  const { user } = useAuth();
   return useMutation({
-    mutationFn: async ({ id, status, feedback }: { id: string; status: ApprovalStatus; feedback?: string }) => {
-      const { error } = await supabase
-        .from("approvals")
-        .update({ status, feedback: feedback || null, reviewer_id: user?.id })
-        .eq("id", id);
+    mutationFn: async ({ id, status, feedback }: { id: string; status: ApprovalDecisionStatus; feedback?: string }) => {
+      const { error } = await supabase.rpc("submit_client_approval_decision", {
+        p_approval_id: id,
+        p_status: status,
+        p_feedback: feedback ?? null,
+      });
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["portal_approvals"] });
+      qc.invalidateQueries({ queryKey: ["client_portal_snapshot"] });
       qc.invalidateQueries({ queryKey: ["approvals"] });
     },
   });
@@ -268,20 +154,21 @@ function EmptyState({ icon: Icon, title, body }: {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function ClientPortalPage() {
-  const { user } = useAuth();
-  const { data: client, isLoading: clientLoading } = useClientByEmail(user?.email);
-
-  const clientId = client?.id;
-  const { data: campaigns = [], isLoading: campaignsLoading } = usePortalCampaigns(clientId);
-  const { data: approvals = [], isLoading: approvalsLoading } = usePortalApprovals(clientId);
-  const campaignIds = campaigns.map(c => c.id);
-  const { data: deliverables = [] } = usePortalDeliverables(campaignIds);
-  const { data: calendarItems = [] } = usePortalCalendar(clientId);
-  const { data: invoices = [] } = usePortalInvoices(clientId);
-  const { data: alerts = [] } = usePortalAlerts(clientId);
+  const { user, signOut } = useAuth();
+  const { data: snapshot, isLoading, error: portalError } = useClientPortalSnapshot();
+  const client = snapshot?.client ?? null;
+  const campaigns = snapshot?.campaigns ?? [];
+  const approvals = snapshot?.approvals ?? [];
+  const deliverables = snapshot?.deliverables ?? [];
+  const calendarItems = snapshot?.calendar ?? [];
+  const invoices = snapshot?.invoices ?? [];
+  const alerts = snapshot?.alerts ?? [];
+  const clientLoading = isLoading;
+  const campaignsLoading = isLoading;
+  const approvalsLoading = isLoading;
   const submitDecision = useSubmitApprovalDecision();
 
-  const [reviewApproval, setReviewApproval] = useState<typeof approvals[0] | null>(null);
+  const [reviewApproval, setReviewApproval] = useState<PortalApproval | null>(null);
   const [feedback, setFeedback] = useState("");
 
   // Derived
@@ -291,18 +178,18 @@ export default function ClientPortalPage() {
   const resolvedApprovals    = approvals.filter(a => a.status === "approved" || a.status === "revision-requested");
   const readyDeliverables    = deliverables.filter(d => d.status === "delivered" || d.status === "approved" || d.status === "ready");
   const outstandingInvoices  = invoices.filter(i => i.status === "sent" || i.status === "overdue");
-  const outstandingTotal     = outstandingInvoices.reduce((sum, i) => sum + ((i as any).total || 0), 0);
+  const outstandingTotal     = outstandingInvoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0);
   const hasAnyData           = campaigns.length > 0 || approvals.length > 0 || deliverables.length > 0 || invoices.length > 0;
 
-  const handleDecision = async (status: ApprovalStatus) => {
+  const handleDecision = async (status: ApprovalDecisionStatus) => {
     if (!reviewApproval) return;
     try {
       await submitDecision.mutateAsync({ id: reviewApproval.id, status, feedback: feedback || undefined });
       toast.success(status === "approved" ? "Aprobado. ¡Gracias!" : "Revisión solicitada. Lo tendremos en cuenta.");
       setReviewApproval(null);
       setFeedback("");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible guardar la decisión");
     }
   };
 
@@ -315,6 +202,20 @@ export default function ClientPortalPage() {
           {[1,2,3,4].map(i => <Skeleton key={i} className="h-24 rounded-xl" />)}
         </div>
         {[1,2,3].map(i => <Skeleton key={i} className="h-32 rounded-xl" />)}
+      </div>
+    );
+  }
+
+  if (portalError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="luxury-card p-10 text-center max-w-md">
+          <AlertCircle className="h-10 w-10 text-destructive mx-auto mb-4" />
+          <h2 className="font-display text-xl font-bold mb-2">No pudimos cargar tu portal</h2>
+          <p className="text-sm text-muted-foreground">
+            Intenta recargar la página. Si el problema continúa, contacta a tu equipo de Thrive.
+          </p>
+        </Card>
       </div>
     );
   }
@@ -368,6 +269,14 @@ export default function ClientPortalPage() {
                 <span className="text-sm font-medium text-destructive">{alerts.length} alerta{alerts.length !== 1 ? "s" : ""}</span>
               </div>
             )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 shrink-0"
+              onClick={() => void signOut()}
+            >
+              <LogOut className="h-3.5 w-3.5" /> Cerrar sesión
+            </Button>
           </div>
         </div>
       </header>
@@ -438,13 +347,13 @@ export default function ClientPortalPage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-medium truncate">
-                          {(approval as any).assets?.name || (approval as any).tasks?.title || "Contenido para revisar"}
+                          {approval.assets?.name || approval.tasks?.title || "Contenido para revisar"}
                         </p>
                         <p className="text-sm text-muted-foreground mt-0.5">
-                          {(approval as any).campaigns?.name || "Campaña"}
-                          {(approval as any).assets?.file_type && (
+                          {approval.campaigns?.name || "Campaña"}
+                          {approval.assets?.file_type && (
                             <span className="ml-1.5 text-xs uppercase opacity-60">
-                              · {(approval as any).assets.file_type}
+                              · {approval.assets.file_type}
                             </span>
                           )}
                           <span className="ml-1.5">· {format(new Date(approval.created_at), "d MMM", { locale: es })}</span>
@@ -488,7 +397,7 @@ export default function ClientPortalPage() {
           ) : activeCampaigns.length > 0 ? (
             <div className="space-y-3">
               {activeCampaigns.map((campaign, i) => {
-                const stages = (campaign.stages as string[]) || [];
+                const stages = campaign.stages || [];
                 const currentIdx = STAGE_ORDER.indexOf(campaign.current_stage);
                 const completedCount = stages.filter(s => STAGE_ORDER.indexOf(s) < currentIdx).length;
                 const pct = stages.length > 1
@@ -613,7 +522,7 @@ export default function ClientPortalPage() {
               <div className="space-y-2">
                 {deliverables.map((d, i) => {
                   const cfg = DELIVERABLE_STATUS[d.status] || DELIVERABLE_STATUS.pending;
-                  const TypeIcon = DELIVERABLE_TYPE_ICON[(d as any).type] || File;
+                  const TypeIcon = DELIVERABLE_TYPE_ICON[d.type] || File;
                   const Icon = cfg.icon;
                   return (
                     <motion.div key={d.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
@@ -625,7 +534,7 @@ export default function ClientPortalPage() {
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-sm truncate">{d.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {(d as any).campaigns?.name}
+                              {d.campaigns?.name}
                               {d.due_date && ` · ${format(new Date(d.due_date), "d MMM", { locale: es })}`}
                             </p>
                           </div>
@@ -658,19 +567,19 @@ export default function ClientPortalPage() {
                 <div key={item.id} className="flex items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-3">
                     <div className="w-7 h-7 rounded-lg bg-muted/40 flex items-center justify-center text-muted-foreground">
-                      {PLATFORM_ICON[(item as any).platform] || <CalendarDays className="h-3.5 w-3.5" />}
+                      {PLATFORM_ICON[item.platform] || <CalendarDays className="h-3.5 w-3.5" />}
                     </div>
                     <div>
                       <p className="text-sm font-medium">
-                        {(item as any).content_type}{(item as any).platform && ` · ${(item as any).platform}`}
+                        {item.content_type}{item.platform && ` · ${item.platform}`}
                       </p>
-                      {(item as any).caption && (
-                        <p className="text-xs text-muted-foreground truncate max-w-xs">{(item as any).caption}</p>
+                      {item.caption && (
+                        <p className="text-xs text-muted-foreground truncate max-w-xs">{item.caption}</p>
                       )}
                     </div>
                   </div>
                   <span className="text-xs text-muted-foreground shrink-0">
-                    {format(new Date((item as any).scheduled_date), "d MMM", { locale: es })}
+                    {format(new Date(item.scheduled_date), "d MMM", { locale: es })}
                   </span>
                 </div>
               ))}
@@ -728,7 +637,9 @@ export default function ClientPortalPage() {
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {inv.due_date
                               ? `Vence ${format(new Date(inv.due_date), "d MMM yyyy", { locale: es })}`
-                              : format(new Date(inv.created_at), "d MMM yyyy", { locale: es })}
+                              : inv.created_at
+                                ? format(new Date(inv.created_at), "d MMM yyyy", { locale: es })
+                                : "Sin fecha"}
                           </p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
@@ -768,21 +679,21 @@ export default function ClientPortalPage() {
             </DialogHeader>
             <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-2 space-y-4">
               <div className="bg-muted/30 rounded-xl p-4 space-y-2 text-sm">
-                {(reviewApproval as any).assets?.name && (
+                {reviewApproval.assets?.name && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Archivo</span>
-                    <span className="font-medium">{(reviewApproval as any).assets.name}</span>
+                    <span className="font-medium">{reviewApproval.assets.name}</span>
                   </div>
                 )}
-                {(reviewApproval as any).tasks?.title && (
+                {reviewApproval.tasks?.title && (
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Tarea</span>
-                    <span className="font-medium">{(reviewApproval as any).tasks.title}</span>
+                    <span className="font-medium">{reviewApproval.tasks.title}</span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Campaña</span>
-                  <span className="font-medium">{(reviewApproval as any).campaigns?.name || "—"}</span>
+                  <span className="font-medium">{reviewApproval.campaigns?.name || "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Enviado</span>
@@ -791,9 +702,9 @@ export default function ClientPortalPage() {
                   </span>
                 </div>
               </div>
-              {(reviewApproval as any).tasks?.description && (
+              {reviewApproval.tasks?.description && (
                 <div className="text-sm text-muted-foreground bg-muted/20 rounded-lg p-3">
-                  {(reviewApproval as any).tasks.description}
+                  {reviewApproval.tasks.description}
                 </div>
               )}
               <div className="space-y-2">

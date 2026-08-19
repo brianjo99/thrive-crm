@@ -13,6 +13,26 @@ import { format } from "date-fns";
 import { Tables } from "@/integrations/supabase/types";
 
 type Deliverable = Tables<"deliverables">;
+type DeliverableType = "video" | "image" | "document" | "report" | "reel" | "thumbnail";
+type DeliverableStatus = "pending" | "in-progress" | "ready" | "delivered" | "approved";
+type DeliverableForm = {
+  name: string;
+  type: DeliverableType;
+  description: string;
+  due_date: string;
+  status: DeliverableStatus;
+};
+
+const DELIVERABLE_TYPES: readonly DeliverableType[] = ["video", "image", "document", "report", "reel", "thumbnail"];
+const DELIVERABLE_STATUSES: readonly DeliverableStatus[] = ["pending", "in-progress", "ready", "delivered", "approved"];
+
+function deliverableType(value: string): DeliverableType {
+  return DELIVERABLE_TYPES.includes(value as DeliverableType) ? value as DeliverableType : "video";
+}
+
+function deliverableStatus(value: string): DeliverableStatus {
+  return DELIVERABLE_STATUSES.includes(value as DeliverableStatus) ? value as DeliverableStatus : "pending";
+}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   pending: { label: "Pending", color: "bg-muted text-muted-foreground", icon: Clock },
@@ -35,7 +55,7 @@ export function DeliverablesPanel({ campaignId, editable = true }: DeliverablesP
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<DeliverableForm>({
     name: "",
     type: "video" as const,
     description: "",
@@ -48,10 +68,10 @@ export function DeliverablesPanel({ campaignId, editable = true }: DeliverablesP
       setEditingId(deliverable.id);
       setFormData({
         name: deliverable.name,
-        type: deliverable.type as any,
+        type: deliverableType(deliverable.type),
         description: deliverable.description || "",
         due_date: deliverable.due_date?.split("T")[0] || "",
-        status: deliverable.status as any,
+        status: deliverableStatus(deliverable.status),
       });
     } else {
       setEditingId(null);
@@ -87,8 +107,8 @@ export function DeliverablesPanel({ campaignId, editable = true }: DeliverablesP
         toast.success("Deliverable created!");
       }
       setIsDialogOpen(false);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible guardar el entregable");
     }
   };
 
@@ -97,8 +117,8 @@ export function DeliverablesPanel({ campaignId, editable = true }: DeliverablesP
       try {
         await deleteDeliverable.mutateAsync(id);
         toast.success("Deliverable deleted!");
-      } catch (error: any) {
-        toast.error(error.message);
+      } catch (error: unknown) {
+        toast.error(error instanceof Error ? error.message : "No fue posible eliminar el entregable");
       }
     }
   };
@@ -148,7 +168,7 @@ export function DeliverablesPanel({ campaignId, editable = true }: DeliverablesP
                   <Label>Type</Label>
                   <Select
                     value={formData.type}
-                    onValueChange={(v: any) => setFormData((p) => ({ ...p, type: v }))}
+                    onValueChange={(value) => setFormData((current) => ({ ...current, type: value as DeliverableType }))}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -186,7 +206,7 @@ export function DeliverablesPanel({ campaignId, editable = true }: DeliverablesP
                   <Label>Status</Label>
                   <Select
                     value={formData.status}
-                    onValueChange={(v: any) => setFormData((p) => ({ ...p, status: v }))}
+                    onValueChange={(value) => setFormData((current) => ({ ...current, status: value as DeliverableStatus }))}
                   >
                     <SelectTrigger>
                       <SelectValue />

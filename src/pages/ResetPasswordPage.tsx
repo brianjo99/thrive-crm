@@ -29,8 +29,8 @@ export default function ResetPasswordPage() {
       if (error) throw error;
       toast.success("Password updated successfully!");
       navigate("/");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible actualizar la contraseña");
     } finally {
       setLoading(false);
     }

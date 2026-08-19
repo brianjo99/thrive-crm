@@ -10,12 +10,12 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export default function AuthPage() {
-  const { signIn, resetPassword, user } = useAuth();
+  const { signIn, resetPassword, user, role, accessLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) navigate("/", { replace: true });
-  }, [user, navigate]);
+    if (user && !accessLoading) navigate(role === "client" ? "/portal" : "/", { replace: true });
+  }, [user, role, accessLoading, navigate]);
   const [mode, setMode] = useState<"login" | "reset">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

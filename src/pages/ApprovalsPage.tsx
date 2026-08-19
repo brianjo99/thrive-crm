@@ -15,6 +15,8 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
+type ApprovalDecision = "approved" | "revision-requested";
+
 function useRevisionRounds(approvalId: string | null) {
   return useQuery({
     queryKey: ["revision_rounds", approvalId],
@@ -62,7 +64,7 @@ export default function ApprovalsPage() {
   const pendingApprovals = allApprovals.filter(a => a.status === "pending");
   const processedApprovals = allApprovals.filter(a => a.status !== "pending");
 
-  const handleDecision = async (id: string, status: string) => {
+  const handleDecision = async (id: string, status: ApprovalDecision) => {
     try {
       await updateApproval.mutateAsync({ id, status, feedback: feedback || undefined, reviewer_id: user?.id });
       if (status === "revision-requested" && feedback) {
@@ -72,8 +74,8 @@ export default function ApprovalsPage() {
       toast.success(status === "approved" ? "Contenido aprobado" : "Revisión solicitada");
       setSelectedApproval(null);
       setFeedback("");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible guardar la aprobación");
     }
   };
 
@@ -120,8 +122,8 @@ export default function ApprovalsPage() {
                     <Card className="luxury-card p-4 cursor-pointer hover:border-primary/30 transition-colors" onClick={() => setSelectedApproval(approval)}>
                       <div className="flex items-center justify-between">
                         <div>
-                          <h4 className="font-medium">{(approval as any).tasks?.title || "Task"}</h4>
-                          <p className="text-sm text-muted-foreground">{(approval as any).clients?.name || "Client"}</p>
+                          <h4 className="font-medium">{approval.tasks?.title || "Tarea"}</h4>
+                          <p className="text-sm text-muted-foreground">{approval.clients?.name || "Cliente"}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-muted-foreground">{format(new Date(approval.created_at), "MMM d")}</span>
@@ -148,8 +150,8 @@ export default function ApprovalsPage() {
                   <Card key={approval.id} className="luxury-card p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium">{(approval as any).tasks?.title || "Task"}</h4>
-                        <p className="text-sm text-muted-foreground">{(approval as any).clients?.name || "Client"}</p>
+                        <h4 className="font-medium">{approval.tasks?.title || "Tarea"}</h4>
+                        <p className="text-sm text-muted-foreground">{approval.clients?.name || "Cliente"}</p>
                         {approval.feedback && <p className="text-sm mt-1 italic text-muted-foreground">"{approval.feedback}"</p>}
                       </div>
                       <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${statusConfig[approval.status]?.color}`}>
@@ -171,21 +173,21 @@ export default function ApprovalsPage() {
               </DialogHeader>
               <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 pb-6 space-y-4">
                 <div className="space-y-2">
-                  <p className="text-sm"><span className="text-muted-foreground">Tarea:</span> {(selectedApproval as any).tasks?.title}</p>
-                  <p className="text-sm"><span className="text-muted-foreground">Cliente:</span> {(selectedApproval as any).clients?.name}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">Tarea:</span> {selectedApproval.tasks?.title}</p>
+                  <p className="text-sm"><span className="text-muted-foreground">Cliente:</span> {selectedApproval.clients?.name}</p>
                   <p className="text-sm"><span className="text-muted-foreground">Tipo:</span> {selectedApproval.reviewer_type === "internal" ? "Revisión interna" : "Revisión de cliente"}</p>
                 </div>
 
-                {(selectedApproval as any).assets?.file_path && (
+                {selectedApproval.assets?.file_path && (
                   <div className="rounded-lg overflow-hidden bg-muted">
-                    {(selectedApproval as any).assets?.file_type?.startsWith("video/") ? (
+                    {selectedApproval.assets.file_type?.startsWith("video/") ? (
                       <video
-                        src={getAssetPublicUrl((selectedApproval as any).assets.file_path)}
+                        src={getAssetPublicUrl(selectedApproval.assets.file_path)}
                         controls
                         className="w-full max-h-64 object-contain"
                       />
                     ) : (
-                      <img src={getAssetPublicUrl((selectedApproval as any).assets.file_path)} alt="Preview" className="w-full max-h-64 object-contain" />
+                      <img src={getAssetPublicUrl(selectedApproval.assets.file_path)} alt="Vista previa del contenido" className="w-full max-h-64 object-contain" />
                     )}
                   </div>
                 )}

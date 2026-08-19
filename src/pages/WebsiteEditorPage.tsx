@@ -17,7 +17,15 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Website } from "./WebsitesPage";
+import {
+  normalizeWebsite,
+  parseWebsiteContent,
+  Website,
+  WebsitePricingPlan,
+  WebsiteSection,
+  WebsiteServiceItem,
+  WebsiteTestimonial,
+} from "@/lib/websiteContent";
 
 type PreviewDevice = "desktop" | "tablet" | "mobile";
 
@@ -68,7 +76,7 @@ export default function WebsiteEditorPage() {
   const navigate = useNavigate();
   
   const [site, setSite] = useState<Website | null>(null);
-  const [sections, setSections] = useState<any[]>([]);
+  const [sections, setSections] = useState<WebsiteSection[]>([]);
   const [themeName, setThemeName] = useState<string>("emerald");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [device, setDevice] = useState<PreviewDevice>("desktop");
@@ -90,10 +98,10 @@ export default function WebsiteEditorPage() {
           .single();
 
         if (error) throw error;
-        setSite(data as Website);
-        const siteContent = data.content as any;
-        setSections(siteContent?.sections || []);
-        setThemeName(siteContent?.theme || "emerald");
+        setSite(normalizeWebsite(data));
+        const siteContent = parseWebsiteContent(data.content);
+        setSections(siteContent.sections);
+        setThemeName(siteContent.theme);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Error desconocido";
         console.error("No se pudo cargar el sitio:", message);
@@ -176,7 +184,7 @@ export default function WebsiteEditorPage() {
   // Add section
   const addSection = (type: string) => {
     const newId = `${type}-${Math.random().toString(36).substring(2, 7)}`;
-    let newSec: any = { id: newId, type };
+    let newSec: WebsiteSection = { id: newId, type };
 
     switch (type) {
       case "hero":
@@ -241,7 +249,7 @@ export default function WebsiteEditorPage() {
   };
 
   // Section editing fields update
-  const updateSectionField = (secId: string, field: string, value: any) => {
+  const updateSectionField = (secId: string, field: keyof WebsiteSection, value: string | number) => {
     setSections(prev => prev.map(s => {
       if (s.id === secId) {
         return { ...s, [field]: value };
@@ -251,30 +259,33 @@ export default function WebsiteEditorPage() {
   };
 
   // Update item array in services, pricing, testimonials
-  const updateSectionArrayField = (secId: string, arrayField: string, index: number, key: string, value: any) => {
+  type WebsiteArrayField = "items" | "plans" | "reviews";
+  type WebsiteArrayItem = WebsiteServiceItem | WebsitePricingPlan | WebsiteTestimonial;
+
+  const updateSectionArrayField = (secId: string, arrayField: WebsiteArrayField, index: number, key: string, value: unknown) => {
     setSections(prev => prev.map(s => {
       if (s.id === secId) {
-        const arr = [...(s[arrayField] || [])];
+        const arr = [...(s[arrayField] || [])] as WebsiteArrayItem[];
         arr[index] = { ...arr[index], [key]: value };
-        return { ...s, [arrayField]: arr };
+        return { ...s, [arrayField]: arr } as WebsiteSection;
       }
       return s;
     }));
   };
 
-  const addArrayItem = (secId: string, arrayField: string, defaultObj: any) => {
+  const addArrayItem = (secId: string, arrayField: WebsiteArrayField, defaultObj: WebsiteArrayItem) => {
     setSections(prev => prev.map(s => {
       if (s.id === secId) {
-        return { ...s, [arrayField]: [...(s[arrayField] || []), defaultObj] };
+        return { ...s, [arrayField]: [...(s[arrayField] || []), defaultObj] } as WebsiteSection;
       }
       return s;
     }));
   };
 
-  const removeArrayItem = (secId: string, arrayField: string, index: number) => {
+  const removeArrayItem = (secId: string, arrayField: WebsiteArrayField, index: number) => {
     setSections(prev => prev.map(s => {
       if (s.id === secId) {
-        return { ...s, [arrayField]: (s[arrayField] || []).filter((_: any, i: number) => i !== index) };
+        return { ...s, [arrayField]: (s[arrayField] || []).filter((_, i) => i !== index) } as WebsiteSection;
       }
       return s;
     }));
@@ -460,7 +471,7 @@ export default function WebsiteEditorPage() {
                             <Plus className="h-3.5 w-3.5 text-primary" />
                           </Button>
                         </div>
-                        {(selectedSection.items || []).map((item: any, idx: number) => (
+                        {(selectedSection.items || []).map((item, idx) => (
                           <div key={idx} className="border border-border/60 p-2.5 rounded bg-muted/20 space-y-2 relative">
                             <Button size="icon" variant="ghost" className="h-5 w-5 absolute right-1.5 top-1.5 text-destructive hover:bg-destructive/10" onClick={() => removeArrayItem(selectedSection.id, "items", idx)}>
                               <Trash2 className="h-3 w-3" />
@@ -496,7 +507,7 @@ export default function WebsiteEditorPage() {
                             <Plus className="h-3.5 w-3.5 text-primary" />
                           </Button>
                         </div>
-                        {(selectedSection.plans || []).map((plan: any, idx: number) => (
+                        {(selectedSection.plans || []).map((plan, idx) => (
                           <div key={idx} className="border border-border/60 p-2.5 rounded bg-muted/20 space-y-2 relative">
                             <Button size="icon" variant="ghost" className="h-5 w-5 absolute right-1.5 top-1.5 text-destructive hover:bg-destructive/10" onClick={() => removeArrayItem(selectedSection.id, "plans", idx)}>
                               <Trash2 className="h-3 w-3" />
@@ -525,7 +536,7 @@ export default function WebsiteEditorPage() {
                             <Plus className="h-3.5 w-3.5 text-primary" />
                           </Button>
                         </div>
-                        {(selectedSection.reviews || []).map((rev: any, idx: number) => (
+                        {(selectedSection.reviews || []).map((rev, idx) => (
                           <div key={idx} className="border border-border/60 p-2.5 rounded bg-muted/20 space-y-2 relative">
                             <Button size="icon" variant="ghost" className="h-5 w-5 absolute right-1.5 top-1.5 text-destructive hover:bg-destructive/10" onClick={() => removeArrayItem(selectedSection.id, "reviews", idx)}>
                               <Trash2 className="h-3 w-3" />
@@ -709,7 +720,7 @@ export default function WebsiteEditorPage() {
                               <p className="text-xs text-muted-foreground">{sec.subtitle || "Descripción general."}</p>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
-                              {(sec.items || []).map((item: any, i: number) => (
+                              {(sec.items || []).map((item, i) => (
                                 <Card key={i} className="p-4 bg-card hover:shadow-md transition-shadow border border-border/60">
                                   <h4 className="font-display font-bold text-sm text-foreground">{item.title}</h4>
                                   <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{item.desc}</p>
@@ -728,7 +739,7 @@ export default function WebsiteEditorPage() {
                               <p className="text-xs text-muted-foreground">{sec.subtitle || "Elige tu plan ideal."}</p>
                             </div>
                             <div className="flex flex-col md:flex-row justify-center items-stretch gap-6">
-                              {(sec.plans || []).map((plan: any, i: number) => (
+                              {(sec.plans || []).map((plan, i) => (
                                 <Card key={i} className={cn("p-6 max-w-xs w-full text-center flex flex-col justify-between border", i === 1 ? "border-primary bg-primary/5 shadow-md" : "border-border")}>
                                   <div className="space-y-4">
                                     <h4 className="font-display font-bold text-sm uppercase tracking-wider text-muted-foreground">{plan.name}</h4>
@@ -759,7 +770,7 @@ export default function WebsiteEditorPage() {
                               <p className="text-xs text-muted-foreground">{sec.subtitle || "Nuestros clientes avalan la calidad."}</p>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto text-left">
-                              {(sec.reviews || []).map((rev: any, i: number) => (
+                              {(sec.reviews || []).map((rev, i) => (
                                 <Card key={i} className="p-5 border border-border bg-card/65 flex flex-col justify-between">
                                   <p className="text-xs italic text-muted-foreground leading-relaxed">"{rev.text}"</p>
                                   <div className="mt-4 flex justify-between items-center">

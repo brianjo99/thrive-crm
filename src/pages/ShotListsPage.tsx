@@ -15,6 +15,17 @@ import { format } from "date-fns";
 import { Tables } from "@/integrations/supabase/types";
 
 type ShotList = Tables<"shot_lists">;
+type ShotStatus = "planned" | "in-progress" | "completed" | "cancelled";
+
+function normalizeShotStatus(status: string): ShotStatus {
+  return ["planned", "in-progress", "completed", "cancelled"].includes(status)
+    ? (status as ShotStatus)
+    : "planned";
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Ocurrió un error inesperado";
+}
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   planned: { label: "Planificado", color: "bg-blue-500/15 text-blue-500", icon: Clock },
@@ -34,7 +45,14 @@ export default function ShotListsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedShotList, setSelectedShotList] = useState<ShotList | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    campaign_id: string;
+    title: string;
+    description: string;
+    location: string;
+    scheduled_date: string;
+    status: ShotStatus;
+  }>({
     campaign_id: "",
     title: "",
     description: "",
@@ -58,7 +76,7 @@ export default function ShotListsPage() {
         description: shotList.description || "",
         location: shotList.location || "",
         scheduled_date: shotList.scheduled_date?.split("T")[0] || "",
-        status: shotList.status as any,
+        status: normalizeShotStatus(shotList.status),
       });
     } else {
       setEditingId(null);
@@ -92,8 +110,8 @@ export default function ShotListsPage() {
         toast.success("Shot list created!");
       }
       setIsDialogOpen(false);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -102,8 +120,8 @@ export default function ShotListsPage() {
       try {
         await deleteShotList.mutateAsync(id);
         toast.success("Shot list deleted!");
-      } catch (error: any) {
-        toast.error(error.message);
+      } catch (error: unknown) {
+        toast.error(getErrorMessage(error));
       }
     }
   };
@@ -192,7 +210,7 @@ export default function ShotListsPage() {
                     <Label>Status</Label>
                     <Select
                       value={formData.status}
-                      onValueChange={(v: any) => setFormData((p) => ({ ...p, status: v }))}
+                      onValueChange={(v) => setFormData((p) => ({ ...p, status: normalizeShotStatus(v) }))}
                     >
                       <SelectTrigger>
                         <SelectValue />

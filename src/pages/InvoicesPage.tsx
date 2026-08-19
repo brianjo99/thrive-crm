@@ -18,6 +18,7 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { format, isPast, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
+import { Tables } from "@/integrations/supabase/types";
 
 // ---------- Types ----------
 type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
@@ -43,8 +44,30 @@ type Invoice = {
   notes: string | null;
   company_name: string | null;
   items: LineItem[];
-  created_at: string;
+  created_at: string | null;
 };
+
+type ClientOption = Pick<Tables<"clients">, "id" | "name">;
+type CampaignOption = Pick<Tables<"campaigns">, "id" | "name" | "client_id">;
+
+function isLineItem(value: unknown): value is LineItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return typeof item.description === "string"
+    && typeof item.quantity === "number"
+    && typeof item.unit_price === "number"
+    && typeof item.amount === "number";
+}
+
+function normalizeInvoiceStatus(status: string | null): InvoiceStatus {
+  return ["draft", "sent", "paid", "overdue", "cancelled"].includes(status ?? "")
+    ? (status as InvoiceStatus)
+    : "draft";
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Ocurrió un error inesperado";
+}
 
 // ---------- Config ----------
 const STATUS_CONFIG: Record<InvoiceStatus, { label: string; color: string; icon: React.ReactNode }> = {
@@ -75,9 +98,11 @@ function useInvoices() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((inv: any) => ({
+      return (data ?? []).map((inv) => ({
         ...inv,
-        items: Array.isArray(inv.items) ? inv.items : [],
+        status: normalizeInvoiceStatus(inv.status),
+        tax: inv.tax ?? 0,
+        items: Array.isArray(inv.items) ? inv.items.filter(isLineItem) : [],
       })) as Invoice[];
     },
   });
@@ -281,8 +306,8 @@ function InvoiceForm({
 }: {
   form: FormState;
   setForm: React.Dispatch<React.SetStateAction<FormState>>;
-  clients: any[];
-  campaigns: any[];
+  clients: ClientOption[];
+  campaigns: CampaignOption[];
   onSave: () => void;
   onCancel: () => void;
   isSaving: boolean;
@@ -444,10 +469,9 @@ export default function InvoicesPage() {
 
   // Sync detail when invoices refresh
   useEffect(() => {
-    if (detail) {
-      const fresh = invoices.find(i => i.id === detail.id);
-      if (fresh) setDetail(fresh);
-    }
+    setDetail((current) => current
+      ? invoices.find((invoice) => invoice.id === current.id) ?? current
+      : null);
   }, [invoices]);
 
   const openEdit = (inv: Invoice) => {
@@ -486,8 +510,8 @@ export default function InvoicesPage() {
       toast.success("Factura creada");
       setNewDialogOpen(false);
       setCreateForm(EMPTY_FORM);
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 
@@ -510,8 +534,8 @@ export default function InvoicesPage() {
       });
       toast.success("Factura actualizada");
       setEditDialogOpen(false);
-    } catch (err: any) {
-      toast.error(err.message ?? "Failed");
+    } catch (err: unknown) {
+      toast.error(getErrorMessage(err));
     }
   };
 

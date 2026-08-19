@@ -239,8 +239,8 @@ export function BrandKitCard({ clientId }: { clientId: string }) {
       });
       toast.success("Brand Kit guardado");
       setEditing(false);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible guardar el Brand Kit");
     }
   };
 
