@@ -18,6 +18,8 @@ import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
+import type { Json } from "@/integrations/supabase/types";
+import { invokeFunction } from "@/lib/invokeFunction";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -67,20 +69,42 @@ const usd = (n: number) => new Intl.NumberFormat("en-US", { style: "currency", c
 
 const EMPTY_ITEM: LineItem = { description: "", quantity: 1, unit_price: 0, amount: 0 };
 
+function isQuoteStatus(value: string): value is QuoteStatus {
+  return value in STATUS_CONFIG;
+}
+
+function isLineItem(value: unknown): value is LineItem {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.description === "string"
+    && typeof record.quantity === "number"
+    && typeof record.unit_price === "number"
+    && typeof record.amount === "number";
+}
+
+function parseLineItems(value: Json): LineItem[] {
+  return Array.isArray(value) ? value.filter(isLineItem) : [];
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "No fue posible completar la acción";
+}
+
 // ─── Hooks ───────────────────────────────────────────────────────────────────
 
 function useQuotes() {
   return useQuery({
     queryKey: ["quotes"],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("quotes")
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []).map((q: any) => ({
+      return (data ?? []).map(q => ({
         ...q,
-        items: Array.isArray(q.items) ? q.items : [],
+        status: isQuoteStatus(q.status) ? q.status : "draft",
+        items: parseLineItems(q.items),
       })) as Quote[];
     },
   });
@@ -90,7 +114,7 @@ function useCreateQuote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: Omit<Quote, "id" | "created_at">) => {
-      const { data, error } = await (supabase as any).from("quotes").insert(input).select().single();
+      const { data, error } = await supabase.from("quotes").insert(input).select().single();
       if (error) throw error;
       return data;
     },
@@ -102,7 +126,7 @@ function useUpdateQuote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<Omit<Quote, "id" | "created_at">>) => {
-      const { error } = await (supabase as any).from("quotes").update(updates).eq("id", id);
+      const { error } = await supabase.from("quotes").update(updates).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quotes"] }),
@@ -113,7 +137,7 @@ function useDeleteQuote() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await (supabase as any).from("quotes").delete().eq("id", id);
+      const { error } = await supabase.from("quotes").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["quotes"] }),
@@ -140,18 +164,18 @@ function useConvertToInvoice() {
         tax: quote.tax,
         total: quote.total,
         notes: quote.notes,
-      } as any);
+      });
       if (error) throw error;
 
       // Mark quote as accepted
-      await (supabase as any).from("quotes").update({ status: "accepted" }).eq("id", quote.id);
+      await supabase.from("quotes").update({ status: "accepted" }).eq("id", quote.id);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["quotes"] });
       qc.invalidateQueries({ queryKey: ["invoices"] });
       toast.success("Cotización convertida a factura");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: unknown) => toast.error(errorMessage(error)),
   });
 }
 
@@ -176,27 +200,26 @@ function QuoteForm({
 
   const handleAIGenerateItems = async () => {
     if (!aiServiciosDesc.trim()) return toast.error("Describe los servicios a cotizar");
-    const client = clients.find((c: any) => c.id === initialData.client_id);
-    const campaign = campaigns.find((c: any) => c.id === initialData.campaign_id);
+    const client = clients.find(c => c.id === initialData.client_id);
+    const campaign = campaigns.find(c => c.id === initialData.campaign_id);
     setAiLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assist`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await invokeFunction<{ error?: string; items?: string }>("ai-assist", {
           type: "quote",
           clientName: client?.name || "",
           campaignName: campaign?.name || "",
           servicios: aiServiciosDesc,
           presupuesto: "",
-        }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      const newItems: LineItem[] = JSON.parse(data.items);
+      if (typeof data.items !== "string") throw new Error("La respuesta de IA no contiene partidas válidas");
+      const parsedItems = JSON.parse(data.items) as unknown;
+      if (!Array.isArray(parsedItems) || !parsedItems.every(isLineItem)) {
+        throw new Error("La IA devolvió partidas con un formato inválido");
+      }
+      const newItems = parsedItems as LineItem[];
       setItems(newItems);
       toast.success("Partidas generadas con IA");
-    } catch (e: any) { toast.error(e.message); }
+    } catch (error: unknown) { toast.error(errorMessage(error)); }
     finally { setAiLoading(false); }
   };
 
@@ -271,7 +294,7 @@ function QuoteForm({
             <SelectTrigger><SelectValue placeholder="Seleccionar cliente..." /></SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Sin cliente</SelectItem>
-              {clients.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              {clients.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -281,7 +304,7 @@ function QuoteForm({
             <SelectTrigger><SelectValue placeholder="Seleccionar campaña..." /></SelectTrigger>
             <SelectContent>
               <SelectItem value="none">Sin campaña</SelectItem>
-              {campaigns.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              {campaigns.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -405,7 +428,7 @@ function QuoteDetail({
   const deleteQuote  = useDeleteQuote();
   const convertToInvoice = useConvertToInvoice();
 
-  const client = clients.find((c: any) => c.id === quote.client_id);
+  const client = clients.find(c => c.id === quote.client_id);
   const cfg    = STATUS_CONFIG[quote.status];
 
   const handleDelete = async () => {
@@ -542,7 +565,7 @@ export default function QuotesPage() {
       await createQuote.mutateAsync(data);
       toast.success("Cotización creada");
       setView("list");
-    } catch (e: any) { toast.error(e.message); }
+    } catch (error: unknown) { toast.error(errorMessage(error)); }
   };
 
   const handleUpdate = async (data: Omit<Quote, "id" | "created_at">) => {
@@ -551,7 +574,7 @@ export default function QuotesPage() {
       await updateQuote.mutateAsync({ id: selectedQuote.id, ...data });
       toast.success("Cotización actualizada");
       setView("detail");
-    } catch (e: any) { toast.error(e.message); }
+    } catch (error: unknown) { toast.error(errorMessage(error)); }
   };
 
   if (view === "create") {
@@ -678,7 +701,7 @@ export default function QuotesPage() {
         ) : (
           <div className="space-y-3">
             {filtered.map((quote, index) => {
-              const client = clients.find((c: any) => c.id === quote.client_id);
+              const client = clients.find(c => c.id === quote.client_id);
               const cfg    = STATUS_CONFIG[quote.status];
               return (
                 <motion.div key={quote.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>

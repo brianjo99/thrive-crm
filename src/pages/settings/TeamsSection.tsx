@@ -14,7 +14,11 @@ import { format } from "date-fns";
 
 type Team = { id: string; name: string; description: string | null; created_at: string };
 type TeamMember = { id: string; team_id: string; user_id: string; role_in_team: string; created_at: string };
-type Profile = { id: string; display_name: string | null; email: string | null };
+type Profile = { user_id: string; display_name: string | null; email: string | null };
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "No fue posible completar la acción";
+}
 
 function useTeams() {
   return useQuery({
@@ -46,7 +50,7 @@ function useProfiles() {
   return useQuery({
     queryKey: ["all_profiles"],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, display_name, email");
+      const { data } = await supabase.from("profiles").select("user_id, display_name, email");
       return (data ?? []) as Profile[];
     },
   });
@@ -83,7 +87,7 @@ function TeamDialog({
       toast.success(team ? "Equipo actualizado" : "Equipo creado");
       onClose();
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: unknown) => toast.error(errorMessage(error)),
   });
 
   const addMember = useMutation({
@@ -98,7 +102,7 @@ function TeamDialog({
       setAddUserId("");
       toast.success("Miembro agregado");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: unknown) => toast.error(errorMessage(error)),
   });
 
   const removeMember = useMutation({
@@ -107,11 +111,11 @@ function TeamDialog({
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["team_members", team?.id] }),
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: unknown) => toast.error(errorMessage(error)),
   });
 
   const memberIds = new Set(members.map(m => m.user_id));
-  const available = profiles.filter(p => !memberIds.has(p.id));
+  const available = profiles.filter(p => !memberIds.has(p.user_id));
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -135,7 +139,7 @@ function TeamDialog({
               {members.length > 0 && (
                 <div className="space-y-1.5">
                   {members.map(m => {
-                    const profile = profiles.find(p => p.id === m.user_id);
+                    const profile = profiles.find(p => p.user_id === m.user_id);
                     return (
                       <div key={m.id} className="flex items-center justify-between bg-muted/30 rounded-lg px-3 py-2">
                         <div>
@@ -162,8 +166,8 @@ function TeamDialog({
                     </SelectTrigger>
                     <SelectContent>
                       {available.map(p => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.display_name ?? p.email ?? p.id}
+                        <SelectItem key={p.user_id} value={p.user_id}>
+                          {p.display_name ?? p.email ?? p.user_id}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -206,7 +210,7 @@ export default function TeamsSection() {
   const [editTeam, setEditTeam] = useState<Team | null>(null);
 
   const memberCount = (teamId: string) =>
-    (allMembers ?? []).filter((m: any) => m.team_id === teamId).length;
+    (allMembers ?? []).filter(m => m.team_id === teamId).length;
 
   const deleteTeam = useMutation({
     mutationFn: async (id: string) => {
@@ -217,7 +221,7 @@ export default function TeamsSection() {
       qc.invalidateQueries({ queryKey: ["teams"] });
       toast.success("Equipo eliminado");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: unknown) => toast.error(errorMessage(error)),
   });
 
   return (

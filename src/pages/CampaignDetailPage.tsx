@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useCampaigns, useTasks, useCreateTask, useUpdateCampaign, useApprovals, useClients, useAssets, useShotLists, useDeliverables, getAssetPublicUrl, useCampaignCosts, useCreateCost, useDeleteCost, useLogAudit } from "@/hooks/useSupabaseData";
+import { useCampaigns, useTasks, useCreateTask, useUpdateCampaign, useApprovals, useClients, useAssets, useShotLists, useDeliverables, getAssetPublicUrl, useCampaignCosts, useCreateCost, useDeleteCost } from "@/hooks/useSupabaseData";
 import { DeliverablesPanel } from "@/components/thrive/DeliverablesPanel";
 import { WorkflowPipeline } from "@/components/thrive/WorkflowPipeline";
 import { TemplateBadge, StatusBadge, ServiceBadge } from "@/components/thrive/Badges";
@@ -76,7 +76,7 @@ export default function CampaignDetailPage() {
   const { data: stageHistory = [] } = useQuery({
     queryKey: ["campaign_stage_history", id],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("campaign_stage_history")
         .select("*")
         .eq("campaign_id", id)
@@ -92,7 +92,6 @@ export default function CampaignDetailPage() {
   const { data: costs = [] } = useCampaignCosts(id);
   const createCost = useCreateCost();
   const deleteCost = useDeleteCost();
-  const logAudit = useLogAudit();
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [costForm, setCostForm] = useState({ description: "", amount: "", category: "other", cost_date: new Date().toISOString().split("T")[0] });
   const [showCostForm, setShowCostForm] = useState(false);
@@ -135,7 +134,6 @@ export default function CampaignDetailPage() {
     if (currentStageIndex < stages.length - 1) {
       const nextStage = stages[currentStageIndex + 1];
       await updateCampaign.mutateAsync({ id: campaign.id, current_stage: nextStage });
-      logAudit.mutate({ action: "advance_stage", resource_type: "campaign", resource_id: campaign.id, resource_name: campaign.name, old_value: { stage: campaign.current_stage }, new_value: { stage: nextStage } });
       toast.success(`Avanzado a ${nextStage}`);
     }
   };
@@ -702,7 +700,6 @@ export default function CampaignDetailPage() {
                         <Button size="sm" disabled={!costForm.description || !costForm.amount || createCost.isPending} onClick={async () => {
                           try {
                             await createCost.mutateAsync({ campaign_id: campaign.id, description: costForm.description, amount: parseFloat(costForm.amount), category: costForm.category, cost_date: costForm.cost_date });
-                            logAudit.mutate({ action: "create_cost", resource_type: "campaign", resource_id: campaign.id, resource_name: campaign.name, new_value: { description: costForm.description, amount: costForm.amount } });
                             setCostForm({ description: "", amount: "", category: "other", cost_date: new Date().toISOString().split("T")[0] });
                             setShowCostForm(false);
                             toast.success("Costo registrado");

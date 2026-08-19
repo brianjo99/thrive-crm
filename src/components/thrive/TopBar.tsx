@@ -3,6 +3,7 @@ import { useUnpaidAlerts, useDismissAlert, useUserRole, useNotifications, useMar
 import { useAuth } from "@/contexts/AuthContext";
 import { Crown, Scissors, Camera, Bell, LogOut, Check, Trash2, CheckCheck, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { invokeFunction } from "@/lib/invokeFunction";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AlertBanner } from "@/components/thrive/AlertsPanel";
@@ -59,8 +60,8 @@ export function TopBar() {
     try {
       await signOut();
       toast.success("Signed out");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible cerrar la sesión");
     }
   };
 
@@ -71,12 +72,10 @@ export function TopBar() {
 
   const handleRefreshNotifications = async () => {
     try {
-      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/smart-notifications`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-      });
-    } catch (_) {}
+      if (userRole === "owner") await invokeFunction("smart-notifications", {});
+    } catch {
+      return;
+    }
   };
 
   return (
@@ -136,7 +135,7 @@ export function TopBar() {
                         alert={{
                           id: alert.id,
                           clientId: alert.client_id,
-                          clientName: (alert as any).clients?.name || "Client",
+                          clientName: alert.clients?.name || "Cliente",
                           servicePerformed: alert.service_performed,
                           message: alert.message,
                           createdAt: new Date(alert.created_at),

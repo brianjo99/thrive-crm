@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_accounts: {
+        Row: {
+          account_id: string | null
+          account_name: string | null
+          created_at: string
+          id: string
+          monthly_budget: number | null
+          notes: string | null
+          platform: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          account_name?: string | null
+          created_at?: string
+          id?: string
+          monthly_budget?: number | null
+          notes?: string | null
+          platform: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          account_name?: string | null
+          created_at?: string
+          id?: string
+          monthly_budget?: number | null
+          notes?: string | null
+          platform?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       approvals: {
         Row: {
           asset_id: string | null
@@ -145,12 +181,272 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          id: string
+          new_value: Json | null
+          old_value: Json | null
+          resource_id: string | null
+          resource_name: string | null
+          resource_type: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          resource_id?: string | null
+          resource_name?: string | null
+          resource_type: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          id?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          resource_id?: string | null
+          resource_name?: string | null
+          resource_type?: string
+        }
+        Relationships: []
+      }
+      brand_kit: {
+        Row: {
+          brand_colors: string[]
+          client_id: string
+          content_pillars: string[]
+          created_at: string
+          id: string
+          no_gos: string | null
+          preferred_ctas: string[]
+          social_handles: Json
+          strategic_notes: string | null
+          tone_of_voice: string | null
+          updated_at: string
+          visual_references: string | null
+        }
+        Insert: {
+          brand_colors?: string[]
+          client_id: string
+          content_pillars?: string[]
+          created_at?: string
+          id?: string
+          no_gos?: string | null
+          preferred_ctas?: string[]
+          social_handles?: Json
+          strategic_notes?: string | null
+          tone_of_voice?: string | null
+          updated_at?: string
+          visual_references?: string | null
+        }
+        Update: {
+          brand_colors?: string[]
+          client_id?: string
+          content_pillars?: string[]
+          created_at?: string
+          id?: string
+          no_gos?: string | null
+          preferred_ctas?: string[]
+          social_handles?: Json
+          strategic_notes?: string | null
+          tone_of_voice?: string | null
+          updated_at?: string
+          visual_references?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "brand_kit_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_sheets: {
+        Row: {
+          call_time: string | null
+          campaign_id: string | null
+          created_at: string | null
+          crew: Json | null
+          id: string
+          location: string | null
+          notes: string | null
+          schedule: Json | null
+          shoot_date: string
+          title: string
+          updated_at: string | null
+          wrap_time: string | null
+        }
+        Insert: {
+          call_time?: string | null
+          campaign_id?: string | null
+          created_at?: string | null
+          crew?: Json | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          schedule?: Json | null
+          shoot_date: string
+          title: string
+          updated_at?: string | null
+          wrap_time?: string | null
+        }
+        Update: {
+          call_time?: string | null
+          campaign_id?: string | null
+          created_at?: string | null
+          crew?: Json | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          schedule?: Json | null
+          shoot_date?: string
+          title?: string
+          updated_at?: string | null
+          wrap_time?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_sheets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_costs: {
+        Row: {
+          amount: number
+          campaign_id: string
+          category: string | null
+          cost_date: string | null
+          created_at: string | null
+          description: string
+          id: string
+        }
+        Insert: {
+          amount?: number
+          campaign_id: string
+          category?: string | null
+          cost_date?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+        }
+        Update: {
+          amount?: number
+          campaign_id?: string
+          category?: string | null
+          cost_date?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_costs_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_metrics: {
+        Row: {
+          approvals_pending: number | null
+          assets_uploaded: number | null
+          campaign_id: string
+          created_at: string
+          date: string
+          id: string
+          notes: string | null
+          on_schedule: boolean | null
+          tasks_completed: number | null
+          tasks_pending: number | null
+        }
+        Insert: {
+          approvals_pending?: number | null
+          assets_uploaded?: number | null
+          campaign_id: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          on_schedule?: boolean | null
+          tasks_completed?: number | null
+          tasks_pending?: number | null
+        }
+        Update: {
+          approvals_pending?: number | null
+          assets_uploaded?: number | null
+          campaign_id?: string
+          created_at?: string
+          date?: string
+          id?: string
+          notes?: string | null
+          on_schedule?: boolean | null
+          tasks_completed?: number | null
+          tasks_pending?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_metrics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_stage_history: {
+        Row: {
+          campaign_id: string
+          entered_at: string
+          id: string
+          stage: string
+        }
+        Insert: {
+          campaign_id: string
+          entered_at?: string
+          id?: string
+          stage: string
+        }
+        Update: {
+          campaign_id?: string
+          entered_at?: string
+          id?: string
+          stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_stage_history_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           client_id: string
           created_at: string
           created_by: string | null
           current_stage: Database["public"]["Enums"]["pipeline_stage"]
+          drive_folder_url: string | null
           due_date: string | null
           id: string
           name: string
@@ -164,6 +460,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           current_stage?: Database["public"]["Enums"]["pipeline_stage"]
+          drive_folder_url?: string | null
           due_date?: string | null
           id?: string
           name: string
@@ -177,6 +474,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           current_stage?: Database["public"]["Enums"]["pipeline_stage"]
+          drive_folder_url?: string | null
           due_date?: string | null
           id?: string
           name?: string
@@ -195,16 +493,142 @@ export type Database = {
           },
         ]
       }
+      client_notes: {
+        Row: {
+          client_id: string
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          type: string
+        }
+        Insert: {
+          client_id: string
+          content: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          type?: string
+        }
+        Update: {
+          client_id?: string
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_onboarding: {
+        Row: {
+          client_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          requirements: Json | null
+          status: string
+          step: number
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          requirements?: Json | null
+          status?: string
+          step?: number
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          requirements?: Json | null
+          status?: string
+          step?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_onboarding_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_portal_tokens: {
+        Row: {
+          campaign_id: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          id: string
+          token: string
+        }
+        Insert: {
+          campaign_id: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          token: string
+        }
+        Update: {
+          campaign_id?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_tokens_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_portal_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           avatar_url: string | null
           created_at: string
           created_by: string | null
           default_checklist: Json
+          drive_folder_url: string | null
           email: string | null
           enabled_services: Database["public"]["Enums"]["service_type"][]
           id: string
           name: string
+          phone: string | null
           type: Database["public"]["Enums"]["client_type"]
           updated_at: string
         }
@@ -213,10 +637,12 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           default_checklist?: Json
+          drive_folder_url?: string | null
           email?: string | null
           enabled_services?: Database["public"]["Enums"]["service_type"][]
           id?: string
           name: string
+          phone?: string | null
           type?: Database["public"]["Enums"]["client_type"]
           updated_at?: string
         }
@@ -225,12 +651,431 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           default_checklist?: Json
+          drive_folder_url?: string | null
           email?: string | null
           enabled_services?: Database["public"]["Enums"]["service_type"][]
           id?: string
           name?: string
+          phone?: string | null
           type?: Database["public"]["Enums"]["client_type"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      comments: {
+        Row: {
+          approval_id: string | null
+          asset_id: string | null
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          mentions: string[] | null
+          task_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          approval_id?: string | null
+          asset_id?: string | null
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          mentions?: string[] | null
+          task_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approval_id?: string | null
+          asset_id?: string | null
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          mentions?: string[] | null
+          task_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "approvals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_calendar: {
+        Row: {
+          asset_url: string | null
+          campaign_id: string | null
+          caption: string | null
+          client_id: string | null
+          content_type: string | null
+          created_at: string | null
+          hashtags: string | null
+          id: string
+          notes: string | null
+          platform: string
+          scheduled_date: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          asset_url?: string | null
+          campaign_id?: string | null
+          caption?: string | null
+          client_id?: string | null
+          content_type?: string | null
+          created_at?: string | null
+          hashtags?: string | null
+          id?: string
+          notes?: string | null
+          platform: string
+          scheduled_date: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          asset_url?: string | null
+          campaign_id?: string | null
+          caption?: string | null
+          client_id?: string | null
+          content_type?: string | null
+          created_at?: string | null
+          hashtags?: string | null
+          id?: string
+          notes?: string | null
+          platform?: string
+          scheduled_date?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_calendar_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "content_calendar_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contracts: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          file_url: string | null
+          id: string
+          name: string
+          notes: string | null
+          signed_at: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          signed_at?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          file_url?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          signed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contracts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deliverables: {
+        Row: {
+          asset_id: string | null
+          assigned_to: string | null
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id?: string | null
+          assigned_to?: string | null
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string | null
+          assigned_to?: string | null
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deliverables_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deliverables_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          campaign_id: string | null
+          client_id: string | null
+          company_name: string | null
+          created_at: string | null
+          due_date: string | null
+          id: string
+          invoice_number: string
+          items: Json | null
+          notes: string | null
+          paid_date: string | null
+          status: string | null
+          subtotal: number
+          tax: number | null
+          total: number
+          updated_at: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          client_id?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number: string
+          items?: Json | null
+          notes?: string | null
+          paid_date?: string | null
+          status?: string | null
+          subtotal?: number
+          tax?: number | null
+          total?: number
+          updated_at?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          client_id?: string | null
+          company_name?: string | null
+          created_at?: string | null
+          due_date?: string | null
+          id?: string
+          invoice_number?: string
+          items?: Json | null
+          notes?: string | null
+          paid_date?: string | null
+          status?: string | null
+          subtotal?: number
+          tax?: number | null
+          total?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          ad_campaign: string | null
+          ad_platform: string | null
+          created_at: string
+          email: string
+          id: string
+          mensaje: string | null
+          nombre: string
+          notes: string | null
+          servicio: string | null
+          source: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          ad_campaign?: string | null
+          ad_platform?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          mensaje?: string | null
+          nombre: string
+          notes?: string | null
+          servicio?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          ad_campaign?: string | null
+          ad_platform?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          mensaje?: string | null
+          nombre?: string
+          notes?: string | null
+          servicio?: string | null
+          source?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      module_visibility: {
+        Row: {
+          id: string
+          is_visible: boolean
+          module: string
+          role: string | null
+          user_id: string | null
+        }
+        Insert: {
+          id?: string
+          is_visible?: boolean
+          module: string
+          role?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          id?: string
+          is_visible?: boolean
+          module?: string
+          role?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          read: boolean
+          read_at: string | null
+          related_id: string | null
+          related_type: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          read?: boolean
+          read_at?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          read?: boolean
+          read_at?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      org_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: Json | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json | null
         }
         Relationships: []
       }
@@ -239,36 +1084,264 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           display_name: string | null
+          email: string | null
           id: string
+          last_seen_at: string | null
+          status: string
           updated_at: string
           user_id: string
-          email: string | null
-          status: string
-          last_seen_at: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           id?: string
+          last_seen_at?: string | null
+          status?: string
           updated_at?: string
           user_id: string
-          email?: string | null
-          status?: string
-          last_seen_at?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
+          email?: string | null
           id?: string
+          last_seen_at?: string | null
+          status?: string
           updated_at?: string
           user_id?: string
-          email?: string | null
-          status?: string
-          last_seen_at?: string | null
         }
         Relationships: []
+      }
+      quotes: {
+        Row: {
+          campaign_id: string | null
+          client_id: string | null
+          created_at: string
+          id: string
+          items: Json
+          notes: string | null
+          quote_number: string
+          status: string
+          subtotal: number
+          tax: number
+          total: number
+          valid_until: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          quote_number: string
+          status?: string
+          subtotal?: number
+          tax?: number
+          total?: number
+          valid_until?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          quote_number?: string
+          status?: string
+          subtotal?: number
+          tax?: number
+          total?: number
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      revision_rounds: {
+        Row: {
+          approval_id: string | null
+          created_at: string | null
+          feedback: string | null
+          id: string
+          round_number: number
+          status: string | null
+        }
+        Insert: {
+          approval_id?: string | null
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          round_number?: number
+          status?: string | null
+        }
+        Update: {
+          approval_id?: string | null
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          round_number?: number
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revision_rounds_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "approvals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          can_approve: boolean
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_manage: boolean
+          can_view: boolean
+          id: string
+          module: string
+          role: string
+        }
+        Insert: {
+          can_approve?: boolean
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_manage?: boolean
+          can_view?: boolean
+          id?: string
+          module: string
+          role: string
+        }
+        Update: {
+          can_approve?: boolean
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_manage?: boolean
+          can_view?: boolean
+          id?: string
+          module?: string
+          role?: string
+        }
+        Relationships: []
+      }
+      scripts: {
+        Row: {
+          campaign_id: string | null
+          content: string | null
+          created_at: string | null
+          id: string
+          status: string | null
+          title: string
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          title: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          campaign_id?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string
+          status?: string | null
+          title?: string
+          updated_at?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scripts_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shot_lists: {
+        Row: {
+          assigned_to: string | null
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          scheduled_date: string | null
+          shots: Json | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          scheduled_date?: string | null
+          shots?: Json | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          scheduled_date?: string | null
+          shots?: Json | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shot_lists_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sops: {
         Row: {
@@ -305,6 +1378,7 @@ export type Database = {
       }
       tasks: {
         Row: {
+          assigned_user_id: string | null
           assignee: Database["public"]["Enums"]["app_role"] | null
           campaign_id: string
           checklist: Json | null
@@ -319,9 +1393,9 @@ export type Database = {
           status: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at: string
-          assigned_user_id: string | null
         }
         Insert: {
+          assigned_user_id?: string | null
           assignee?: Database["public"]["Enums"]["app_role"] | null
           campaign_id: string
           checklist?: Json | null
@@ -336,9 +1410,9 @@ export type Database = {
           status?: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at?: string
-          assigned_user_id?: string | null
         }
         Update: {
+          assigned_user_id?: string | null
           assignee?: Database["public"]["Enums"]["app_role"] | null
           campaign_id?: string
           checklist?: Json | null
@@ -353,9 +1427,15 @@ export type Database = {
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
           updated_at?: string
-          assigned_user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_user_id_fkey"
+            columns: ["assigned_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tasks_campaign_id_fkey"
             columns: ["campaign_id"]
@@ -370,14 +1450,60 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "tasks_assigned_user_id_fkey"
-            columns: ["assigned_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
         ]
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          role_in_team: string
+          team_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role_in_team?: string
+          team_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role_in_team?: string
+          team_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
       }
       unpaid_alerts: {
         Row: {
@@ -432,910 +1558,51 @@ export type Database = {
         }
         Relationships: []
       }
-      leads: {
-        Row: {
-          id: string
-          nombre: string
-          email: string
-          servicio: string | null
-          mensaje: string | null
-          status: "new" | "contacted" | "converted" | "closed"
-          notes: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          nombre: string
-          email: string
-          servicio?: string | null
-          mensaje?: string | null
-          status?: "new" | "contacted" | "converted" | "closed"
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          nombre?: string
-          email?: string
-          servicio?: string | null
-          mensaje?: string | null
-          status?: "new" | "contacted" | "converted" | "closed"
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       websites: {
         Row: {
+          content: Json
+          created_at: string
           id: string
+          leads_count: number | null
           name: string
+          published: boolean | null
           slug: string
           template_type: string
-          content: Json
-          published: boolean | null
-          views: number | null
-          leads_count: number | null
-          created_at: string
           updated_at: string
+          views: number | null
         }
         Insert: {
+          content?: Json
+          created_at?: string
           id?: string
+          leads_count?: number | null
           name: string
+          published?: boolean | null
           slug: string
           template_type: string
-          content?: Json
-          published?: boolean | null
-          views?: number | null
-          leads_count?: number | null
-          created_at?: string
           updated_at?: string
+          views?: number | null
         }
         Update: {
+          content?: Json
+          created_at?: string
           id?: string
+          leads_count?: number | null
           name?: string
+          published?: boolean | null
           slug?: string
           template_type?: string
-          content?: Json
-          published?: boolean | null
+          updated_at?: string
           views?: number | null
-          leads_count?: number | null
-          created_at?: string
-          updated_at?: string
         }
         Relationships: []
-      }
-      client_onboarding: {
-        Row: {
-          id: string
-          client_id: string
-          step: number
-          status: string
-          requirements: Json | null
-          notes: string | null
-          completed_at: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          client_id: string
-          step?: number
-          status?: string
-          requirements?: Json | null
-          notes?: string | null
-          completed_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          client_id?: string
-          step?: number
-          status?: string
-          requirements?: Json | null
-          notes?: string | null
-          completed_at?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_onboarding_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      shot_lists: {
-        Row: {
-          id: string
-          campaign_id: string
-          title: string
-          description: string | null
-          location: string | null
-          scheduled_date: string | null
-          assigned_to: string | null
-          status: string
-          shots: Json | null
-          notes: string | null
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          campaign_id: string
-          title: string
-          description?: string | null
-          location?: string | null
-          scheduled_date?: string | null
-          assigned_to?: string | null
-          status?: string
-          shots?: Json | null
-          notes?: string | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          campaign_id?: string
-          title?: string
-          description?: string | null
-          location?: string | null
-          scheduled_date?: string | null
-          assigned_to?: string | null
-          status?: string
-          shots?: Json | null
-          notes?: string | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "shot_lists_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      deliverables: {
-        Row: {
-          id: string
-          campaign_id: string
-          name: string
-          type: string
-          description: string | null
-          status: string
-          due_date: string | null
-          assigned_to: string | null
-          asset_id: string | null
-          notes: string | null
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          campaign_id: string
-          name: string
-          type: string
-          description?: string | null
-          status?: string
-          due_date?: string | null
-          assigned_to?: string | null
-          asset_id?: string | null
-          notes?: string | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          campaign_id?: string
-          name?: string
-          type?: string
-          description?: string | null
-          status?: string
-          due_date?: string | null
-          assigned_to?: string | null
-          asset_id?: string | null
-          notes?: string | null
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "deliverables_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "deliverables_asset_id_fkey"
-            columns: ["asset_id"]
-            isOneToOne: false
-            referencedRelation: "assets"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      notifications: {
-        Row: {
-          id: string
-          user_id: string
-          type: string
-          title: string
-          message: string | null
-          related_id: string | null
-          related_type: string | null
-          read: boolean
-          read_at: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          type: string
-          title: string
-          message?: string | null
-          related_id?: string | null
-          related_type?: string | null
-          read?: boolean
-          read_at?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          type?: string
-          title?: string
-          message?: string | null
-          related_id?: string | null
-          related_type?: string | null
-          read?: boolean
-          read_at?: string | null
-          created_at?: string
-        }
-        Relationships: []
-      }
-      comments: {
-        Row: {
-          id: string
-          task_id: string | null
-          approval_id: string | null
-          asset_id: string | null
-          author_id: string
-          content: string
-          mentions: string[] | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          task_id?: string | null
-          approval_id?: string | null
-          asset_id?: string | null
-          author_id: string
-          content: string
-          mentions?: string[] | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          task_id?: string | null
-          approval_id?: string | null
-          asset_id?: string | null
-          author_id?: string
-          content?: string
-          mentions?: string[] | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "comments_task_id_fkey"
-            columns: ["task_id"]
-            isOneToOne: false
-            referencedRelation: "tasks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "comments_approval_id_fkey"
-            columns: ["approval_id"]
-            isOneToOne: false
-            referencedRelation: "approvals"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "comments_asset_id_fkey"
-            columns: ["asset_id"]
-            isOneToOne: false
-            referencedRelation: "assets"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      client_portal_tokens: {
-        Row: {
-          id: string
-          client_id: string
-          campaign_id: string
-          token: string
-          expires_at: string
-          created_by: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          client_id: string
-          campaign_id: string
-          token: string
-          expires_at: string
-          created_by?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          client_id?: string
-          campaign_id?: string
-          token?: string
-          expires_at?: string
-          created_by?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_portal_tokens_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "client_portal_tokens_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      campaign_metrics: {
-        Row: {
-          id: string
-          campaign_id: string
-          date: string
-          tasks_completed: number | null
-          tasks_pending: number | null
-          approvals_pending: number | null
-          assets_uploaded: number | null
-          on_schedule: boolean | null
-          notes: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          campaign_id: string
-          date?: string
-          tasks_completed?: number | null
-          tasks_pending?: number | null
-          approvals_pending?: number | null
-          assets_uploaded?: number | null
-          on_schedule?: boolean | null
-          notes?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          campaign_id?: string
-          date?: string
-          tasks_completed?: number | null
-          tasks_pending?: number | null
-          approvals_pending?: number | null
-          assets_uploaded?: number | null
-          on_schedule?: boolean | null
-          notes?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "campaign_metrics_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      teams: {
-        Row: {
-          id: string
-          name: string
-          description: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          created_at?: string
-        }
-        Relationships: []
-      }
-      team_members: {
-        Row: {
-          id: string
-          team_id: string
-          user_id: string
-          role_in_team: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          team_id: string
-          user_id: string
-          role_in_team?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          team_id?: string
-          user_id?: string
-          role_in_team?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_members_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      audit_logs: {
-        Row: {
-          id: string
-          actor_id: string | null
-          actor_name: string | null
-          action: string
-          resource_type: string
-          resource_id: string | null
-          resource_name: string | null
-          old_value: Json | null
-          new_value: Json | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          actor_id?: string | null
-          actor_name?: string | null
-          action: string
-          resource_type: string
-          resource_id?: string | null
-          resource_name?: string | null
-          old_value?: Json | null
-          new_value?: Json | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          actor_id?: string | null
-          actor_name?: string | null
-          action?: string
-          resource_type?: string
-          resource_id?: string | null
-          resource_name?: string | null
-          old_value?: Json | null
-          new_value?: Json | null
-          created_at?: string
-        }
-        Relationships: []
-      }
-      role_permissions: {
-        Row: {
-          id: string
-          role: string
-          module: string
-          can_view: boolean
-          can_create: boolean
-          can_edit: boolean
-          can_delete: boolean
-          can_approve: boolean
-          can_manage: boolean
-        }
-        Insert: {
-          id?: string
-          role: string
-          module: string
-          can_view?: boolean
-          can_create?: boolean
-          can_edit?: boolean
-          can_delete?: boolean
-          can_approve?: boolean
-          can_manage?: boolean
-        }
-        Update: {
-          id?: string
-          role?: string
-          module?: string
-          can_view?: boolean
-          can_create?: boolean
-          can_edit?: boolean
-          can_delete?: boolean
-          can_approve?: boolean
-          can_manage?: boolean
-        }
-        Relationships: []
-      }
-      module_visibility: {
-        Row: {
-          id: string
-          role: string | null
-          user_id: string | null
-          module: string
-          is_visible: boolean
-        }
-        Insert: {
-          id?: string
-          role?: string | null
-          user_id?: string | null
-          module: string
-          is_visible?: boolean
-        }
-        Update: {
-          id?: string
-          role?: string | null
-          user_id?: string | null
-          module?: string
-          is_visible?: boolean
-        }
-        Relationships: []
-      }
-      org_settings: {
-        Row: {
-          key: string
-          value: Json | null
-          updated_at: string
-        }
-        Insert: {
-          key: string
-          value?: Json | null
-          updated_at?: string
-        }
-        Update: {
-          key?: string
-          value?: Json | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      scripts: {
-        Row: {
-          id: string
-          campaign_id: string | null
-          title: string
-          content: string | null
-          version: number
-          status: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          campaign_id?: string | null
-          title: string
-          content?: string | null
-          version?: number
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          campaign_id?: string | null
-          title?: string
-          content?: string | null
-          version?: number
-          status?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "scripts_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      invoices: {
-        Row: {
-          id: string
-          client_id: string | null
-          campaign_id: string | null
-          invoice_number: string
-          status: string
-          subtotal: number
-          tax: number
-          total: number
-          due_date: string | null
-          paid_date: string | null
-          notes: string | null
-          company_name: string | null
-          items: Json | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          client_id?: string | null
-          campaign_id?: string | null
-          invoice_number: string
-          status?: string
-          subtotal?: number
-          tax?: number
-          total?: number
-          due_date?: string | null
-          paid_date?: string | null
-          notes?: string | null
-          company_name?: string | null
-          items?: Json | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          client_id?: string | null
-          campaign_id?: string | null
-          invoice_number?: string
-          status?: string
-          subtotal?: number
-          tax?: number
-          total?: number
-          due_date?: string | null
-          paid_date?: string | null
-          notes?: string | null
-          company_name?: string | null
-          items?: Json | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "invoices_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invoices_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      call_sheets: {
-        Row: {
-          id: string
-          campaign_id: string | null
-          title: string
-          shoot_date: string | null
-          location: string | null
-          call_time: string | null
-          wrap_time: string | null
-          notes: string | null
-          crew: Json | null
-          schedule: Json | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          campaign_id?: string | null
-          title: string
-          shoot_date?: string | null
-          location?: string | null
-          call_time?: string | null
-          wrap_time?: string | null
-          notes?: string | null
-          crew?: Json | null
-          schedule?: Json | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          campaign_id?: string | null
-          title?: string
-          shoot_date?: string | null
-          location?: string | null
-          call_time?: string | null
-          wrap_time?: string | null
-          notes?: string | null
-          crew?: Json | null
-          schedule?: Json | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "call_sheets_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      content_calendar: {
-        Row: {
-          id: string
-          campaign_id: string | null
-          client_id: string | null
-          platform: string
-          scheduled_date: string
-          content_type: string
-          status: string
-          caption: string | null
-          hashtags: string | null
-          notes: string | null
-          asset_url: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          campaign_id?: string | null
-          client_id?: string | null
-          platform: string
-          scheduled_date: string
-          content_type: string
-          status?: string
-          caption?: string | null
-          hashtags?: string | null
-          notes?: string | null
-          asset_url?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          campaign_id?: string | null
-          client_id?: string | null
-          platform?: string
-          scheduled_date?: string
-          content_type?: string
-          status?: string
-          caption?: string | null
-          hashtags?: string | null
-          notes?: string | null
-          asset_url?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "content_calendar_campaign_id_fkey"
-            columns: ["campaign_id"]
-            isOneToOne: false
-            referencedRelation: "campaigns"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "content_calendar_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      revision_rounds: {
-        Row: {
-          id: string
-          approval_id: string
-          round_number: number
-          feedback: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          approval_id: string
-          round_number: number
-          feedback: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          approval_id?: string
-          round_number?: number
-          feedback?: string
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "revision_rounds_approval_id_fkey"
-            columns: ["approval_id"]
-            isOneToOne: false
-            referencedRelation: "approvals"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      brand_kit: {
-        Row: {
-          id: string
-          client_id: string
-          tone_of_voice: string | null
-          content_pillars: string[]
-          preferred_ctas: string[]
-          brand_colors: string[]
-          visual_references: string | null
-          no_gos: string | null
-          social_handles: Json
-          strategic_notes: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          client_id: string
-          tone_of_voice?: string | null
-          content_pillars?: string[]
-          preferred_ctas?: string[]
-          brand_colors?: string[]
-          visual_references?: string | null
-          no_gos?: string | null
-          social_handles?: Json
-          strategic_notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          client_id?: string
-          tone_of_voice?: string | null
-          content_pillars?: string[]
-          preferred_ctas?: string[]
-          brand_colors?: string[]
-          visual_references?: string | null
-          no_gos?: string | null
-          social_handles?: Json
-          strategic_notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "brand_kit_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: true
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          }
-        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      get_current_access_state: { Args: never; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1350,6 +1617,16 @@ export type Database = {
       increment_website_views: {
         Args: { website_id: string }
         Returns: undefined
+      }
+      is_internal_user: { Args: never; Returns: boolean }
+      submit_public_lead: {
+        Args: {
+          p_email: string
+          p_mensaje?: string | null
+          p_nombre: string
+          p_servicio?: string | null
+        }
+        Returns: string
       }
     }
     Enums: {

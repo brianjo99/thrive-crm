@@ -10,6 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, FolderKanban, Search, AlertTriangle, CheckCircle, Download, Sparkles, Loader2 } from "lucide-react";
 import { exportToCsv } from "@/utils/exportCsv";
+import { invokeFunction } from "@/lib/invokeFunction";
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "No fue posible completar la acción";
+}
 import { motion } from "framer-motion";
 import { CampaignTemplate } from "@/types/thrive";
 import { format, isPast, isToday } from "date-fns";
@@ -53,16 +58,15 @@ export default function CampaignsPage() {
     if (!aiForm.objetivo.trim()) return toast.error("Describe el objetivo de la campaña");
     setAiLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assist`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "campaign", clientName: client?.name || "", ...aiForm }),
+      const data = await invokeFunction<{ name?: string }>("ai-assist", {
+        type: "campaign",
+        clientName: client?.name || "",
+        ...aiForm,
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
+      if (!data.name) throw new Error("La IA no devolvió un nombre de campaña");
       setNewCampaign(p => ({ ...p, name: data.name }));
       toast.success("Nombre generado con IA");
-    } catch (e: any) { toast.error(e.message); }
+    } catch (error: unknown) { toast.error(errorMessage(error)); }
     finally { setAiLoading(false); }
   };
 
@@ -73,7 +77,7 @@ export default function CampaignsPage() {
   });
 
   const filteredCampaigns = campaigns.filter((campaign) => {
-    const clientName = (campaign as any).clients?.name || "";
+    const clientName = campaign.clients?.name || "";
     return (
       campaign.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       clientName.toLowerCase().includes(searchQuery.toLowerCase())
@@ -91,8 +95,8 @@ export default function CampaignsPage() {
       toast.success("¡Campaña creada!");
       setNewCampaign({ name: "", clientId: "", template: "film-edit" });
       setIsDialogOpen(false);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error));
     }
   };
 
@@ -213,7 +217,7 @@ export default function CampaignsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredCampaigns.map((campaign, index) => {
-              const clientName = (campaign as any).clients?.name || "Unknown";
+              const clientName = campaign.clients?.name || "Sin cliente";
               const campaignTasks = allTasks.filter(t => t.campaign_id === campaign.id);
               const completedTasks = campaignTasks.filter(t => t.status === "complete");
               const urgentTasks = campaignTasks.filter(t => t.priority === "urgent" && t.status !== "complete");

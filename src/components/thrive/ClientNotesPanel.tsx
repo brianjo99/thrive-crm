@@ -35,7 +35,7 @@ function useClientNotes(clientId: string) {
   return useQuery({
     queryKey: ["client_notes", clientId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("client_notes")
         .select("*")
         .eq("client_id", clientId)
@@ -52,7 +52,7 @@ function useAddClientNote(clientId: string) {
   const { user } = useAuth();
   return useMutation({
     mutationFn: async ({ type, content }: { type: NoteType; content: string }) => {
-      const { error } = await (supabase as any).from("client_notes").insert({
+      const { error } = await supabase.from("client_notes").insert({
         client_id: clientId,
         type,
         content,
@@ -68,7 +68,7 @@ function useDeleteClientNote(clientId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (noteId: string) => {
-      const { error } = await (supabase as any).from("client_notes").delete().eq("id", noteId);
+      const { error } = await supabase.from("client_notes").delete().eq("id", noteId);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["client_notes", clientId] }),
@@ -90,8 +90,8 @@ export function ClientNotesPanel({ clientId }: { clientId: string }) {
       setContent("");
       setIsAdding(false);
       toast.success("Nota agregada");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible agregar la nota");
     }
   };
 

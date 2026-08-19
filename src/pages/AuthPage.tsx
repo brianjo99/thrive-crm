@@ -5,21 +5,20 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Mail, Lock, User } from "lucide-react";
+import { Sparkles, Mail, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export default function AuthPage() {
-  const { signIn, signUp, resetPassword, user } = useAuth();
+  const { signIn, resetPassword, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) navigate("/", { replace: true });
   }, [user, navigate]);
-  const [mode, setMode] = useState<"login" | "signup" | "reset">("login");
+  const [mode, setMode] = useState<"login" | "reset">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,17 +27,14 @@ export default function AuthPage() {
     try {
       if (mode === "login") {
         await signIn(email, password);
-        toast.success("Welcome back!");
-      } else if (mode === "signup") {
-        await signUp(email, password, displayName);
-        toast.success("Account created! Check your email to confirm.");
+        toast.success("Sesión iniciada");
       } else {
         await resetPassword(email);
-        toast.success("Password reset email sent!");
+        toast.success("Te enviamos el enlace para restablecer tu contraseña");
         setMode("login");
       }
-    } catch (error: any) {
-      toast.error(error.message || "An error occurred");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible completar la solicitud");
     } finally {
       setLoading(false);
     }
@@ -62,27 +58,11 @@ export default function AuthPage() {
         <Card className="luxury-card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <h2 className="font-display text-xl font-semibold text-center">
-              {mode === "login" ? "Sign In" : mode === "signup" ? "Create Account" : "Reset Password"}
+              {mode === "login" ? "Iniciar sesión" : "Restablecer contraseña"}
             </h2>
 
-            {mode === "signup" && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="name"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Your name"
-                    className="pl-9"
-                  />
-                </div>
-              </div>
-            )}
-
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Correo electrónico</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -90,16 +70,17 @@ export default function AuthPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="tu@empresa.com"
                   className="pl-9"
                   required
+                  autoComplete="email"
                 />
               </div>
             </div>
 
             {mode !== "reset" && (
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Contraseña</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -111,6 +92,7 @@ export default function AuthPage() {
                     className="pl-9"
                     required
                     minLength={6}
+                    autoComplete="current-password"
                   />
                 </div>
               </div>
@@ -118,12 +100,10 @@ export default function AuthPage() {
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading
-                ? "Loading..."
+                ? "Procesando..."
                 : mode === "login"
-                ? "Sign In"
-                : mode === "signup"
-                ? "Create Account"
-                : "Send Reset Link"}
+                ? "Iniciar sesión"
+                : "Enviar enlace"}
             </Button>
           </form>
 
@@ -134,36 +114,17 @@ export default function AuthPage() {
                   onClick={() => setMode("reset")}
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Forgot password?
+                  ¿Olvidaste tu contraseña?
                 </button>
-                <p className="text-muted-foreground">
-                  Don't have an account?{" "}
-                  <button
-                    onClick={() => setMode("signup")}
-                    className="text-primary font-medium hover:underline"
-                  >
-                    Sign up
-                  </button>
-                </p>
+                <p className="text-muted-foreground">El acceso al CRM es únicamente por invitación.</p>
               </>
-            )}
-            {mode === "signup" && (
-              <p className="text-muted-foreground">
-                Already have an account?{" "}
-                <button
-                  onClick={() => setMode("login")}
-                  className="text-primary font-medium hover:underline"
-                >
-                  Sign in
-                </button>
-              </p>
             )}
             {mode === "reset" && (
               <button
                 onClick={() => setMode("login")}
                 className="text-primary font-medium hover:underline"
               >
-                Back to sign in
+                Volver al inicio de sesión
               </button>
             )}
           </div>

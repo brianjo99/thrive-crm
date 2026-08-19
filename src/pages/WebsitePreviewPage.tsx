@@ -139,14 +139,17 @@ export default function WebsitePreviewPage() {
     const siteName = site?.name || "Website Builder Site";
 
     try {
-      // 1. Insert lead into leads table
-      const { error: leadErr } = await supabase.from("leads").insert({
-        nombre: formName,
-        email: formEmail,
-        servicio: siteName,
-        mensaje: formMsg || `Lead capturado automáticamente desde el Website Builder de Thrive CRM.`,
-        status: "new",
-        notes: `Origen: Landing Page [${siteName}] - Tel: ${formPhone}`
+      // 1. Submit through the restricted public RPC. Callers cannot set internal fields.
+      const context = [
+        formMsg || "Lead capturado desde una landing page de Thrive CRM.",
+        formPhone ? `Teléfono: ${formPhone}` : null,
+        `Landing page: ${siteName}`,
+      ].filter(Boolean).join("\n");
+      const { error: leadErr } = await supabase.rpc("submit_public_lead", {
+        p_nombre: formName,
+        p_email: formEmail,
+        p_servicio: siteName,
+        p_mensaje: context,
       });
 
       if (leadErr) throw leadErr;

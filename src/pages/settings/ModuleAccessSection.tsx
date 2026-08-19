@@ -12,7 +12,6 @@ const ROLES = [
   { id: "owner",        label: "Owner",        color: "text-primary",    bg: "bg-primary/10" },
   { id: "editor",       label: "Editor",        color: "text-purple-400", bg: "bg-purple-500/10" },
   { id: "videographer", label: "Videographer",  color: "text-cyan-400",   bg: "bg-cyan-500/10" },
-  { id: "client",       label: "Cliente",       color: "text-orange-400", bg: "bg-orange-500/10" },
 ];
 
 const MODULES = [
@@ -36,11 +35,12 @@ function useVisibility(role: string) {
   return useQuery({
     queryKey: ["module_visibility_role", role],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("module_visibility")
         .select("module, is_visible")
         .eq("role", role);
-      return new Map((data ?? []).map((r: any) => [r.module, r.is_visible]));
+      if (error) throw error;
+      return new Map((data ?? []).map(r => [r.module, r.is_visible]));
     },
   });
 }
@@ -58,7 +58,7 @@ function useToggleVisibility() {
       qc.invalidateQueries({ queryKey: ["module_visibility_role", role] });
       qc.invalidateQueries({ queryKey: ["module_visibility"] });
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: unknown) => toast.error(error instanceof Error ? error.message : "No fue posible guardar el cambio"),
   });
 }
 
@@ -132,7 +132,7 @@ export default function ModuleAccessSection() {
       <div>
         <h2 className="font-display text-xl font-semibold">Visibilidad de Módulos</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Controla qué módulos aparecen en el sidebar para cada rol
+          Controla qué módulos aparecen y pueden abrirse desde el panel interno
         </p>
       </div>
 
