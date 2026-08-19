@@ -171,21 +171,21 @@ export const TEMPLATE_SCHEMES: Record<string, {
   }
 };
 
-const LOCAL_STORAGE_KEY = "thrive_website_builder_sites";
-
 export default function WebsitesPage() {
   const navigate = useNavigate();
   const [websites, setWebsites] = useState<Website[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Creation dialog state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newSiteName, setNewSiteName] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("gym");
 
-  // Load websites from Supabase (or LocalStorage on failure)
+  // Supabase is the source of truth. Never present device-local data as published.
   const fetchWebsites = async () => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const { data, error } = await supabase
         .from("websites")
@@ -194,40 +194,11 @@ export default function WebsitesPage() {
 
       if (error) throw error;
       setWebsites(data as Website[]);
-    } catch (err: any) {
-      console.warn("DB Websites table not found, falling back to LocalStorage:", err.message);
-      const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (localData) {
-        setWebsites(JSON.parse(localData));
-      } else {
-        // Seed default local data if empty
-        const defaultSites: Website[] = [
-          {
-            id: "local-gym",
-            name: "FitNation CDMX - Memberships",
-            slug: "fitnation-cdmx",
-            template_type: "gym",
-            content: TEMPLATE_SCHEMES.gym,
-            published: true,
-            views: 450,
-            leads_count: 38,
-            created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-          },
-          {
-            id: "local-dental",
-            name: "SmileStudio Polanco",
-            slug: "smilestudio-polanco",
-            template_type: "dental",
-            content: TEMPLATE_SCHEMES.dental,
-            published: false,
-            views: 0,
-            leads_count: 0,
-            created_at: new Date().toISOString()
-          }
-        ];
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(defaultSites));
-        setWebsites(defaultSites);
-      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("No se pudieron cargar los sitios:", message);
+      setWebsites([]);
+      setLoadError("No se pudo conectar con la tabla de sitios en Supabase.");
     } finally {
       setIsLoading(false);
     }
@@ -278,31 +249,10 @@ export default function WebsitesPage() {
       toast.success("Sitio web creado correctamente!");
       setIsCreateOpen(false);
       navigate(`/sites/editor/${data.id}`);
-    } catch (err: any) {
-      console.warn("DB Create failed, writing locally to LocalStorage:", err.message);
-      // Fallback: Local Storage write
-      const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      const currentLocal: Website[] = localData ? JSON.parse(localData) : [];
-      
-      const newLocalSite: Website = {
-        id: `local-${Math.random().toString(36).substring(2, 9)}`,
-        name: newSiteName,
-        slug: slug,
-        template_type: selectedTemplate,
-        content: newSiteContent,
-        published: false,
-        views: 0,
-        leads_count: 0,
-        created_at: new Date().toISOString()
-      };
-
-      const updatedLocal = [newLocalSite, ...currentLocal];
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocal));
-      setWebsites(updatedLocal);
-      
-      toast.success("Sitio creado en almacenamiento local");
-      setIsCreateOpen(false);
-      navigate(`/sites/editor/${newLocalSite.id}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("No se pudo crear el sitio:", message);
+      toast.error("No se pudo crear el sitio en Supabase.");
     }
   };
 
@@ -316,16 +266,10 @@ export default function WebsitesPage() {
       if (error) throw error;
       toast.success("Sitio web eliminado con éxito");
       fetchWebsites();
-    } catch (err: any) {
-      console.warn("DB delete failed, updating local storage:", err.message);
-      const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (localData) {
-        const currentLocal: Website[] = JSON.parse(localData);
-        const updatedLocal = currentLocal.filter(site => site.id !== id);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocal));
-        setWebsites(updatedLocal);
-        toast.success("Sitio web eliminado localmente");
-      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("No se pudo eliminar el sitio:", message);
+      toast.error("No se pudo eliminar el sitio en Supabase.");
     }
   };
 
@@ -396,6 +340,15 @@ export default function WebsitesPage() {
             <Plus className="h-8 w-8 animate-spin text-primary" />
             <p className="text-sm">Cargando tus sitios web...</p>
           </div>
+        ) : loadError ? (
+          <Card className="mx-auto max-w-xl border-destructive/20 bg-destructive/5 p-8 text-center space-y-4">
+            <Globe className="h-10 w-10 text-destructive mx-auto" />
+            <div className="space-y-1">
+              <h3 className="font-display font-bold text-lg">Sitios no disponibles</h3>
+              <p className="text-sm text-muted-foreground">{loadError}</p>
+            </div>
+            <Button variant="outline" onClick={fetchWebsites}>Reintentar</Button>
+          </Card>
         ) : websites.length === 0 ? (
           <div className="border border-dashed border-border rounded-xl p-16 text-center max-w-xl mx-auto space-y-4">
             <Globe className="h-12 w-12 text-muted-foreground stroke-1 mx-auto" />
@@ -457,6 +410,7 @@ export default function WebsitesPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label={`Eliminar ${site.name}`}
                       className="h-8 w-8 text-destructive hover:bg-destructive/10"
                       onClick={(e) => handleDeleteWebsite(site.id, e)}
                     >

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { Search, Users, FolderKanban, ClipboardList, TrendingUp, FileText, Loader2 } from "lucide-react";
@@ -16,11 +16,11 @@ interface SearchResult {
 }
 
 const typeConfig = {
-  client: { icon: Users, color: "text-primary", label: "Client" },
-  campaign: { icon: FolderKanban, color: "text-accent", label: "Campaign" },
-  task: { icon: ClipboardList, color: "text-[hsl(280_60%_55%)]", label: "Task" },
+  client: { icon: Users, color: "text-primary", label: "Cliente" },
+  campaign: { icon: FolderKanban, color: "text-accent", label: "Campaña" },
+  task: { icon: ClipboardList, color: "text-[hsl(280_60%_55%)]", label: "Tarea" },
   lead: { icon: TrendingUp, color: "text-success", label: "Lead" },
-  script: { icon: FileText, color: "text-warning", label: "Script" },
+  script: { icon: FileText, color: "text-warning", label: "Guion" },
 };
 
 export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
@@ -44,7 +44,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
       ]);
 
       const all: SearchResult[] = [
-        ...(clients.data || []).map(c => ({ id: c.id, title: c.name, subtitle: c.email || "Client", type: "client" as const, url: "/clients" })),
+        ...(clients.data || []).map(c => ({ id: c.id, title: c.name, subtitle: c.email || "Cliente", type: "client" as const, url: `/clients/${c.id}` })),
         ...(campaigns.data || []).map(c => ({ id: c.id, title: c.name, subtitle: (c as any).clients?.name, type: "campaign" as const, url: `/campaigns/${c.id}` })),
         ...(tasks.data || []).map(t => ({ id: t.id, title: t.title, subtitle: t.status, type: "task" as const, url: "/campaigns" })),
         ...(leads.data || []).map(l => ({ id: l.id, title: l.nombre, subtitle: l.email, type: "lead" as const, url: "/leads" })),
@@ -78,6 +78,10 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 gap-0 max-w-lg overflow-hidden">
+        <DialogTitle className="sr-only">Búsqueda global</DialogTitle>
+        <DialogDescription className="sr-only">
+          Busca clientes, campañas, tareas, leads y guiones.
+        </DialogDescription>
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
           {loading ? <Loader2 className="h-4 w-4 text-muted-foreground animate-spin flex-shrink-0" /> : <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
           <Input
@@ -85,7 +89,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
             value={query}
             onChange={e => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search clients, campaigns, tasks, leads..."
+            placeholder="Buscar clientes, campañas, tareas y leads..."
             className="border-0 bg-transparent p-0 h-auto text-base focus-visible:ring-0 placeholder:text-muted-foreground/60"
           />
           <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 text-[10px] font-medium text-muted-foreground">ESC</kbd>
@@ -122,13 +126,13 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
         {query.length >= 2 && !loading && results.length === 0 && (
           <div className="py-12 text-center">
             <Search className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">No results for "{query}"</p>
+            <p className="text-sm text-muted-foreground">No hay resultados para "{query}"</p>
           </div>
         )}
 
         {!query && (
           <div className="py-6 px-4 text-center text-muted-foreground text-sm">
-            Type to search across all data...
+            Escribe para buscar en todos los datos...
           </div>
         )}
       </DialogContent>

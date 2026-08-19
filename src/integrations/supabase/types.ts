@@ -1343,6 +1343,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_website_leads: {
+        Args: { website_id: string }
+        Returns: undefined
+      }
+      increment_website_views: {
+        Args: { website_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "owner" | "editor" | "videographer" | "client"
