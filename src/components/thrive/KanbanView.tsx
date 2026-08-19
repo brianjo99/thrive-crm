@@ -7,23 +7,19 @@ import { cn } from "@/lib/utils";
 import { Calendar, User, GripVertical } from "lucide-react";
 import { format, isPast, isToday } from "date-fns";
 import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
 
-type Task = {
-  id: string;
-  title: string;
-  status: string;
-  due_date?: string | null;
-  service_type?: string | null;
-  stage?: string | null;
-  [key: string]: any;
-};
+type Task = Pick<
+  Database["public"]["Tables"]["tasks"]["Row"],
+  "id" | "title" | "status" | "due_date" | "service_type" | "stage"
+>;
 
 const COLUMNS = [
-  { id: "todo", label: "To Do", color: "text-muted-foreground", bg: "bg-muted/30", border: "border-muted/50" },
-  { id: "in_progress", label: "In Progress", color: "text-[hsl(200_70%_50%)]", bg: "bg-[hsl(200_70%_50%/0.05)]", border: "border-[hsl(200_70%_50%/0.3)]" },
-  { id: "review", label: "Review", color: "text-warning", bg: "bg-warning/5", border: "border-warning/30" },
-  { id: "complete", label: "Complete", color: "text-success", bg: "bg-success/5", border: "border-success/30" },
-];
+  { id: "pending", label: "Por hacer", color: "text-muted-foreground", bg: "bg-muted/30", border: "border-muted/50" },
+  { id: "in-progress", label: "En progreso", color: "text-[hsl(200_70%_50%)]", bg: "bg-[hsl(200_70%_50%/0.05)]", border: "border-[hsl(200_70%_50%/0.3)]" },
+  { id: "review", label: "Revisión", color: "text-warning", bg: "bg-warning/5", border: "border-warning/30" },
+  { id: "complete", label: "Completada", color: "text-success", bg: "bg-success/5", border: "border-success/30" },
+] as const;
 
 const serviceColors: Record<string, string> = {
   film: "bg-[hsl(200_70%_50%/0.15)] text-[hsl(200_70%_50%)]",
@@ -80,10 +76,10 @@ function Column({
   onDragOver,
   isDragOver,
 }: {
-  column: typeof COLUMNS[0];
+  column: typeof COLUMNS[number];
   tasks: Task[];
   onDragStart: (e: React.DragEvent, task: Task) => void;
-  onDrop: (e: React.DragEvent, status: string) => void;
+  onDrop: (e: React.DragEvent, status: Task["status"]) => void;
   onDragOver: (e: React.DragEvent) => void;
   isDragOver: boolean;
 }) {
@@ -119,8 +115,8 @@ export function KanbanView({ tasks }: { tasks: Task[] }) {
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { error } = await supabase.from("tasks").update({ status: status as any }).eq("id", id);
+    mutationFn: async ({ id, status }: { id: string; status: Task["status"] }) => {
+      const { error } = await supabase.from("tasks").update({ status }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
@@ -132,7 +128,7 @@ export function KanbanView({ tasks }: { tasks: Task[] }) {
     e.dataTransfer.effectAllowed = "move";
   };
 
-  const handleDrop = async (e: React.DragEvent, status: string) => {
+  const handleDrop = async (e: React.DragEvent, status: Task["status"]) => {
     e.preventDefault();
     setDragOverCol(null);
     if (dragging && dragging.status !== status) {

@@ -28,6 +28,16 @@ import { ClientType, ServiceType } from "@/types/thrive";
 import { Tables } from "@/integrations/supabase/types";
 
 type ClientRow = Tables<"clients">;
+type ChecklistEntry = { id: string; label: string; checked: boolean };
+
+function checklistEntries(value: ClientRow["default_checklist"] | undefined): ChecklistEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((item): item is ChecklistEntry => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+    const entry = item as Record<string, unknown>;
+    return typeof entry.id === "string" && typeof entry.label === "string" && typeof entry.checked === "boolean";
+  });
+}
 
 // ─── Inline data hooks ───────────────────────────────────────────────────────
 
@@ -150,7 +160,7 @@ export default function ClientDetailPage() {
     .reduce((s, i) => s + i.total, 0);
 
   // ── Onboarding progress
-  const checklistItems = (client?.default_checklist as any[]) ?? [];
+  const checklistItems = checklistEntries(client?.default_checklist);
   const doneCount = checklistItems.filter(i => i.checked).length;
   const onboardingPct = checklistItems.length > 0
     ? Math.round((doneCount / checklistItems.length) * 100)
@@ -161,8 +171,8 @@ export default function ClientDetailPage() {
     setEditForm({
       name: client.name,
       email: client.email ?? "",
-      phone: (client as any).phone ?? "",
-      drive_folder_url: (client as any).drive_folder_url ?? "",
+      phone: client.phone ?? "",
+      drive_folder_url: client.drive_folder_url ?? "",
       type: client.type as ClientType,
       enabledServices: (client.enabled_services ?? []) as ServiceType[],
     });
@@ -180,11 +190,11 @@ export default function ClientDetailPage() {
         enabledServices: editForm.enabledServices,
         phone: editForm.phone || undefined,
         drive_folder_url: editForm.drive_folder_url || undefined,
-      } as any);
+      });
       toast.success("Cliente actualizado");
       setEditOpen(false);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible actualizar el cliente");
     }
   };
 
@@ -263,16 +273,16 @@ export default function ClientDetailPage() {
               )}
             </div>
             <div className="flex gap-2 flex-shrink-0 flex-wrap">
-              {(client as any).phone && (
+              {client.phone && (
                 <Button asChild variant="outline" size="sm" className="gap-1.5 text-green-500 border-green-500/30 hover:bg-green-500/10">
-                  <a href={`https://wa.me/${(client as any).phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
+                  <a href={`https://wa.me/${client.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer">
                     <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
                   </a>
                 </Button>
               )}
-              {(client as any).drive_folder_url && (
+              {client.drive_folder_url && (
                 <Button asChild variant="outline" size="sm" className="gap-1.5">
-                  <a href={(client as any).drive_folder_url} target="_blank" rel="noreferrer">
+                  <a href={client.drive_folder_url} target="_blank" rel="noreferrer">
                     <FolderOpen className="h-3.5 w-3.5" /> Drive
                   </a>
                 </Button>
@@ -532,7 +542,9 @@ export default function ClientDetailPage() {
                         setContractForm({ name: "", file_url: "", notes: "", signed_at: "" });
                         setShowContractForm(false);
                         toast.success("Contrato guardado");
-                      } catch (e: any) { toast.error(e.message); }
+                      } catch (error: unknown) {
+                        toast.error(error instanceof Error ? error.message : "No fue posible guardar el contrato");
+                      }
                     }}>Guardar</Button>
                     <Button size="sm" variant="ghost" onClick={() => setShowContractForm(false)}>Cancelar</Button>
                   </div>
@@ -633,13 +645,13 @@ export default function ClientDetailPage() {
                     </a>
                   </div>
                 )}
-                {(client as any).phone && (
+                {client.phone && (
                   <div className="flex items-center justify-between text-sm gap-2">
                     <span className="text-muted-foreground flex items-center gap-1.5 flex-shrink-0">
                       <Phone className="h-3.5 w-3.5" /> Teléfono
                     </span>
-                    <a href={`https://wa.me/${(client as any).phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="font-medium text-green-500 hover:underline text-right">
-                      {(client as any).phone}
+                    <a href={`https://wa.me/${client.phone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="font-medium text-green-500 hover:underline text-right">
+                      {client.phone}
                     </a>
                   </div>
                 )}
@@ -727,17 +739,17 @@ export default function ClientDetailPage() {
                 {/* Show first few unchecked items */}
                 <div className="space-y-1.5">
                   {checklistItems
-                    .filter((item: any) => !item.checked)
+                    .filter(item => !item.checked)
                     .slice(0, 4)
-                    .map((item: any) => (
+                    .map(item => (
                       <div key={item.id} className="flex items-center gap-2 text-xs text-muted-foreground">
                         <div className="w-3 h-3 rounded border border-border flex-shrink-0" />
                         <span>{item.label}</span>
                       </div>
                     ))}
-                  {checklistItems.filter((item: any) => !item.checked).length > 4 && (
+                  {checklistItems.filter(item => !item.checked).length > 4 && (
                     <p className="text-xs text-muted-foreground pl-5">
-                      +{checklistItems.filter((item: any) => !item.checked).length - 4} más
+                      +{checklistItems.filter(item => !item.checked).length - 4} más
                     </p>
                   )}
                   {onboardingPct === 100 && (

@@ -22,9 +22,11 @@ type InvitePayload = {
   email?: unknown;
   role?: unknown;
   display_name?: unknown;
+  client_id?: unknown;
 };
 
-const allowedRoles = new Set(["owner", "editor", "videographer"]);
+const allowedRoles = new Set(["owner", "editor", "videographer", "client"]);
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 Deno.serve(async (req) => {
   const headers = corsHeaders(req);
@@ -64,11 +66,21 @@ Deno.serve(async (req) => {
     const email = typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
     const role = typeof payload.role === "string" ? payload.role : "";
     const displayName = typeof payload.display_name === "string" ? payload.display_name.trim() : "";
+    const clientId = typeof payload.client_id === "string" ? payload.client_id : "";
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       return new Response(JSON.stringify({ error: "Valid email required" }), { status: 400, headers });
     }
     if (!allowedRoles.has(role)) {
       return new Response(JSON.stringify({ error: "Invalid role" }), { status: 400, headers });
+    }
+    if (role === "client") {
+      if (!uuidPattern.test(clientId)) {
+        return new Response(JSON.stringify({ error: "A valid client is required for portal access" }), { status: 400, headers });
+      }
+      const { data: client } = await adminClient.from("clients").select("id").eq("id", clientId).maybeSingle();
+      if (!client) {
+        return new Response(JSON.stringify({ error: "Client not found" }), { status: 400, headers });
+      }
     }
 
     const { data: invited, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
@@ -86,10 +98,18 @@ Deno.serve(async (req) => {
         display_name: displayName || email.split("@")[0],
         status: "invited",
       }).eq("user_id", invited.user.id);
+      const { error: portalError } = role === "client"
+        ? await adminClient.from("client_portal_access").upsert({
+            user_id: invited.user.id,
+            client_id: clientId,
+            granted_by: user.id,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id" })
+        : { error: null };
 
-      if (roleError || profileError) {
+      if (roleError || profileError || portalError) {
         await adminClient.auth.admin.deleteUser(invited.user.id);
-        throw roleError ?? profileError;
+        throw roleError ?? profileError ?? portalError;
       }
     }
 

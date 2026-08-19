@@ -15,25 +15,17 @@ import {
 import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { normalizeWebsite, WebsiteSection } from "@/lib/websiteContent";
+import type { Website } from "@/lib/websiteContent";
 
-export interface Website {
-  id: string;
-  name: string;
-  slug: string;
-  template_type: string;
-  content: any;
-  published: boolean;
-  views: number;
-  leads_count: number;
-  created_at?: string;
-}
+export type { Website } from "@/lib/websiteContent";
 
 // ─── Default template contents ───────────────────────────────────────────────
-export const TEMPLATE_SCHEMES: Record<string, {
+const TEMPLATE_SCHEMES: Record<string, {
   name: string;
   desc: string;
   theme: string;
-  sections: any[];
+  sections: WebsiteSection[];
 }> = {
   gym: {
     name: "FitNation Center",
@@ -193,7 +185,7 @@ export default function WebsitesPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setWebsites(data as Website[]);
+      setWebsites((data ?? []).map(normalizeWebsite));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Error desconocido";
       console.error("No se pudieron cargar los sitios:", message);

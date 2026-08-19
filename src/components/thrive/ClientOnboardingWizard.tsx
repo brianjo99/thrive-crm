@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCreateClientOnboarding, useUpdateClientOnboarding } from "@/hooks/useSupabaseData";
+import { useCreateClientOnboarding } from "@/hooks/useSupabaseData";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,15 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Client = Tables<"clients">;
+type OnboardingValue = string | string[] | boolean;
+
+function textFieldValue(value: OnboardingValue | undefined): string {
+  return typeof value === "string" ? value : "";
+}
+
+function selectedValues(value: OnboardingValue | undefined): string[] {
+  return Array.isArray(value) ? value : [];
+}
 
 interface OnboardingStep {
   id: string;
@@ -180,21 +189,20 @@ export function ClientOnboardingWizard({
   onComplete,
 }: ClientOnboardingWizardProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState<Record<string, any>>({});
+  const [formData, setFormData] = useState<Record<string, OnboardingValue>>({});
   const createOnboarding = useCreateClientOnboarding();
-  const updateOnboarding = useUpdateClientOnboarding();
 
   const step = ONBOARDING_STEPS[currentStep];
   const isLastStep = currentStep === ONBOARDING_STEPS.length - 1;
   const isFirstStep = currentStep === 0;
 
-  const handleFieldChange = (key: string, value: any) => {
+  const handleFieldChange = (key: string, value: OnboardingValue) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleCheckboxGroupChange = (key: string, value: string, checked: boolean) => {
     setFormData((prev) => {
-      const current = prev[key] || [];
+      const current = Array.isArray(prev[key]) ? prev[key] : [];
       return {
         ...prev,
         [key]: checked ? [...current, value] : current.filter((v: string) => v !== value),
@@ -223,8 +231,8 @@ export function ClientOnboardingWizard({
       toast.success("Client onboarding completed!");
       onComplete?.();
       onClose();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible completar el onboarding");
     }
   };
 
@@ -277,7 +285,7 @@ export function ClientOnboardingWizard({
                     <Input
                       id={field.key}
                       placeholder={field.placeholder}
-                      value={formData[field.key] || ""}
+                      value={textFieldValue(formData[field.key])}
                       onChange={(e) => handleFieldChange(field.key, e.target.value)}
                     />
                   )}
@@ -286,7 +294,7 @@ export function ClientOnboardingWizard({
                     <Textarea
                       id={field.key}
                       placeholder={field.placeholder}
-                      value={formData[field.key] || ""}
+                      value={textFieldValue(formData[field.key])}
                       onChange={(e) => handleFieldChange(field.key, e.target.value)}
                       rows={4}
                     />
@@ -298,7 +306,7 @@ export function ClientOnboardingWizard({
                         <div key={option.value} className="flex items-center space-x-2">
                           <Checkbox
                             id={`${field.key}-${option.value}`}
-                            checked={(formData[field.key] || []).includes(option.value)}
+                            checked={selectedValues(formData[field.key]).includes(option.value)}
                             onCheckedChange={(checked) =>
                               handleCheckboxGroupChange(field.key, option.value, checked as boolean)
                             }

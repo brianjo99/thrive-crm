@@ -26,7 +26,11 @@ function useInvoiceStats() {
       const totalPending = rows.filter(r => r.status === "sent").reduce((s, r) => s + (r.total || 0), 0);
       const totalOverdue = rows.filter(r => r.status === "overdue").reduce((s, r) => s + (r.total || 0), 0);
       const count = { total: rows.length, paid: 0, sent: 0, overdue: 0, draft: 0 };
-      rows.forEach(r => { if (r.status in count) (count as any)[r.status]++; });
+      rows.forEach(row => {
+        if (row.status === "paid" || row.status === "sent" || row.status === "overdue" || row.status === "draft") {
+          count[row.status] += 1;
+        }
+      });
       return { totalInvoiced, totalPaid, totalPending, totalOverdue, count };
     },
   });

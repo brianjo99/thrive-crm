@@ -58,8 +58,8 @@ export default function EditorAssetsPage() {
       toast.success(`${uploadForm.files.length} file(s) uploaded!`);
       setUploadForm({ files: [], clientId: "", campaignId: "", notes: "" });
       setIsUploadOpen(false);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible subir los archivos");
     }
   };
 

@@ -24,6 +24,33 @@ import { Tables } from "@/integrations/supabase/types";
 // ─── Shot Lists Types ────────────────────────────────────────────────────────
 
 type ShotList = Tables<"shot_lists">;
+type ShotStatus = "planned" | "in-progress" | "completed" | "cancelled";
+
+type CallSheetFormValues = {
+  title: string;
+  campaign_id: string;
+  shoot_date: string;
+  location: string;
+  call_time: string;
+  wrap_time: string;
+  notes: string;
+};
+
+type CampaignOption = {
+  id: string;
+  name: string;
+  clients: { name: string } | null;
+};
+
+function normalizeShotStatus(status: string): ShotStatus {
+  return ["planned", "in-progress", "completed", "cancelled"].includes(status)
+    ? (status as ShotStatus)
+    : "planned";
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Ocurrió un error inesperado";
+}
 
 const SHOT_STATUS_CONFIG: Record<string, { label: string; color: string; icon: typeof Clock }> = {
   planned:      { label: "Planificado", color: "bg-blue-500/15 text-blue-500",   icon: Clock },
@@ -55,6 +82,18 @@ type CallSheetWithCampaign = CallSheet & {
   campaigns: { name: string; clients: { name: string } | null } | null;
 };
 
+function isCrewMember(value: unknown): value is CrewMember {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return [item.name, item.role, item.call_time, item.phone].every((field) => typeof field === "string");
+}
+
+function isScheduleItem(value: unknown): value is ScheduleItem {
+  if (!value || typeof value !== "object") return false;
+  const item = value as Record<string, unknown>;
+  return [item.time, item.activity, item.notes].every((field) => typeof field === "string");
+}
+
 const EMPTY_CREW: CrewMember     = { name: "", role: "", call_time: "", phone: "" };
 const EMPTY_SCHEDULE: ScheduleItem = { time: "", activity: "", notes: "" };
 
@@ -69,10 +108,10 @@ function useCallSheets() {
         .select("*, campaigns(name, clients(name))")
         .order("shoot_date", { ascending: true });
       if (error) throw error;
-      return (data ?? []).map((d: any) => ({
+      return (data ?? []).map((d) => ({
         ...d,
-        crew: Array.isArray(d.crew) ? d.crew : [],
-        schedule: Array.isArray(d.schedule) ? d.schedule : [],
+        crew: Array.isArray(d.crew) ? d.crew.filter(isCrewMember) : [],
+        schedule: Array.isArray(d.schedule) ? d.schedule.filter(isScheduleItem) : [],
       })) as CallSheetWithCampaign[];
     },
   });
@@ -189,7 +228,14 @@ function ShotListsTab() {
   const [editingId, setEditingId]         = useState<string | null>(null);
   const [selectedShotList, setSelectedShotList] = useState<ShotList | null>(null);
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    campaign_id: string;
+    title: string;
+    description: string;
+    location: string;
+    scheduled_date: string;
+    status: ShotStatus;
+  }>({
     campaign_id: "",
     title: "",
     description: "",
@@ -213,7 +259,7 @@ function ShotListsTab() {
         description: shotList.description || "",
         location: shotList.location || "",
         scheduled_date: shotList.scheduled_date?.split("T")[0] || "",
-        status: shotList.status as any,
+        status: normalizeShotStatus(shotList.status),
       });
     } else {
       setEditingId(null);
@@ -236,8 +282,8 @@ function ShotListsTab() {
         toast.success("Shot list creado");
       }
       setIsDialogOpen(false);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -246,8 +292,8 @@ function ShotListsTab() {
     try {
       await deleteShotList.mutateAsync(id);
       toast.success("Shot list eliminado");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error));
     }
   };
 
@@ -319,7 +365,7 @@ function ShotListsTab() {
               </div>
               <div className="space-y-2">
                 <Label>Estado</Label>
-                <Select value={formData.status} onValueChange={(v: any) => setFormData((p) => ({ ...p, status: v }))}>
+                <Select value={formData.status} onValueChange={(v) => setFormData((p) => ({ ...p, status: normalizeShotStatus(v) }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="planned">Planificado</SelectItem>
@@ -463,13 +509,13 @@ function CallSheetsTab() {
   const [viewSheet, setViewSheet]     = useState<CallSheetWithCampaign | null>(null);
   const [editSheet, setEditSheet]     = useState<CallSheetWithCampaign | null>(null);
 
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<CallSheetFormValues>({
     title: "", campaign_id: "", shoot_date: "", location: "", call_time: "", wrap_time: "", notes: "",
   });
   const [crew, setCrew]         = useState<CrewMember[]>([{ ...EMPTY_CREW }]);
   const [schedule, setSchedule] = useState<ScheduleItem[]>([{ ...EMPTY_SCHEDULE }]);
 
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<CallSheetFormValues>({
     title: "", campaign_id: "", shoot_date: "", location: "", call_time: "", wrap_time: "", notes: "",
   });
   const [editCrew, setEditCrew]         = useState<CrewMember[]>([]);
@@ -501,10 +547,11 @@ function CallSheetsTab() {
 
   const handleCreate = async () => {
     if (!form.title.trim()) return toast.error("El título es obligatorio");
+    if (!form.shoot_date) return toast.error("La fecha de rodaje es obligatoria");
     await createCallSheet.mutateAsync({
       title: form.title.trim(),
       campaign_id: (form.campaign_id && form.campaign_id !== "none") ? form.campaign_id : null,
-      shoot_date: form.shoot_date || null,
+      shoot_date: form.shoot_date,
       location: form.location || null,
       call_time: form.call_time || null,
       wrap_time: form.wrap_time || null,
@@ -536,11 +583,12 @@ function CallSheetsTab() {
   const handleUpdate = async () => {
     if (!editSheet) return;
     if (!editForm.title.trim()) return toast.error("El título es obligatorio");
+    if (!editForm.shoot_date) return toast.error("La fecha de rodaje es obligatoria");
     await updateCallSheet.mutateAsync({
       id: editSheet.id,
       title: editForm.title.trim(),
-      campaign_id: editForm.campaign_id || null,
-      shoot_date: editForm.shoot_date || null,
+      campaign_id: editForm.campaign_id && editForm.campaign_id !== "none" ? editForm.campaign_id : null,
+      shoot_date: editForm.shoot_date,
       location: editForm.location || null,
       call_time: editForm.call_time || null,
       wrap_time: editForm.wrap_time || null,
@@ -831,7 +879,9 @@ function CallSheetsTab() {
 function CallSheetForm({
   form, setForm, campaigns, crew, setCrew, schedule, setSchedule,
 }: {
-  form: any; setForm: any; campaigns: any[];
+  form: CallSheetFormValues;
+  setForm: React.Dispatch<React.SetStateAction<CallSheetFormValues>>;
+  campaigns: CampaignOption[];
   crew: CrewMember[]; setCrew: React.Dispatch<React.SetStateAction<CrewMember[]>>;
   schedule: ScheduleItem[]; setSchedule: React.Dispatch<React.SetStateAction<ScheduleItem[]>>;
 }) {
@@ -842,15 +892,15 @@ function CallSheetForm({
         <div className="grid grid-cols-2 gap-4">
           <div className="col-span-2 space-y-1.5">
             <Label>Título</Label>
-            <Input placeholder="Ej: Día de rodaje — Campaña Nike Primavera" value={form.title} onChange={(e) => setForm((f: any) => ({ ...f, title: e.target.value }))} />
+            <Input placeholder="Ej: Día de rodaje — Campaña Nike Primavera" value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} />
           </div>
           <div className="col-span-2 space-y-1.5">
             <Label>Campaña</Label>
-            <Select value={form.campaign_id} onValueChange={(v) => setForm((f: any) => ({ ...f, campaign_id: v }))}>
+            <Select value={form.campaign_id} onValueChange={(v) => setForm((f) => ({ ...f, campaign_id: v }))}>
               <SelectTrigger><SelectValue placeholder="Seleccionar campaña..." /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">Sin campaña</SelectItem>
-                {campaigns.map((c: any) => (
+                {campaigns.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}{c.clients?.name && <span className="text-muted-foreground ml-1.5">· {c.clients.name}</span>}
                   </SelectItem>
@@ -859,24 +909,24 @@ function CallSheetForm({
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Fecha de rodaje</Label>
-            <Input type="date" value={form.shoot_date} onChange={(e) => setForm((f: any) => ({ ...f, shoot_date: e.target.value }))} />
+            <Label>Fecha de rodaje *</Label>
+            <Input type="date" value={form.shoot_date} onChange={(e) => setForm((f) => ({ ...f, shoot_date: e.target.value }))} />
           </div>
           <div className="col-span-2 space-y-1.5">
             <Label>Ubicación</Label>
-            <Input placeholder="Dirección o nombre del estudio" value={form.location} onChange={(e) => setForm((f: any) => ({ ...f, location: e.target.value }))} />
+            <Input placeholder="Dirección o nombre del estudio" value={form.location} onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))} />
           </div>
           <div className="space-y-1.5">
             <Label>Hora de llamada</Label>
-            <Input type="time" value={form.call_time} onChange={(e) => setForm((f: any) => ({ ...f, call_time: e.target.value }))} />
+            <Input type="time" value={form.call_time} onChange={(e) => setForm((f) => ({ ...f, call_time: e.target.value }))} />
           </div>
           <div className="space-y-1.5">
             <Label>Hora de cierre</Label>
-            <Input type="time" value={form.wrap_time} onChange={(e) => setForm((f: any) => ({ ...f, wrap_time: e.target.value }))} />
+            <Input type="time" value={form.wrap_time} onChange={(e) => setForm((f) => ({ ...f, wrap_time: e.target.value }))} />
           </div>
           <div className="col-span-2 space-y-1.5">
             <Label>Notas generales</Label>
-            <Textarea placeholder="Notas para el día de rodaje..." value={form.notes} onChange={(e) => setForm((f: any) => ({ ...f, notes: e.target.value }))} rows={3} />
+            <Textarea placeholder="Notas para el día de rodaje..." value={form.notes} onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))} rows={3} />
           </div>
         </div>
       </div>

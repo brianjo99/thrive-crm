@@ -44,6 +44,7 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const WebsitesPage = lazy(() => import("./pages/WebsitesPage"));
 const WebsiteEditorPage = lazy(() => import("./pages/WebsiteEditorPage"));
 const WebsitePreviewPage = lazy(() => import("./pages/WebsitePreviewPage"));
+const ClientPortalPage = lazy(() => import("./pages/ClientPortalPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 function FullPageLoader() {
@@ -113,7 +114,11 @@ function ProtectedLayout() {
     );
   }
 
-  if (accountStatus !== "active" || !role || role === "client") {
+  if (accountStatus === "active" && role === "client") {
+    return <Navigate to="/portal" replace />;
+  }
+
+  if (accountStatus !== "active" || !role) {
     return (
       <AccessNotice
         title="Acceso pendiente"
@@ -169,6 +174,45 @@ function ProtectedLayout() {
   );
 }
 
+function ClientPortalRoute() {
+  const { user, loading, accessLoading, accountStatus, role, signOut, refreshAccess } = useAuth();
+
+  if (loading || accessLoading) return <FullPageLoader />;
+  if (!user) return <Navigate to="/auth" replace />;
+
+  if (accountStatus === "suspended" || accountStatus === "disabled") {
+    return (
+      <AccessNotice
+        title="Cuenta sin acceso"
+        description="Esta cuenta está suspendida o desactivada. Contacta a tu equipo de Thrive para recuperar el acceso."
+        signOut={() => void signOut()}
+      />
+    );
+  }
+
+  if (accountStatus === "error") {
+    return (
+      <AccessNotice
+        title="No pudimos verificar tu acceso"
+        description="La sesión está activa, pero no fue posible confirmar los permisos del portal."
+        retry={() => void refreshAccess()}
+        signOut={() => void signOut()}
+      />
+    );
+  }
+
+  if (accountStatus === "active" && role === "client") return <ClientPortalPage />;
+  if (accountStatus === "active" && role) return <Navigate to="/" replace />;
+
+  return (
+    <AccessNotice
+      title="Portal pendiente"
+      description="Tu cuenta todavía no tiene un cliente vinculado. Contacta a tu equipo de Thrive para completar el acceso."
+      signOut={() => void signOut()}
+    />
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -181,6 +225,7 @@ const App = () => (
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/sites/preview/:id" element={<WebsitePreviewPage />} />
+              <Route path="/portal" element={<ClientPortalRoute />} />
               <Route path="/*" element={<ProtectedLayout />} />
             </Routes>
           </Suspense>

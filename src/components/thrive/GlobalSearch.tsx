@@ -45,7 +45,7 @@ export function GlobalSearch({ open, onOpenChange }: { open: boolean; onOpenChan
 
       const all: SearchResult[] = [
         ...(clients.data || []).map(c => ({ id: c.id, title: c.name, subtitle: c.email || "Cliente", type: "client" as const, url: `/clients/${c.id}` })),
-        ...(campaigns.data || []).map(c => ({ id: c.id, title: c.name, subtitle: (c as any).clients?.name, type: "campaign" as const, url: `/campaigns/${c.id}` })),
+        ...(campaigns.data || []).map(c => ({ id: c.id, title: c.name, subtitle: c.clients?.name, type: "campaign" as const, url: `/campaigns/${c.id}` })),
         ...(tasks.data || []).map(t => ({ id: t.id, title: t.title, subtitle: t.status, type: "task" as const, url: "/campaigns" })),
         ...(leads.data || []).map(l => ({ id: l.id, title: l.nombre, subtitle: l.email, type: "lead" as const, url: "/leads" })),
         ...(scripts.data || []).map(s => ({ id: s.id, title: s.title, subtitle: s.status, type: "script" as const, url: "/scripts" })),

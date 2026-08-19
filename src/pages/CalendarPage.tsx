@@ -237,8 +237,8 @@ export default function CalendarPage() {
         toast.success("Post scheduled");
       }
       setDialogOpen(false);
-    } catch (err: any) {
-      toast.error(err.message ?? "Something went wrong");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Something went wrong");
     }
   };
 

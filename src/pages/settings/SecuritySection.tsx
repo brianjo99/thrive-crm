@@ -11,10 +11,11 @@ function useSuspendedAccounts() {
   return useQuery({
     queryKey: ["suspended_accounts"],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .select("user_id, display_name, email, status, last_seen_at")
         .in("status", ["suspended", "disabled"]);
+      if (error) throw error;
       return data ?? [];
     },
   });
@@ -24,10 +25,10 @@ export default function SecuritySection() {
   const { data: suspendedAccounts = [], refetch } = useSuspendedAccounts();
 
   const reactivate = async (userId: string) => {
-    const { error } = await supabase
-      .from("profiles")
-      .update({ status: "active" })
-      .eq("user_id", userId);
+    const { error } = await supabase.rpc("set_account_status", {
+      p_user_id: userId,
+      p_status: "active",
+    });
     if (error) toast.error(error.message);
     else {
       await refetch();

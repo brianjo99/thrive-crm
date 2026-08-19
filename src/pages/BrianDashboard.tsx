@@ -53,7 +53,7 @@ export default function BrianDashboard() {
   const filmingTasks = todaysTasks.filter(t => t.service_type === "film");
   const overdueTasks = allTasks.filter(t => t.due_date && new Date(t.due_date) < new Date() && t.status !== "complete");
   const activeCampaigns = campaigns.filter(c => c.current_stage !== "complete");
-  const newLeads = (leads as any[]).filter(l => l.status === "new").length;
+  const newLeads = leads.filter(l => l.status === "new").length;
 
   const displayName = user?.user_metadata?.display_name || user?.email?.split("@")[0] || "there";
 
@@ -155,7 +155,7 @@ export default function BrianDashboard() {
                 <div className="space-y-4">
                   {activeCampaigns.slice(0, 5).map(campaign => {
                     const progress = getStageProgress(campaign.current_stage);
-                    const client = (campaign as any).clients;
+                    const client = campaign.clients;
                     return (
                       <div
                         key={campaign.id}

@@ -14,7 +14,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Website } from "./WebsitesPage";
+import { normalizeWebsite, parseWebsiteContent, Website, WebsiteSection } from "@/lib/websiteContent";
 import { useAuth } from "@/contexts/AuthContext";
 
 const PREVIEW_THEMES: Record<string, {
@@ -85,7 +85,7 @@ export default function WebsitePreviewPage() {
   const { user } = useAuth();
   
   const [site, setSite] = useState<Website | null>(null);
-  const [sections, setSections] = useState<any[]>([]);
+  const [sections, setSections] = useState<WebsiteSection[]>([]);
   const [themeName, setThemeName] = useState<string>("emerald");
   const [loading, setLoading] = useState(true);
 
@@ -108,10 +108,10 @@ export default function WebsitePreviewPage() {
           .single();
 
         if (error) throw error;
-        setSite(data as Website);
-        const siteContent = data.content as any;
-        setSections(siteContent?.sections || []);
-        setThemeName(siteContent?.theme || "emerald");
+        setSite(normalizeWebsite(data));
+        const siteContent = parseWebsiteContent(data.content);
+        setSections(siteContent.sections);
+        setThemeName(siteContent.theme);
 
         const { error: viewError } = await supabase.rpc("increment_website_views", {
           website_id: data.id,
@@ -264,7 +264,7 @@ export default function WebsitePreviewPage() {
                     <p className="text-sm text-muted-foreground leading-relaxed">{sec.subtitle}</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {(sec.items || []).map((item: any, i: number) => (
+                    {(sec.items || []).map((item, i) => (
                       <Card key={i} className={cn("p-6 text-left border hover:shadow-xl transition-all duration-300", t.cardBg)}>
                         <h4 className="font-display font-bold text-base">{item.title}</h4>
                         <p className="text-xs text-muted-foreground mt-3 leading-relaxed">{item.desc}</p>
@@ -282,7 +282,7 @@ export default function WebsitePreviewPage() {
                     <p className="text-sm text-muted-foreground">{sec.subtitle}</p>
                   </div>
                   <div className="flex flex-col md:flex-row justify-center items-stretch gap-6">
-                    {(sec.plans || []).map((plan: any, i: number) => (
+                    {(sec.plans || []).map((plan, i) => (
                       <Card key={i} className={cn("p-8 max-w-sm w-full text-center flex flex-col justify-between border hover:shadow-2xl transition-all duration-300", t.cardBg, i === 1 && "border-2 border-primary/60 scale-[1.02]")}>
                         <div className="space-y-4">
                           <h4 className="font-display font-bold text-xs uppercase tracking-wider text-muted-foreground">{plan.name}</h4>
@@ -320,7 +320,7 @@ export default function WebsitePreviewPage() {
                     <p className="text-sm text-muted-foreground">{sec.subtitle}</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto text-left">
-                    {(sec.reviews || []).map((rev: any, i: number) => (
+                    {(sec.reviews || []).map((rev, i) => (
                       <Card key={i} className={cn("p-6 border flex flex-col justify-between hover:shadow-lg transition-shadow duration-300", t.cardBg)}>
                         <p className="text-sm italic text-muted-foreground leading-relaxed">"{rev.text}"</p>
                         <div className="mt-4 flex justify-between items-center">

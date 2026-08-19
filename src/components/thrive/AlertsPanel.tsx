@@ -44,7 +44,7 @@ export function AlertsPanel({ className }: { className?: string }) {
   const mappedAlerts: UnpaidAlert[] = alerts.map(a => ({
     id: a.id,
     clientId: a.client_id,
-    clientName: (a as any).clients?.name || "Client",
+    clientName: a.clients?.name || "Cliente",
     servicePerformed: a.service_performed,
     message: a.message,
     createdAt: new Date(a.created_at),

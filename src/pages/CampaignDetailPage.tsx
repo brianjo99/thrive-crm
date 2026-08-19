@@ -153,8 +153,8 @@ export default function CampaignDetailPage() {
       toast.success("Tarea añadida");
       setNewTask({ title: "", description: "", priority: "medium", stage: "", service_type: "" });
       setIsAddTaskOpen(false);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "No fue posible añadir la tarea");
     }
   };
 
@@ -703,7 +703,9 @@ export default function CampaignDetailPage() {
                             setCostForm({ description: "", amount: "", category: "other", cost_date: new Date().toISOString().split("T")[0] });
                             setShowCostForm(false);
                             toast.success("Costo registrado");
-                          } catch (e: any) { toast.error(e.message); }
+                          } catch (error: unknown) {
+                            toast.error(error instanceof Error ? error.message : "No fue posible registrar el costo");
+                          }
                         }}>Guardar</Button>
                         <Button size="sm" variant="ghost" onClick={() => setShowCostForm(false)}>Cancelar</Button>
                       </div>
@@ -807,8 +809,8 @@ export default function CampaignDetailPage() {
                   </div>
                 )}
               </div>
-              {(campaign as any).drive_folder_url ? (
-                <a href={(campaign as any).drive_folder_url} target="_blank" rel="noreferrer" className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-xs text-primary hover:underline">
+              {campaign.drive_folder_url ? (
+                <a href={campaign.drive_folder_url} target="_blank" rel="noreferrer" className="mt-3 pt-3 border-t border-border flex items-center gap-2 text-xs text-primary hover:underline">
                   <FolderOpen className="h-3.5 w-3.5" /> Carpeta de Drive
                 </a>
               ) : (
@@ -820,7 +822,7 @@ export default function CampaignDetailPage() {
                     onBlur={async e => {
                       const url = e.target.value.trim();
                       if (!url) return;
-                      await updateCampaign.mutateAsync({ id: campaign.id, drive_folder_url: url } as any);
+                      await updateCampaign.mutateAsync({ id: campaign.id, drive_folder_url: url });
                       toast.success("Enlace de Drive guardado");
                     }}
                   />
@@ -842,7 +844,7 @@ export default function CampaignDetailPage() {
                 <div className="space-y-2">
                   {approvals.slice(0, 5).map(a => (
                     <div key={a.id} className="flex items-center justify-between text-sm">
-                      <span className="truncate text-xs">{(a as any).tasks?.title || "Tarea"}</span>
+                      <span className="truncate text-xs">{a.tasks?.title || "Tarea"}</span>
                       <span className={`shrink-0 text-xs px-1.5 py-0.5 rounded-full ml-2 ${APPROVAL_STATUS[a.status]?.color}`}>
                         {APPROVAL_STATUS[a.status]?.label}
                       </span>
