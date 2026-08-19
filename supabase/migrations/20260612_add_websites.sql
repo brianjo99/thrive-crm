@@ -1,6 +1,8 @@
 -- Migration: Add Websites Table for GoHighLevel Clone Website Builder
 -- Applied: 2026-06-12
 
+BEGIN;
+
 CREATE TABLE IF NOT EXISTS public.websites (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -63,3 +65,5 @@ REVOKE ALL ON FUNCTION public.increment_website_views(uuid) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.increment_website_leads(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.increment_website_views(uuid) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.increment_website_leads(uuid) TO anon, authenticated;
+
+COMMIT;
