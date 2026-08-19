@@ -31,7 +31,10 @@ export default defineConfig({
           if (id.includes("/node_modules/lucide-react/")) return "icons-vendor";
           if (id.includes("/node_modules/date-fns/")) return "date-vendor";
           if (id.includes("/node_modules/@tanstack/")) return "query-vendor";
-          return "vendor";
+          // Let Rollup place unclassified dependencies automatically. A catch-all
+          // vendor chunk creates a circular import with react-vendor and can run
+          // libraries before React has finished initializing in production.
+          return;
         },
       },
     },
