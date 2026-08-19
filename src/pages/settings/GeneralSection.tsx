@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
+import { normalizeSettingValue } from "./orgSettings";
 
 type OrgSettings = {
   org_name: string;
@@ -30,13 +31,18 @@ function useOrgSettings() {
     queryKey: ["org_settings"],
     queryFn: async () => {
       const { data, error } = await supabase.from("org_settings").select("key, value");
-      if (error) return DEFAULTS;
+      if (error) {
+        console.warn("No se pudo cargar la configuración general:", error.message);
+        return DEFAULTS;
+      }
       const obj: Record<string, string> = {};
-      (data ?? []).forEach((row: any) => {
-        obj[row.key] = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
+      (data ?? []).forEach((row) => {
+        const value = normalizeSettingValue(row.value);
+        if (value !== undefined) obj[row.key] = value;
       });
       return { ...DEFAULTS, ...obj } as OrgSettings;
     },
+    retry: false,
   });
 }
 
@@ -53,7 +59,7 @@ export default function GeneralSection() {
     mutationFn: async (values: OrgSettings) => {
       const rows = Object.entries(values).map(([key, value]) => ({
         key,
-        value: JSON.stringify(value),
+        value,
         updated_at: new Date().toISOString(),
       }));
       const { error } = await supabase.from("org_settings").upsert(rows, { onConflict: "key" });
@@ -63,7 +69,7 @@ export default function GeneralSection() {
       qc.invalidateQueries({ queryKey: ["org_settings"] });
       toast.success("Configuración guardada");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   if (isLoading) return <div className="text-muted-foreground text-sm">Cargando...</div>;
@@ -79,15 +85,16 @@ export default function GeneralSection() {
         <h3 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Organización</h3>
 
         <div className="space-y-2">
-          <Label>Nombre de la organización</Label>
+          <Label htmlFor="org-name">Nombre de la organización</Label>
           <Input
+            id="org-name"
             value={form.org_name}
             onChange={e => setForm(f => ({ ...f, org_name: e.target.value }))}
             placeholder="Thrive Agency"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Zona horaria</Label>
             <Select value={form.timezone} onValueChange={v => setForm(f => ({ ...f, timezone: v }))}>

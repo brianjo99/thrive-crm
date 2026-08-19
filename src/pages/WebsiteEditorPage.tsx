@@ -63,8 +63,6 @@ const THEME_PALETTES: Record<string, {
   }
 };
 
-const LOCAL_STORAGE_KEY = "thrive_website_builder_sites";
-
 export default function WebsiteEditorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -74,12 +72,16 @@ export default function WebsiteEditorPage() {
   const [themeName, setThemeName] = useState<string>("emerald");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [device, setDevice] = useState<PreviewDevice>("desktop");
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
 
   // Fetch website data
   useEffect(() => {
     const fetchSite = async () => {
+      setIsLoading(true);
+      setLoadError(null);
       try {
         const { data, error } = await supabase
           .from("websites")
@@ -92,24 +94,12 @@ export default function WebsiteEditorPage() {
         const siteContent = data.content as any;
         setSections(siteContent?.sections || []);
         setThemeName(siteContent?.theme || "emerald");
-      } catch (err: any) {
-        console.warn("DB Single Fetch failed, loading from LocalStorage:", err.message);
-        const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (localData) {
-          const currentLocal: Website[] = JSON.parse(localData);
-          const found = currentLocal.find(site => site.id === id);
-          if (found) {
-            setSite(found);
-            setSections(found.content?.sections || []);
-            setThemeName(found.content?.theme || "emerald");
-          } else {
-            toast.error("Sitio web no encontrado.");
-            navigate("/sites");
-          }
-        } else {
-          toast.error("Sitio web no encontrado.");
-          navigate("/sites");
-        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Error desconocido";
+        console.error("No se pudo cargar el sitio:", message);
+        setLoadError("No se pudo cargar este sitio desde Supabase.");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchSite();
@@ -138,31 +128,14 @@ export default function WebsiteEditorPage() {
       
       setSite(prev => prev ? { ...prev, content: updatedContent, published: isPublishAction ? true : prev.published } : null);
       if (showToast) toast.success(isPublishAction ? "¡Sitio publicado con éxito!" : "Progreso guardado correctamente");
-      setIsSaving(false);
       return true;
-    } catch (err: any) {
-      console.warn("DB Update failed, writing locally to LocalStorage:", err.message);
-      
-      const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (localData) {
-        const currentLocal: Website[] = JSON.parse(localData);
-        const updatedLocal = currentLocal.map(s => {
-          if (s.id === site.id) {
-            return {
-              ...s,
-              content: updatedContent,
-              published: isPublishAction ? true : s.published
-            };
-          }
-          return s;
-        });
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocal));
-        
-        setSite(prev => prev ? { ...prev, content: updatedContent, published: isPublishAction ? true : prev.published } : null);
-        if (showToast) toast.success(isPublishAction ? "¡Sitio publicado en local!" : "Borrador guardado localmente");
-      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("No se pudo guardar el sitio:", message);
+      toast.error("No se pudo guardar el sitio en Supabase.");
+      return false;
+    } finally {
       setIsSaving(false);
-      return true;
     }
   };
 
@@ -310,6 +283,29 @@ export default function WebsiteEditorPage() {
   const palette = THEME_PALETTES[themeName] || THEME_PALETTES.emerald;
   const selectedSection = sections.find(s => s.id === selectedSectionId);
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-3">
+          <Globe className="h-10 w-10 text-primary animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Cargando editor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!site || loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <Card className="max-w-md p-6 text-center space-y-4">
+          <h1 className="font-display text-xl font-semibold">Sitio no disponible</h1>
+          <p className="text-sm text-muted-foreground">{loadError ?? "No encontramos el sitio solicitado."}</p>
+          <Button onClick={() => navigate("/sites")}>Volver a Sitios</Button>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Navbar */}
@@ -325,7 +321,7 @@ export default function WebsiteEditorPage() {
             </div>
             <p className="text-[10px] text-muted-foreground flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
-              Guardado automático local activo
+              Guardado persistente en Supabase
             </p>
           </div>
         </div>

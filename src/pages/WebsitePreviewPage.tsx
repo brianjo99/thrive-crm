@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Website } from "./WebsitesPage";
+import { useAuth } from "@/contexts/AuthContext";
 
 const PREVIEW_THEMES: Record<string, {
   gradient: string;
@@ -78,11 +79,10 @@ const PREVIEW_THEMES: Record<string, {
   }
 };
 
-const LOCAL_STORAGE_KEY = "thrive_website_builder_sites";
-
 export default function WebsitePreviewPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   
   const [site, setSite] = useState<Website | null>(null);
   const [sections, setSections] = useState<any[]>([]);
@@ -113,38 +113,14 @@ export default function WebsitePreviewPage() {
         setSections(siteContent?.sections || []);
         setThemeName(siteContent?.theme || "emerald");
 
-        // Increment view count inside Supabase
-        await supabase
-          .from("websites")
-          .update({ views: (data.views || 0) + 1 })
-          .eq("id", data.id);
-      } catch (err: any) {
-        console.warn("DB Fetch failed, checking LocalStorage:", err.message);
-        
-        // Fallback: Local Storage
-        const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (localData) {
-          const currentLocal: Website[] = JSON.parse(localData);
-          const found = currentLocal.find(site => site.id === id);
-          if (found) {
-            setSite(found);
-            setSections(found.content?.sections || []);
-            setThemeName(found.content?.theme || "emerald");
-
-            // Increment views count locally
-            const updatedLocal = currentLocal.map(s => {
-              if (s.id === found.id) {
-                return { ...s, views: (s.views || 0) + 1 };
-              }
-              return s;
-            });
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocal));
-          } else {
-            toast.error("Sitio web no encontrado.");
-          }
-        } else {
-          toast.error("Sitio web no encontrado.");
-        }
+        const { error: viewError } = await supabase.rpc("increment_website_views", {
+          website_id: data.id,
+        });
+        if (viewError) console.warn("No se pudo registrar la visita:", viewError.message);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Error desconocido";
+        console.error("No se pudo cargar el sitio publicado:", message);
+        toast.error("Sitio web no encontrado o no publicado.");
       } finally {
         setLoading(false);
       }
@@ -177,31 +153,18 @@ export default function WebsitePreviewPage() {
 
       // 2. Increment leads count on website table
       if (site) {
-        await supabase
-          .from("websites")
-          .update({ leads_count: (site.leads_count || 0) + 1 })
-          .eq("id", site.id);
+        const { error: countError } = await supabase.rpc("increment_website_leads", {
+          website_id: site.id,
+        });
+        if (countError) console.warn("No se pudo actualizar el contador de leads:", countError.message);
       }
 
       setSubmittedSuccess(true);
       toast.success("¡Datos enviados con éxito!");
-    } catch (err: any) {
-      console.error(err);
-      toast.error(`Error de base de datos: ${err.message}. Guardando lead localmente...`);
-      
-      // Local Storage update fallback
-      const localData = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (localData && site) {
-        const currentLocal: Website[] = JSON.parse(localData);
-        const updatedLocal = currentLocal.map(s => {
-          if (s.id === site.id) {
-            return { ...s, leads_count: (s.leads_count || 0) + 1 };
-          }
-          return s;
-        });
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updatedLocal));
-      }
-      setSubmittedSuccess(true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Error desconocido";
+      console.error("No se pudo registrar el lead:", message);
+      toast.error("No pudimos enviar tus datos. Inténtalo de nuevo.");
     } finally {
       setIsSubmitting(false);
     }
@@ -237,18 +200,20 @@ export default function WebsitePreviewPage() {
     <div className={cn("min-h-screen font-sans bg-gradient-to-br", t.gradient, themeName === "midnight" ? "text-slate-100" : "text-slate-900")}>
       
       {/* Visual Floating Banner for owner mode preview */}
-      <div className="bg-primary/10 border-b border-primary/20 px-6 py-2 flex items-center justify-between text-xs font-semibold backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-1.5 text-primary">
-          <Globe className="h-3.5 w-3.5" />
-          <span>Vista Previa del Sitio: {site.name}</span>
+      {user && (
+        <div className="bg-primary/10 border-b border-primary/20 px-6 py-2 flex items-center justify-between text-xs font-semibold backdrop-blur-md sticky top-0 z-50">
+          <div className="flex items-center gap-1.5 text-primary">
+            <Globe className="h-3.5 w-3.5" />
+            <span>Vista previa: {site.name}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] uppercase font-mono">Vista previa</Badge>
+            <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => navigate(`/sites/editor/${site.id}`)}>
+              Volver al editor
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground text-[10px] uppercase font-mono">Live Demo</Badge>
-          <Button variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => navigate(`/sites/editor/${site.id}`)}>
-            Volver al Editor
-          </Button>
-        </div>
-      </div>
+      )}
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-16">
         {sections.map((sec) => {

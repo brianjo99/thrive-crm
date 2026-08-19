@@ -15,7 +15,7 @@ import { CampaignTemplate } from "@/types/thrive";
 import { format, isPast, isToday } from "date-fns";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 const STAGE_ORDER = ["discovery","pre-production","filming","editing","review","revisions","posting","reporting","complete"] as const;
 
@@ -43,7 +43,6 @@ export default function CampaignsPage() {
   const { data: clients = [] } = useClients();
   const { data: allTasks = [] } = useTasks();
   const createCampaign = useCreateCampaign();
-  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -244,61 +243,64 @@ export default function CampaignsPage() {
 
               return (
                 <motion.div key={campaign.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-                  <Card
-                    className={`luxury-card p-5 cursor-pointer hover:border-primary/30 transition-colors ${isBlocked ? "border-l-4 border-l-destructive" : ""}`}
-                    onClick={() => navigate(`/campaigns/${campaign.id}`)}
+                  <Link
+                    to={`/campaigns/${campaign.id}`}
+                    aria-label={`Abrir campaña ${campaign.name}`}
+                    className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                   >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex-1 min-w-0 mr-3">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-display font-semibold truncate">{campaign.name}</h3>
-                          {isBlocked && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
-                          {campaign.current_stage === "complete" && <CheckCircle className="h-4 w-4 text-success shrink-0" />}
+                    <Card className={`luxury-card p-5 hover:border-primary/30 transition-colors ${isBlocked ? "border-l-4 border-l-destructive" : ""}`}>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0 mr-3">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-display font-semibold truncate">{campaign.name}</h3>
+                            {isBlocked && <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />}
+                            {campaign.current_stage === "complete" && <CheckCircle className="h-4 w-4 text-success shrink-0" />}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{clientName}</p>
                         </div>
-                        <p className="text-sm text-muted-foreground">{clientName}</p>
+                        <TemplateBadge template={campaign.template} />
                       </div>
-                      <TemplateBadge template={campaign.template} />
-                    </div>
 
-                    {/* Pipeline progress bar */}
-                    {stages.length > 0 && (
-                      <div className="mb-3">
-                        <StagePipelineDots stages={stages} currentStage={campaign.current_stage} />
-                      </div>
-                    )}
-
-                    {/* Current stage + next action */}
-                    <div className="flex items-center justify-between mb-3">
-                      <StatusBadge status={campaign.current_stage} />
-                      <span className="text-xs text-muted-foreground italic">{nextHint}</span>
-                    </div>
-
-                    <div className="pt-3 border-t border-border space-y-2">
-                      {/* Task completion bar */}
-                      {campaignTasks.length > 0 && (
-                        <div>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-                            <span>Tareas</span>
-                            <span>{completedTasks.length}/{campaignTasks.length} · {completionPct}%</span>
-                          </div>
-                          <div className="h-1 bg-muted rounded-full overflow-hidden">
-                            <div className="h-full bg-primary rounded-full" style={{ width: `${completionPct}%` }} />
-                          </div>
+                      {/* Pipeline progress bar */}
+                      {stages.length > 0 && (
+                        <div className="mb-3">
+                          <StagePipelineDots stages={stages} currentStage={campaign.current_stage} />
                         </div>
                       )}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Inicio {format(new Date(campaign.start_date), "d MMM yyyy")}</span>
-                        {isBlocked && (
-                          <span className="text-destructive font-medium">
-                            {urgentTasks.length > 0 ? `${urgentTasks.length} urgente${urgentTasks.length !== 1 ? "s" : ""}` : `${overdueTasks.length} vencida${overdueTasks.length !== 1 ? "s" : ""}`}
-                          </span>
-                        )}
-                        {!isBlocked && campaign.due_date && (
-                          <span>{format(new Date(campaign.due_date), "d MMM yyyy")}</span>
-                        )}
+
+                      {/* Current stage + next action */}
+                      <div className="flex items-center justify-between mb-3">
+                        <StatusBadge status={campaign.current_stage} />
+                        <span className="text-xs text-muted-foreground italic">{nextHint}</span>
                       </div>
-                    </div>
-                  </Card>
+
+                      <div className="pt-3 border-t border-border space-y-2">
+                        {/* Task completion bar */}
+                        {campaignTasks.length > 0 && (
+                          <div>
+                            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+                              <span>Tareas</span>
+                              <span>{completedTasks.length}/{campaignTasks.length} · {completionPct}%</span>
+                            </div>
+                            <div className="h-1 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full bg-primary rounded-full" style={{ width: `${completionPct}%` }} />
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>Inicio {format(new Date(campaign.start_date), "d MMM yyyy")}</span>
+                          {isBlocked && (
+                            <span className="text-destructive font-medium">
+                              {urgentTasks.length > 0 ? `${urgentTasks.length} urgente${urgentTasks.length !== 1 ? "s" : ""}` : `${overdueTasks.length} vencida${overdueTasks.length !== 1 ? "s" : ""}`}
+                            </span>
+                          )}
+                          {!isBlocked && campaign.due_date && (
+                            <span>{format(new Date(campaign.due_date), "d MMM yyyy")}</span>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  </Link>
                 </motion.div>
               );
             })}
