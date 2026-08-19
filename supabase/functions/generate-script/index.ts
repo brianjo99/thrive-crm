@@ -1,13 +1,30 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+import { AccessError, corsHeaders, jsonResponse, requireInternalUser } from "../_shared/security.ts";
+
+type GeminiResponse = {
+  error?: { message?: string };
+  candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
 };
 
+function textField(body: Record<string, unknown>, key: string, maxLength = 500) {
+  const value = body[key];
+  return typeof value === "string" ? value.trim().slice(0, maxLength) : "";
+}
+
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(req) });
+  if (req.method !== "POST") return jsonResponse(req, { error: "Method not allowed" }, 405);
 
   try {
-    const { tipo, tono, descripcion, duracion, plataforma, campaignName, clientName } = await req.json();
+    await requireInternalUser(req);
+    const body = await req.json() as Record<string, unknown>;
+    const tipo = textField(body, "tipo", 120);
+    const tono = textField(body, "tono", 120);
+    const descripcion = textField(body, "descripcion", 1600);
+    const duracion = textField(body, "duracion", 80);
+    const plataforma = textField(body, "plataforma", 120);
+    const campaignName = textField(body, "campaignName", 120);
+    const clientName = textField(body, "clientName", 120);
+    if (!descripcion) return jsonResponse(req, { error: "Description required" }, 400);
 
     const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) throw new Error("GEMINI_API_KEY not configured");
@@ -44,19 +61,16 @@ Escribe SOLO el script, sin explicaciones adicionales.`;
       }
     );
 
-    const data = await response.json();
+    const data = await response.json() as GeminiResponse;
     if (!response.ok) throw new Error(data.error?.message || "Gemini API error");
 
     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
     if (!text) throw new Error("No content generated");
 
-    return new Response(JSON.stringify({ script: text }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(req, { script: text });
+  } catch (error: unknown) {
+    const status = error instanceof AccessError ? error.status : 500;
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    return jsonResponse(req, { error: message }, status);
   }
 });

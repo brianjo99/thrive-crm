@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useClients, useAssets, useClientOnboarding, useUpdateClient, getAssetPublicUrl, useClientContracts, useCreateContract, useDeleteContract, useLogAudit } from "@/hooks/useSupabaseData";
+import { useClients, useAssets, useClientOnboarding, useUpdateClient, getAssetPublicUrl, useClientContracts, useCreateContract, useDeleteContract } from "@/hooks/useSupabaseData";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -122,7 +122,6 @@ export default function ClientDetailPage() {
   const { data: contracts = [] } = useClientContracts(id);
   const createContract = useCreateContract();
   const deleteContract = useDeleteContract();
-  const logAudit = useLogAudit();
 
   const [editOpen, setEditOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
@@ -530,7 +529,6 @@ export default function ClientDetailPage() {
                     <Button size="sm" disabled={!contractForm.name || createContract.isPending} onClick={async () => {
                       try {
                         await createContract.mutateAsync({ client_id: id!, name: contractForm.name, file_url: contractForm.file_url || undefined, notes: contractForm.notes || undefined, signed_at: contractForm.signed_at || undefined });
-                        logAudit.mutate({ action: "create_contract", resource_type: "client", resource_id: id, resource_name: client.name, new_value: { name: contractForm.name } });
                         setContractForm({ name: "", file_url: "", notes: "", signed_at: "" });
                         setShowContractForm(false);
                         toast.success("Contrato guardado");

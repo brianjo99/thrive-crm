@@ -14,6 +14,29 @@ import { ClipboardList, Search, LayoutGrid, List, CheckCircle, Clock, AlertCircl
 import { isToday, isPast } from "date-fns";
 import { toast } from "sonner";
 import { exportToCsv } from "@/utils/exportCsv";
+import type { Database } from "@/integrations/supabase/types";
+import { invokeFunction } from "@/lib/invokeFunction";
+
+type TaskPriority = Database["public"]["Enums"]["task_priority"];
+type PipelineStage = Database["public"]["Enums"]["pipeline_stage"];
+type AppRole = Database["public"]["Enums"]["app_role"];
+type AiSuggestedTask = { title: string; description: string; priority: TaskPriority };
+
+function isTaskPriority(value: unknown): value is TaskPriority {
+  return value === "low" || value === "medium" || value === "high" || value === "urgent";
+}
+
+function isAiSuggestedTask(value: unknown): value is AiSuggestedTask {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return typeof record.title === "string"
+    && typeof record.description === "string"
+    && isTaskPriority(record.priority);
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "No fue posible completar la acción";
+}
 
 const PIPELINE_STAGES = [
   { value: "discovery", label: "Discovery" },
@@ -35,7 +58,7 @@ export default function TasksPage() {
     queryKey: ["profiles"],
     queryFn: async () => {
       const { data } = await supabase.from("profiles").select("id, display_name, email");
-      return (data || []) as { id: string; display_name: string | null; email: string | null }[];
+      return data || [];
     },
   });
   const [view, setView] = useState<"kanban" | "list">("kanban");
@@ -44,44 +67,43 @@ export default function TasksPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [aiTasksLoading, setAiTasksLoading] = useState(false);
-  const [aiSuggestedTasks, setAiSuggestedTasks] = useState<{title:string;description:string;priority:string}[]>([]);
+  const [aiSuggestedTasks, setAiSuggestedTasks] = useState<AiSuggestedTask[]>([]);
 
   const handleAISuggestTasks = async () => {
     if (!createForm.campaign_id) return toast.error("Selecciona una campaña primero");
-    const campaign = campaigns.find(c => c.id === createForm.campaign_id) as any;
+    const campaign = campaigns.find(c => c.id === createForm.campaign_id);
     setAiTasksLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assist`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await invokeFunction<{ error?: string; tasks?: string }>("ai-assist", {
           type: "tasks",
           campaignName: campaign?.name || "",
           clientName: campaign?.clients?.name || "",
           stage: createForm.stage,
-          description: campaign?.description || "",
-        }),
+          description: "",
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setAiSuggestedTasks(JSON.parse(data.tasks));
+      if (typeof data.tasks !== "string") throw new Error("La respuesta de IA no contiene tareas válidas");
+      const parsedTasks = JSON.parse(data.tasks) as unknown;
+      if (!Array.isArray(parsedTasks) || !parsedTasks.every(isAiSuggestedTask)) {
+        throw new Error("La IA devolvió tareas con un formato inválido");
+      }
+      setAiSuggestedTasks(parsedTasks);
       toast.success("Tareas sugeridas");
-    } catch (e: any) { toast.error(e.message); }
+    } catch (error: unknown) { toast.error(errorMessage(error)); }
     finally { setAiTasksLoading(false); }
   };
 
-  const handleAddAITask = (task: {title:string;description:string;priority:string}) => {
-    setCreateForm(p => ({ ...p, title: task.title, priority: task.priority as any }));
+  const handleAddAITask = (task: AiSuggestedTask) => {
+    setCreateForm(p => ({ ...p, title: task.title, priority: task.priority }));
     setAiSuggestedTasks([]);
     toast.success("Tarea cargada — edita y guarda");
   };
   const [createForm, setCreateForm] = useState({
     campaign_id: "",
     title: "",
-    priority: "medium" as "low" | "medium" | "high" | "urgent",
-    assignee: "" as "" | "owner" | "editor" | "videographer" | "client",
+    priority: "medium" as TaskPriority,
+    assignee: "" as "" | AppRole,
     assigned_user_id: "",
-    stage: "pre-production" as string,
+    stage: "pre-production" as PipelineStage,
     due_date: "",
   });
 
@@ -99,15 +121,15 @@ export default function TasksPage() {
         title: createForm.title,
         priority: createForm.priority,
         assignee: createForm.assignee || null,
-        assigned_user_id: (createForm.assigned_user_id || null) as any,
-        stage: createForm.stage as any,
+        assigned_user_id: createForm.assigned_user_id || null,
+        stage: createForm.stage,
         due_date: createForm.due_date || null,
       });
       toast.success("Tarea creada");
       setIsCreateOpen(false);
       setCreateForm({ campaign_id: "", title: "", priority: "medium", assignee: "", assigned_user_id: "", stage: "pre-production", due_date: "" });
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error));
     }
   };
 
@@ -141,8 +163,8 @@ export default function TasksPage() {
                 className="gap-1.5"
                 onClick={() => exportToCsv("tareas.csv", allTasks.map(t => ({
                   Título: t.title,
-                  Campaña: (t as any).campaigns?.name || "",
-                  Cliente: (t as any).clients?.name || "",
+                  Campaña: t.campaigns?.name || "",
+                  Cliente: t.clients?.name || "",
                   Estado: t.status,
                   Prioridad: t.priority,
                   Asignado: t.assignee || "",
@@ -199,7 +221,7 @@ export default function TasksPage() {
                     <div className="grid grid-cols-2 gap-3">
                       <div className="space-y-2">
                         <Label>Prioridad</Label>
-                        <Select value={createForm.priority} onValueChange={(v: any) => setCreateForm(p => ({ ...p, priority: v }))}>
+                        <Select value={createForm.priority} onValueChange={v => setCreateForm(p => ({ ...p, priority: v as TaskPriority }))}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="low">Baja</SelectItem>
@@ -211,7 +233,7 @@ export default function TasksPage() {
                       </div>
                       <div className="space-y-2">
                         <Label>Asignado a (rol)</Label>
-                        <Select value={createForm.assignee} onValueChange={(v: any) => setCreateForm(p => ({ ...p, assignee: v }))}>
+                        <Select value={createForm.assignee} onValueChange={v => setCreateForm(p => ({ ...p, assignee: v as AppRole }))}>
                           <SelectTrigger><SelectValue placeholder="Sin asignar" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="owner">Owner</SelectItem>
@@ -224,7 +246,7 @@ export default function TasksPage() {
                     </div>
                     <div className="space-y-2">
                       <Label>Etapa</Label>
-                      <Select value={createForm.stage} onValueChange={v => setCreateForm(p => ({ ...p, stage: v }))}>
+                      <Select value={createForm.stage} onValueChange={v => setCreateForm(p => ({ ...p, stage: v as PipelineStage }))}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {PIPELINE_STAGES.map(s => (

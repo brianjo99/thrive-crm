@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useLogAudit } from "@/hooks/useSupabaseData";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +15,11 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
+import { invokeFunction } from "@/lib/invokeFunction";
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "No fue posible completar la acción";
+}
 
 type Lead = {
   id: string;
@@ -97,7 +101,6 @@ export default function LeadsPage() {
   const updateLead = useUpdateLead();
   const deleteLead = useDeleteLead();
   const convertLead = useConvertLeadToClient();
-  const logAudit = useLogAudit();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -111,21 +114,16 @@ export default function LeadsPage() {
     if (!selectedLead) return;
     setAiEmailLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assist`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const data = await invokeFunction<{ subject?: string; body?: string }>("ai-assist", {
           type: "lead-email",
           leadName: selectedLead.nombre,
           empresa: "",
           servicio: selectedLead.servicio || "",
           notas: selectedLead.mensaje || notes || "",
-        }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setAiEmail(data);
-    } catch (e: any) { toast.error(e.message); }
+      if (!data.subject || !data.body) throw new Error("La IA no devolvió un email válido");
+      setAiEmail({ subject: data.subject, body: data.body });
+    } catch (error: unknown) { toast.error(errorMessage(error)); }
     finally { setAiEmailLoading(false); }
   };
 
@@ -146,7 +144,6 @@ export default function LeadsPage() {
 
   const handleStatusChange = async (lead: Lead, status: Lead["status"]) => {
     await updateLead.mutateAsync({ id: lead.id, status });
-    logAudit.mutate({ action: "lead_status", resource_type: "lead", resource_id: lead.id, resource_name: lead.nombre, old_value: { status: lead.status }, new_value: { status } });
     if (selectedLead?.id === lead.id) setSelectedLead({ ...lead, status });
     toast.success(`Lead marcado como ${STATUS_CONFIG[status].label}`);
   };
@@ -515,8 +512,8 @@ export default function LeadsPage() {
                           toast.success(`${selectedLead.nombre} convertido a cliente`);
                           setSelectedLead(null);
                           navigate(`/clients/${newClient.id}`);
-                        } catch (err: any) {
-                          toast.error(err.message);
+                        } catch (error: unknown) {
+                          toast.error(errorMessage(error));
                         }
                       }}
                     >

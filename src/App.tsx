@@ -1,65 +1,127 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AppSidebar } from "@/components/thrive/AppSidebar";
 import { TopBar } from "@/components/thrive/TopBar";
-import Index from "./pages/Index";
-import BrianDashboard from "./pages/BrianDashboard";
-import ClientsPage from "./pages/ClientsPage";
-import CampaignsPage from "./pages/CampaignsPage";
-import TemplatesPage from "./pages/TemplatesPage";
-import EditorDashboard from "./pages/EditorDashboard";
-import EditorAssetsPage from "./pages/EditorAssetsPage";
-import VideographerDashboard from "./pages/VideographerDashboard";
-import VideographerShotsPage from "./pages/VideographerShotsPage";
-import AssetsPage from "./pages/AssetsPage";
-import ApprovalsPage from "./pages/ApprovalsPage";
-import CampaignDetailPage from "./pages/CampaignDetailPage";
-import ClientDetailPage from "./pages/ClientDetailPage";
-import ShotListsPage from "./pages/ShotListsPage";
-import FilmacionPage from "./pages/FilmacionPage";
-import AuthPage from "./pages/AuthPage";
-import ResetPasswordPage from "./pages/ResetPasswordPage";
-import LeadsPage from "./pages/LeadsPage";
-import AdsPage from "./pages/AdsPage";
-import CalendarPage from "./pages/CalendarPage";
-import InvoicesPage from "./pages/InvoicesPage";
-import ScriptsPage from "./pages/ScriptsPage";
-import CallSheetsPage from "./pages/CallSheetsPage";
-import TasksPage from "./pages/TasksPage";
-import ReportingPage from "./pages/ReportingPage";
-import QuotesPage from "./pages/QuotesPage";
-import HelpPage from "./pages/HelpPage";
-import SettingsPage from "./pages/SettingsPage";
-import WebsitesPage from "./pages/WebsitesPage";
-import WebsiteEditorPage from "./pages/WebsiteEditorPage";
-import WebsitePreviewPage from "./pages/WebsitePreviewPage";
-import NotFound from "./pages/NotFound";
 import { ProtectedRoute, RoleRoute } from "@/components/thrive/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
-function ProtectedLayout() {
-  const { user, loading } = useAuth();
+const Index = lazy(() => import("./pages/Index"));
+const BrianDashboard = lazy(() => import("./pages/BrianDashboard"));
+const ClientsPage = lazy(() => import("./pages/ClientsPage"));
+const CampaignsPage = lazy(() => import("./pages/CampaignsPage"));
+const TemplatesPage = lazy(() => import("./pages/TemplatesPage"));
+const EditorDashboard = lazy(() => import("./pages/EditorDashboard"));
+const EditorAssetsPage = lazy(() => import("./pages/EditorAssetsPage"));
+const VideographerDashboard = lazy(() => import("./pages/VideographerDashboard"));
+const VideographerShotsPage = lazy(() => import("./pages/VideographerShotsPage"));
+const AssetsPage = lazy(() => import("./pages/AssetsPage"));
+const ApprovalsPage = lazy(() => import("./pages/ApprovalsPage"));
+const CampaignDetailPage = lazy(() => import("./pages/CampaignDetailPage"));
+const ClientDetailPage = lazy(() => import("./pages/ClientDetailPage"));
+const ShotListsPage = lazy(() => import("./pages/ShotListsPage"));
+const FilmacionPage = lazy(() => import("./pages/FilmacionPage"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"));
+const LeadsPage = lazy(() => import("./pages/LeadsPage"));
+const AdsPage = lazy(() => import("./pages/AdsPage"));
+const CalendarPage = lazy(() => import("./pages/CalendarPage"));
+const InvoicesPage = lazy(() => import("./pages/InvoicesPage"));
+const ScriptsPage = lazy(() => import("./pages/ScriptsPage"));
+const CallSheetsPage = lazy(() => import("./pages/CallSheetsPage"));
+const TasksPage = lazy(() => import("./pages/TasksPage"));
+const ReportingPage = lazy(() => import("./pages/ReportingPage"));
+const QuotesPage = lazy(() => import("./pages/QuotesPage"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const WebsitesPage = lazy(() => import("./pages/WebsitesPage"));
+const WebsiteEditorPage = lazy(() => import("./pages/WebsiteEditorPage"));
+const WebsitePreviewPage = lazy(() => import("./pages/WebsitePreviewPage"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <span className="text-primary-foreground font-display font-bold text-lg">T</span>
-          </div>
-          <p className="text-muted-foreground">Loading...</p>
+function FullPageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mx-auto mb-4 animate-pulse">
+          <span className="text-primary-foreground font-display font-bold text-lg">T</span>
+        </div>
+        <p className="text-muted-foreground">Cargando...</p>
+      </div>
+    </div>
+  );
+}
+
+function AccessNotice({
+  title,
+  description,
+  retry,
+  signOut,
+}: {
+  title: string;
+  description: string;
+  retry?: () => void;
+  signOut: () => void;
+}) {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-lg">
+        <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 font-display font-bold">T</div>
+        <h1 className="font-display text-xl font-semibold">{title}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">{description}</p>
+        <div className="mt-6 flex justify-center gap-2">
+          {retry && <Button onClick={retry}>Reintentar</Button>}
+          <Button variant={retry ? "outline" : "default"} onClick={signOut}>Cerrar sesión</Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ProtectedLayout() {
+  const { user, loading, accessLoading, accountStatus, role, signOut, refreshAccess } = useAuth();
+
+  if (loading || accessLoading) return <FullPageLoader />;
+
+  if (!user) return <Navigate to="/auth" replace />;
+
+  if (accountStatus === "suspended" || accountStatus === "disabled") {
+    return (
+      <AccessNotice
+        title="Cuenta sin acceso"
+        description="Esta cuenta está suspendida o desactivada. Contacta al Owner del CRM para recuperar el acceso."
+        signOut={() => void signOut()}
+      />
     );
   }
 
-  if (!user) return <Navigate to="/auth" replace />;
+  if (accountStatus === "error") {
+    return (
+      <AccessNotice
+        title="No pudimos verificar tu acceso"
+        description="La sesión está activa, pero no fue posible confirmar los permisos de la cuenta."
+        retry={() => void refreshAccess()}
+        signOut={() => void signOut()}
+      />
+    );
+  }
+
+  if (accountStatus !== "active" || !role || role === "client") {
+    return (
+      <AccessNotice
+        title="Acceso pendiente"
+        description="Tu cuenta existe, pero todavía no tiene un rol interno habilitado. Solicita al Owner que complete la asignación."
+        signOut={() => void signOut()}
+      />
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -114,12 +176,14 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/sites/preview/:id" element={<WebsitePreviewPage />} />
-            <Route path="/*" element={<ProtectedLayout />} />
-          </Routes>
+          <Suspense fallback={<FullPageLoader />}>
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/sites/preview/:id" element={<WebsitePreviewPage />} />
+              <Route path="/*" element={<ProtectedLayout />} />
+            </Routes>
+          </Suspense>
         </BrowserRouter>
       </TooltipProvider>
     </AuthProvider>

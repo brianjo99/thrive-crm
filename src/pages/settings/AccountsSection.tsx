@@ -13,12 +13,15 @@ import { Search, MoreVertical, User, Shield, Eye, Ban, RefreshCw, Mail, UserPlus
 import { Label } from "@/components/ui/label";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import type { Database } from "@/integrations/supabase/types";
 
 type AccountStatus = "active" | "invited" | "suspended" | "disabled";
 type AppRole = "owner" | "editor" | "videographer";
+type ModuleVisibility = Pick<Database["public"]["Tables"]["module_visibility"]["Row"], "module" | "is_visible">;
 
 type Account = {
-  id: string;
+  profile_id: string;
+  user_id: string;
   display_name: string | null;
   email: string | null;
   status: AccountStatus;
@@ -26,6 +29,10 @@ type Account = {
   created_at: string;
   role: AppRole | null;
 };
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "No fue posible completar la acción";
+}
 
 const STATUS_CONFIG: Record<AccountStatus, { label: string; color: string }> = {
   active:    { label: "Activo",     color: "bg-green-500/15 text-green-400" },
@@ -59,14 +66,21 @@ function useAccounts() {
     queryKey: ["settings_accounts"],
     queryFn: async () => {
       const [profilesRes, rolesRes] = await Promise.all([
-        supabase.from("profiles").select("id, display_name, email, status, last_seen_at, created_at").order("created_at"),
+        supabase.from("profiles").select("id, user_id, display_name, email, status, last_seen_at, created_at").order("created_at"),
         supabase.from("user_roles").select("user_id, role"),
       ]);
-      const roles = new Map((rolesRes.data ?? []).map((r: any) => [r.user_id, r.role]));
-      return (profilesRes.data ?? []).map((p: any) => ({
-        ...p,
-        status: p.status ?? "active",
-        role: roles.get(p.id) ?? null,
+      if (profilesRes.error) throw profilesRes.error;
+      if (rolesRes.error) throw rolesRes.error;
+      const roles = new Map((rolesRes.data ?? []).map(r => [r.user_id, r.role as AppRole]));
+      return (profilesRes.data ?? []).map(p => ({
+        profile_id: p.id,
+        user_id: p.user_id,
+        display_name: p.display_name,
+        email: p.email,
+        status: (p.status ?? "active") as AccountStatus,
+        last_seen_at: p.last_seen_at,
+        created_at: p.created_at,
+        role: roles.get(p.user_id) ?? null,
       })) as Account[];
     },
   });
@@ -80,20 +94,12 @@ function useUpdateAccountRole() {
         .from("user_roles")
         .upsert({ user_id: userId, role }, { onConflict: "user_id" });
       if (error) throw error;
-      // Audit log
-      await supabase.from("audit_logs").insert({
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        action: "change_role",
-        resource_type: "account",
-        resource_id: userId,
-        new_value: { role },
-      }).then(() => {});
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["settings_accounts"] });
       toast.success("Rol actualizado");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: unknown) => toast.error(errorMessage(error)),
   });
 }
 
@@ -101,37 +107,14 @@ function useUpdateAccountStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ userId, status }: { userId: string; status: AccountStatus }) => {
-      const { error } = await supabase.from("profiles").update({ status }).eq("id", userId);
+      const { error } = await supabase.from("profiles").update({ status }).eq("user_id", userId);
       if (error) throw error;
-      await supabase.from("audit_logs").insert({
-        actor_id: (await supabase.auth.getUser()).data.user?.id,
-        action: "change_status",
-        resource_type: "account",
-        resource_id: userId,
-        new_value: { status },
-      }).then(() => {});
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["settings_accounts"] });
       toast.success("Estado actualizado");
     },
-    onError: (e: any) => toast.error(e.message),
-  });
-}
-
-function useRolePermissions(role: string | null) {
-  return useQuery({
-    queryKey: ["role_permissions", role],
-    queryFn: async () => {
-      if (!role) return [];
-      const { data, error } = await supabase
-        .from("role_permissions")
-        .select("*")
-        .eq("role", role);
-      if (error) return [];
-      return data ?? [];
-    },
-    enabled: !!role,
+    onError: (error: unknown) => toast.error(errorMessage(error)),
   });
 }
 
@@ -144,17 +127,16 @@ function useModuleVisibility(role: string | null) {
         .from("module_visibility")
         .select("module, is_visible")
         .eq("role", role);
-      return data ?? [];
+      return (data ?? []) as ModuleVisibility[];
     },
     enabled: !!role,
   });
 }
 
 function EffectiveAccessPanel({ account }: { account: Account }) {
-  const { data: perms = [] } = useRolePermissions(account.role);
   const { data: visibility = [] } = useModuleVisibility(account.role);
 
-  const visibleMap = new Map(visibility.map((v: any) => [v.module, v.is_visible]));
+  const visibleMap = new Map(visibility.map(v => [v.module, v.is_visible]));
   const visibleModules = MODULES.filter(m => visibleMap.get(m) !== false);
   const hiddenModules = MODULES.filter(m => visibleMap.get(m) === false);
 
@@ -205,30 +187,6 @@ function EffectiveAccessPanel({ account }: { account: Account }) {
         </div>
       )}
 
-      {perms.length > 0 && (
-        <div className="space-y-2">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Permisos por módulo</p>
-          <div className="space-y-1">
-            {perms.map((p: any) => {
-              const active = [
-                p.can_view && "Ver",
-                p.can_create && "Crear",
-                p.can_edit && "Editar",
-                p.can_delete && "Eliminar",
-                p.can_approve && "Aprobar",
-                p.can_manage && "Administrar",
-              ].filter(Boolean);
-              if (active.length === 0) return null;
-              return (
-                <div key={p.module} className="flex items-center gap-2 text-xs">
-                  <span className="w-24 text-muted-foreground font-medium">{MODULE_LABELS[p.module] ?? p.module}</span>
-                  <span className="text-foreground/70">{active.join(", ")}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -268,7 +226,7 @@ function AccountDetailDialog({
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rol</p>
               <Select
                 value={account.role ?? ""}
-                onValueChange={(v) => updateRole.mutate({ userId: account.id, role: v as AppRole })}
+                onValueChange={(v) => updateRole.mutate({ userId: account.user_id, role: v as AppRole })}
               >
                 <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Sin rol" /></SelectTrigger>
                 <SelectContent>
@@ -283,7 +241,7 @@ function AccountDetailDialog({
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Estado</p>
               <Select
                 value={account.status}
-                onValueChange={(v) => updateStatus.mutate({ userId: account.id, status: v as AccountStatus })}
+                onValueChange={(v) => updateStatus.mutate({ userId: account.user_id, status: v as AccountStatus })}
               >
                 <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -332,7 +290,7 @@ function useInviteUser() {
       qc.invalidateQueries({ queryKey: ["settings_accounts"] });
       toast.success("Invitación enviada");
     },
-    onError: (e: any) => toast.error(e.message),
+    onError: (error: unknown) => toast.error(errorMessage(error)),
   });
 }
 
@@ -407,6 +365,17 @@ export default function AccountsSection() {
   const [selected, setSelected] = useState<Account | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
 
+  const sendPasswordReset = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success(`Enlace de restablecimiento enviado a ${email}`);
+  };
+
   const filtered = accounts.filter(a =>
     (a.display_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
     (a.email ?? "").toLowerCase().includes(search.toLowerCase())
@@ -445,7 +414,7 @@ export default function AccountsSection() {
               </div>
             ) : filtered.map(account => (
               <div
-                key={account.id}
+                key={account.profile_id}
                 className="flex items-center gap-4 px-5 py-3.5 hover:bg-muted/30 transition-colors"
               >
                 <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
@@ -480,34 +449,39 @@ export default function AccountsSection() {
                     <DropdownMenuItem onClick={() => setSelected(account)}>
                       <Eye className="h-3.5 w-3.5 mr-2" /> Ver detalles
                     </DropdownMenuItem>
+                    {account.email && (
+                      <DropdownMenuItem onClick={() => void sendPasswordReset(account.email!)}>
+                        <Mail className="h-3.5 w-3.5 mr-2" /> Restablecer contraseña
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => updateRole.mutate({ userId: account.id, role: "owner" })}>
+                    <DropdownMenuItem onClick={() => updateRole.mutate({ userId: account.user_id, role: "owner" })}>
                       <Shield className="h-3.5 w-3.5 mr-2" /> Hacer Owner
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateRole.mutate({ userId: account.id, role: "editor" })}>
+                    <DropdownMenuItem onClick={() => updateRole.mutate({ userId: account.user_id, role: "editor" })}>
                       Hacer Editor
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => updateRole.mutate({ userId: account.id, role: "videographer" })}>
+                    <DropdownMenuItem onClick={() => updateRole.mutate({ userId: account.user_id, role: "videographer" })}>
                       Hacer Videographer
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     {account.status !== "suspended" ? (
                       <DropdownMenuItem
                         className="text-yellow-500"
-                        onClick={() => updateStatus.mutate({ userId: account.id, status: "suspended" })}
+                        onClick={() => updateStatus.mutate({ userId: account.user_id, status: "suspended" })}
                       >
                         <Ban className="h-3.5 w-3.5 mr-2" /> Suspender
                       </DropdownMenuItem>
                     ) : (
                       <DropdownMenuItem
-                        onClick={() => updateStatus.mutate({ userId: account.id, status: "active" })}
+                        onClick={() => updateStatus.mutate({ userId: account.user_id, status: "active" })}
                       >
                         <RefreshCw className="h-3.5 w-3.5 mr-2" /> Reactivar
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem
                       className="text-destructive"
-                      onClick={() => updateStatus.mutate({ userId: account.id, status: "disabled" })}
+                      onClick={() => updateStatus.mutate({ userId: account.user_id, status: "disabled" })}
                     >
                       Desactivar cuenta
                     </DropdownMenuItem>

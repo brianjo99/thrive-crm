@@ -16,6 +16,11 @@ import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { invokeFunction } from "@/lib/invokeFunction";
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "No fue posible completar la acción";
+}
 
 type Script = {
   id: string;
@@ -180,24 +185,19 @@ export default function ScriptsPage() {
     if (!aiForm.descripcion.trim()) return toast.error("Describe el contenido que quieres generar");
     setAiGenerating(true);
     try {
-      const campaign = (campaigns as any[]).find((c: any) => c.id === newCampaignId);
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-script`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const campaign = campaigns.find(c => c.id === newCampaignId);
+      const data = await invokeFunction<{ script?: string }>("generate-script", {
           ...aiForm,
           campaignName: campaign?.name || "",
           clientName: campaign?.clients?.name || "",
-        }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error generando script");
+      if (!data.script) throw new Error("La IA no devolvió un script válido");
       setNewContent(data.script);
       if (!newTitle) setNewTitle(`${aiForm.plataforma} — ${aiForm.tipo}`);
       setShowAI(false);
       toast.success("Script generado con IA");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error));
     } finally {
       setAiGenerating(false);
     }
@@ -236,8 +236,8 @@ export default function ScriptsPage() {
       setNewCampaignId("");
       setNewStatus("draft");
       setNewContent("");
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error));
     }
   };
 
@@ -267,8 +267,8 @@ export default function ScriptsPage() {
           : "Script guardado"
       );
       setSelectedScript(null);
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (error: unknown) {
+      toast.error(errorMessage(error));
     }
   };
 
@@ -604,7 +604,7 @@ export default function ScriptsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin campaña</SelectItem>
-                    {(campaigns as any[]).map((c: any) => (
+                    {campaigns.map(c => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}
                         {c.clients?.name && (

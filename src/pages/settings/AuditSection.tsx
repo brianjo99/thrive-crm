@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { ClipboardList, User } from "lucide-react";
+import type { Json } from "@/integrations/supabase/types";
 
 type AuditLog = {
   id: string;
@@ -13,8 +14,8 @@ type AuditLog = {
   resource_type: string;
   resource_id: string | null;
   resource_name: string | null;
-  old_value: any;
-  new_value: any;
+  old_value: Json | null;
+  new_value: Json | null;
   created_at: string;
 };
 
@@ -22,8 +23,12 @@ const ACTION_CONFIG: Record<string, { label: string; color: string }> = {
   change_role:      { label: "Cambio de rol",       color: "bg-blue-500/15 text-blue-400" },
   change_status:    { label: "Cambio de estado",    color: "bg-yellow-500/15 text-yellow-400" },
   create_team:      { label: "Equipo creado",       color: "bg-green-500/15 text-green-400" },
+  update_team:      { label: "Equipo actualizado",  color: "bg-blue-500/15 text-blue-400" },
   delete_team:      { label: "Equipo eliminado",    color: "bg-red-500/15 text-red-400" },
-  change_perm:      { label: "Permisos",            color: "bg-purple-500/15 text-purple-400" },
+  add_team_member:  { label: "Miembro agregado",    color: "bg-green-500/15 text-green-400" },
+  remove_team_member:{ label: "Miembro retirado",   color: "bg-red-500/15 text-red-400" },
+  change_permission:{ label: "Permisos",            color: "bg-purple-500/15 text-purple-400" },
+  change_visibility:{ label: "Visibilidad",         color: "bg-purple-500/15 text-purple-400" },
   change_setting:   { label: "Configuración",       color: "bg-orange-500/15 text-orange-400" },
   advance_stage:    { label: "Avance de etapa",     color: "bg-primary/15 text-primary" },
   create_cost:      { label: "Costo registrado",    color: "bg-red-500/15 text-red-400" },
@@ -32,6 +37,9 @@ const ACTION_CONFIG: Record<string, { label: string; color: string }> = {
   convert_lead:     { label: "Lead convertido",     color: "bg-green-500/15 text-green-400" },
   create_campaign:  { label: "Campaña creada",      color: "bg-primary/15 text-primary" },
   create_client:    { label: "Cliente creado",      color: "bg-teal-500/15 text-teal-400" },
+  create_ad_account:{ label: "Cuenta publicitaria", color: "bg-green-500/15 text-green-400" },
+  update_ad_account:{ label: "Cuenta publicitaria", color: "bg-blue-500/15 text-blue-400" },
+  delete_ad_account:{ label: "Cuenta publicitaria", color: "bg-red-500/15 text-red-400" },
 };
 
 function useAuditLogs() {
@@ -43,18 +51,24 @@ function useAuditLogs() {
         .select("*")
         .order("created_at", { ascending: false })
         .limit(200);
-      if (error) return [] as AuditLog[];
+      if (error) throw error;
       return (data ?? []) as AuditLog[];
     },
   });
 }
 
 function formatAction(log: AuditLog): string {
+  const newValue = log.new_value;
+  const field = (key: string) => {
+    if (!newValue || typeof newValue !== "object" || Array.isArray(newValue)) return "—";
+    const value = newValue[key];
+    return typeof value === "string" ? value : "—";
+  };
   switch (log.action) {
     case "change_role":
-      return `Rol cambiado a "${log.new_value?.role ?? "—"}"`;
+      return `Rol cambiado a "${field("role")}"`;
     case "change_status":
-      return `Estado cambiado a "${log.new_value?.status ?? "—"}"`;
+      return `Estado cambiado a "${field("status")}"`;
     default:
       return log.action.replace(/_/g, " ");
   }

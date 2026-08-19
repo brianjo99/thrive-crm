@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Tables, TablesInsert } from "@/integrations/supabase/types";
+import { Json, Tables, TablesInsert } from "@/integrations/supabase/types";
 import { CLIENT_TYPE_CHECKLISTS, SERVICE_TEMPLATES } from "@/types/thrive";
 import type { ClientType, CampaignTemplate, ServiceType } from "@/types/thrive";
 
@@ -374,7 +374,7 @@ export function useClientOnboarding(clientId?: string) {
 export function useCreateClientOnboarding() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { client_id: string; requirements: Record<string, any> }) => {
+    mutationFn: async (input: { client_id: string; requirements: Json }) => {
       const { data, error } = await supabase
         .from("client_onboarding")
         .insert(input)
@@ -629,36 +629,13 @@ export function useDeleteComment() {
   });
 }
 
-// ---- Audit Logging ----
-export function useLogAudit() {
-  const { user } = useAuth();
-  return useMutation({
-    mutationFn: async (entry: {
-      action: string;
-      resource_type?: string;
-      resource_id?: string;
-      resource_name?: string;
-      old_value?: any;
-      new_value?: any;
-    }) => {
-      const profile = user ? await supabase.from("profiles").select("display_name").eq("id", user.id).single() : null;
-      const actor_name = (profile?.data as any)?.display_name || user?.email?.split("@")[0] || "Sistema";
-      await supabase.from("audit_logs" as any).insert({
-        actor_id: user?.id,
-        actor_name,
-        ...entry,
-      });
-    },
-  });
-}
-
 // ---- Campaign Costs ----
 export function useCampaignCosts(campaignId?: string) {
   return useQuery({
     queryKey: ["campaign_costs", campaignId],
     queryFn: async () => {
       if (!campaignId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("campaign_costs")
         .select("*")
         .eq("campaign_id", campaignId)
@@ -674,7 +651,7 @@ export function useCreateCost() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { campaign_id: string; description: string; amount: number; category: string; cost_date: string }) => {
-      const { error } = await (supabase as any).from("campaign_costs").insert(input);
+      const { error } = await supabase.from("campaign_costs").insert(input);
       if (error) throw error;
     },
     onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ["campaign_costs", v.campaign_id] }),
@@ -685,7 +662,7 @@ export function useDeleteCost() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, campaignId }: { id: string; campaignId: string }) => {
-      const { error } = await (supabase as any).from("campaign_costs").delete().eq("id", id);
+      const { error } = await supabase.from("campaign_costs").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ["campaign_costs", v.campaignId] }),
@@ -698,7 +675,7 @@ export function useClientContracts(clientId?: string) {
     queryKey: ["contracts", clientId],
     queryFn: async () => {
       if (!clientId) return [];
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("contracts")
         .select("*")
         .eq("client_id", clientId)
@@ -714,7 +691,7 @@ export function useCreateContract() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: { client_id: string; name: string; file_url?: string; notes?: string; signed_at?: string }) => {
-      const { error } = await (supabase as any).from("contracts").insert(input);
+      const { error } = await supabase.from("contracts").insert(input);
       if (error) throw error;
     },
     onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ["contracts", v.client_id] }),
@@ -725,7 +702,7 @@ export function useDeleteContract() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, clientId }: { id: string; clientId: string }) => {
-      const { error } = await (supabase as any).from("contracts").delete().eq("id", id);
+      const { error } = await supabase.from("contracts").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: (_, v) => qc.invalidateQueries({ queryKey: ["contracts", v.clientId] }),

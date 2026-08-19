@@ -13,7 +13,7 @@ function useSuspendedAccounts() {
     queryFn: async () => {
       const { data } = await supabase
         .from("profiles")
-        .select("id, display_name, email, status, last_seen_at")
+        .select("user_id, display_name, email, status, last_seen_at")
         .in("status", ["suspended", "disabled"]);
       return data ?? [];
     },
@@ -21,23 +21,18 @@ function useSuspendedAccounts() {
 }
 
 export default function SecuritySection() {
-  const { data: suspendedAccounts = [] } = useSuspendedAccounts();
-
-  const sendPasswordReset = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) toast.error(error.message);
-    else toast.success(`Email de reset enviado a ${email}`);
-  };
+  const { data: suspendedAccounts = [], refetch } = useSuspendedAccounts();
 
   const reactivate = async (userId: string) => {
     const { error } = await supabase
       .from("profiles")
       .update({ status: "active" })
-      .eq("id", userId);
+      .eq("user_id", userId);
     if (error) toast.error(error.message);
-    else toast.success("Cuenta reactivada");
+    else {
+      await refetch();
+      toast.success("Cuenta reactivada");
+    }
   };
 
   return (
@@ -66,8 +61,8 @@ export default function SecuritySection() {
           </div>
         ) : (
           <div className="space-y-3">
-            {suspendedAccounts.map((acc: any) => (
-              <div key={acc.id} className="flex items-center justify-between bg-muted/30 rounded-lg px-4 py-3">
+            {suspendedAccounts.map(acc => (
+              <div key={acc.user_id} className="flex items-center justify-between bg-muted/30 rounded-lg px-4 py-3">
                 <div>
                   <p className="text-sm font-medium">{acc.display_name ?? "Sin nombre"}</p>
                   {acc.email && <p className="text-xs text-muted-foreground">{acc.email}</p>}
@@ -79,7 +74,7 @@ export default function SecuritySection() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-yellow-500/15 text-yellow-400 text-xs capitalize">{acc.status}</Badge>
-                  <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => reactivate(acc.id)}>
+                  <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => reactivate(acc.user_id)}>
                     <RefreshCw className="h-3 w-3" /> Reactivar
                   </Button>
                 </div>
@@ -104,17 +99,17 @@ export default function SecuritySection() {
         </p>
       </Card>
 
-      {/* Future features notice */}
+      {/* Enforced protections */}
       <Card className="luxury-card p-5 border-border/40 bg-muted/10">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Próximamente
+          Protecciones activas
         </p>
         <div className="space-y-2 text-sm text-muted-foreground">
-          <p>• Autenticación de dos factores (2FA)</p>
-          <p>• Allowlist de dominios de email</p>
-          <p>• Invitaciones por email (invite-only)</p>
-          <p>• Políticas de contraseñas</p>
-          <p>• Sesiones activas por usuario</p>
+          <p>• Acceso interno únicamente por invitación</p>
+          <p>• Bloqueo inmediato de cuentas suspendidas o desactivadas</p>
+          <p>• Permisos sensibles validados por la base de datos</p>
+          <p>• Auditoría protegida contra inserciones o cambios manuales</p>
+          <p>• Registro del último acceso verificado</p>
         </div>
       </Card>
     </div>

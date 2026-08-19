@@ -1,18 +1,19 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { AccessError, corsHeaders, jsonResponse, requireInternalUser } from "../_shared/security.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+type NotificationInsert = {
+  user_id: string;
+  type: "approval" | "task" | "campaign" | "asset" | "message";
+  title: string;
+  message: string;
+  read: boolean;
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, serviceKey);
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders(req) });
+  if (req.method !== "POST") return jsonResponse(req, { error: "Method not allowed" }, 405);
 
   try {
+    const { adminClient: supabase } = await requireInternalUser(req, true);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const threeDaysFromNow = new Date(today);
@@ -24,14 +25,12 @@ Deno.serve(async (req) => {
       .select("user_id")
       .eq("role", "owner");
 
-    const ownerIds = (owners || []).map((r: any) => r.user_id);
+    const ownerIds = (owners || []).map(r => r.user_id);
     if (ownerIds.length === 0) {
-      return new Response(JSON.stringify({ message: "No owners found" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(req, { message: "No owners found" });
     }
 
-    const notifications: any[] = [];
+    const notifications: NotificationInsert[] = [];
     const todayIso = today.toISOString();
     const threeDaysIso = threeDaysFromNow.toISOString();
 
@@ -60,7 +59,7 @@ Deno.serve(async (req) => {
             user_id: userId,
             type: "task",
             title: `Tareas vencidas: ${overdueTasks.length}`,
-            message: overdueTasks.slice(0, 3).map((t: any) =>
+            message: overdueTasks.slice(0, 3).map(t =>
               `"${t.title}"${t.campaigns?.name ? ` — ${t.campaigns.name}` : ""}`
             ).join(", ") + (overdueTasks.length > 3 ? ` y ${overdueTasks.length - 3} más` : ""),
             read: false,
@@ -74,7 +73,7 @@ Deno.serve(async (req) => {
     yesterday.setDate(today.getDate() - 1);
     const { data: pendingApprovals } = await supabase
       .from("approvals")
-      .select("id, title")
+      .select("id, tasks(title)")
       .eq("status", "pending")
       .lt("created_at", yesterday.toISOString());
 
@@ -94,7 +93,7 @@ Deno.serve(async (req) => {
             user_id: userId,
             type: "approval",
             title: `Aprobaciones pendientes: ${pendingApprovals.length}`,
-            message: pendingApprovals.slice(0, 3).map((a: any) => `"${a.title}"`).join(", ") +
+            message: pendingApprovals.slice(0, 3).map(a => `"${a.tasks?.title ?? "Aprobación"}"`).join(", ") +
               (pendingApprovals.length > 3 ? ` y ${pendingApprovals.length - 3} más` : ""),
             read: false,
           });
@@ -165,7 +164,7 @@ Deno.serve(async (req) => {
             user_id: userId,
             type: "task",
             title: `Tareas urgentes sin iniciar: ${urgentTasks.length}`,
-            message: urgentTasks.slice(0, 3).map((t: any) =>
+            message: urgentTasks.slice(0, 3).map(t =>
               `"${t.title}"${t.campaigns?.name ? ` — ${t.campaigns.name}` : ""}`
             ).join(", ") + (urgentTasks.length > 3 ? ` y ${urgentTasks.length - 3} más` : ""),
             read: false,
@@ -180,14 +179,10 @@ Deno.serve(async (req) => {
       if (error) throw error;
     }
 
-    return new Response(
-      JSON.stringify({ created: notifications.length, message: "Smart notifications processed" }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse(req, { created: notifications.length, message: "Smart notifications processed" });
+  } catch (error: unknown) {
+    const status = error instanceof AccessError ? error.status : 500;
+    const message = error instanceof Error ? error.message : "Unexpected error";
+    return jsonResponse(req, { error: message }, status);
   }
 });

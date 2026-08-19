@@ -250,17 +250,16 @@ const SECTIONS: Section[] = [
     color: "text-orange-400",
     title: "Media Buying — Plataformas de publicidad",
     subtitle: "Registra las cuentas y canales de compra de medios que usas",
-    description: "Directorio de plataformas de publicidad digital y compra de medios: Meta Ads, Google Ads, TikTok Ads, YouTube Ads, streaming y más. Registra qué plataformas usas y los datos clave de cada cuenta.",
+    description: "Registro operativo de las cuentas de Meta Ads, Google Ads, TikTok Ads y LinkedIn Ads, con su estado, identificador y presupuesto mensual.",
     steps: [
-      "Las plataformas están organizadas en 4 categorías: Social, Search, Streaming/CTV y Programmatic.",
-      "Haz clic en cualquier tarjeta de plataforma para configurarla.",
-      "Elige el estado: Activo (lo usas), Planeado (lo vas a usar), Pausado o No aplica.",
-      "Agrega el nombre de la cuenta, Account ID/Pixel ID, presupuesto mensual y notas.",
-      "El botón 'Ads Manager →' abre directamente la plataforma en una nueva pestaña.",
-      "Las tarjetas activas se destacan con un borde de color.",
+      "Haz clic en 'Agregar cuenta' y elige la plataforma.",
+      "Registra el nombre, el ID externo, el presupuesto mensual y las notas operativas.",
+      "Elige el estado: Planificada, Activa o Pausada.",
+      "Usa Editar para mantener los datos al día o el icono de papelera para eliminar una cuenta.",
     ],
     tips: [
       "El resumen arriba muestra cuántas plataformas tienes activas y el presupuesto mensual total.",
+      "Por seguridad, el CRM no guarda tokens publicitarios en el navegador ni presenta métricas demo como datos reales.",
     ],
   },
   {
