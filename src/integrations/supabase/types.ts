@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.4"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       ad_accounts: {
@@ -572,6 +597,38 @@ export type Database = {
           },
         ]
       }
+      client_portal_access: {
+        Row: {
+          client_id: string
+          created_at: string
+          granted_by: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          granted_by?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          granted_by?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_portal_access_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_portal_tokens: {
         Row: {
           campaign_id: string
@@ -610,38 +667,6 @@ export type Database = {
           },
           {
             foreignKeyName: "client_portal_tokens_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      client_portal_access: {
-        Row: {
-          client_id: string
-          created_at: string
-          granted_by: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          client_id: string
-          created_at?: string
-          granted_by?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          client_id?: string
-          created_at?: string
-          granted_by?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "client_portal_access_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
@@ -1654,7 +1679,7 @@ export type Database = {
       is_internal_user: { Args: never; Returns: boolean }
       set_account_role: {
         Args: {
-          p_client_id?: string | null
+          p_client_id?: string
           p_role: Database["public"]["Enums"]["app_role"]
           p_user_id: string
         }
@@ -1665,19 +1690,15 @@ export type Database = {
         Returns: undefined
       }
       submit_client_approval_decision: {
-        Args: {
-          p_approval_id: string
-          p_feedback?: string | null
-          p_status: string
-        }
+        Args: { p_approval_id: string; p_feedback?: string; p_status: string }
         Returns: undefined
       }
       submit_public_lead: {
         Args: {
           p_email: string
-          p_mensaje?: string | null
+          p_mensaje?: string
           p_nombre: string
-          p_servicio?: string | null
+          p_servicio?: string
         }
         Returns: string
       }
@@ -1829,6 +1850,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["owner", "editor", "videographer", "client"],
