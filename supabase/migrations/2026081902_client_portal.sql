@@ -1,5 +1,7 @@
 -- Secure client portal access and centralize account administration.
 
+BEGIN;
+
 CREATE TABLE IF NOT EXISTS public.client_portal_access (
   user_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   client_id uuid NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
@@ -17,6 +19,11 @@ CREATE POLICY "owners can read client_portal_access"
 
 REVOKE INSERT, UPDATE, DELETE ON public.client_portal_access FROM anon, authenticated;
 GRANT SELECT ON public.client_portal_access TO authenticated;
+
+DROP TRIGGER IF EXISTS update_client_portal_access_updated_at ON public.client_portal_access;
+CREATE TRIGGER update_client_portal_access_updated_at
+  BEFORE UPDATE ON public.client_portal_access
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 -- Role and status mutations go through validated RPCs so an owner cannot
 -- accidentally remove the final active owner or strand a client account.
@@ -377,3 +384,5 @@ $$;
 
 REVOKE ALL ON FUNCTION public.submit_client_approval_decision(uuid, text, text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.submit_client_approval_decision(uuid, text, text) TO authenticated;
+
+COMMIT;
