@@ -328,10 +328,11 @@ export function useDismissAlert() {
 
 // ---- User Role ----
 export function useUserRole() {
-  const { user } = useAuth();
+  const { user, demoMode, role } = useAuth();
   return useQuery({
-    queryKey: ["user_role", user?.id],
+    queryKey: ["user_role", user?.id, demoMode],
     queryFn: async () => {
+      if (demoMode) return role;
       if (!user) return null;
       const { data, error } = await supabase
         .from("user_roles")
@@ -342,6 +343,7 @@ export function useUserRole() {
       return data?.role ?? null;
     },
     enabled: !!user,
+    initialData: demoMode ? "owner" : undefined,
   });
 }
 

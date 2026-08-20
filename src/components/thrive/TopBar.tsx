@@ -1,7 +1,7 @@
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useUnpaidAlerts, useDismissAlert, useUserRole, useNotifications, useMarkNotificationRead, useDeleteNotification } from "@/hooks/useSupabaseData";
 import { useAuth } from "@/contexts/AuthContext";
-import { Crown, Scissors, Camera, Bell, LogOut, Check, Trash2, CheckCheck, Search } from "lucide-react";
+import { Crown, Scissors, Camera, Bell, LogOut, Check, Trash2, CheckCheck, Search, Eye } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { invokeFunction } from "@/lib/invokeFunction";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,7 @@ export function TopBar() {
   const dismissAlert = useDismissAlert();
   const markRead = useMarkNotificationRead();
   const deleteNotification = useDeleteNotification();
-  const { signOut } = useAuth();
+  const { signOut, demoMode } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -89,6 +89,12 @@ export function TopBar() {
           <RoleIcon className={cn("h-4 w-4", config.color)} />
           <span className="text-sm font-medium">{config.label}</span>
         </div>
+        {demoMode && (
+          <span className="hidden sm:inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+            <Eye className="h-3 w-3" />
+            Demo · solo lectura
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
