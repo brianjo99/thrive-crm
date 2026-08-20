@@ -5,12 +5,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Mail, Lock } from "lucide-react";
+import { Sparkles, Mail, Lock, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 
 export default function AuthPage() {
-  const { signIn, resetPassword, user, role, accessLoading } = useAuth();
+  const { signIn, resetPassword, enterDemo, user, role, accessLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -106,6 +106,32 @@ export default function AuthPage() {
                 : "Enviar enlace"}
             </Button>
           </form>
+
+          {mode === "login" && (
+            <div className="mt-4 space-y-3">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">o explora sin cuenta</span>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2"
+                onClick={enterDemo}
+                disabled={loading}
+              >
+                <Eye className="h-4 w-4" />
+                Entrar en modo demo
+              </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                Vista de prueba · sin acceso a datos reales
+              </p>
+            </div>
+          )}
 
           <div className="mt-4 text-center text-sm space-y-2">
             {mode === "login" && (
